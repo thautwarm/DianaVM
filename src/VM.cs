@@ -3,6 +3,15 @@ using System.Collections.Generic;
 namespace DianaScript
 {
 
+    public static class Utils
+    {
+        public static B Then<A, B>(this A a, Func<A, B> f){
+            return f(a);
+        }
+        public static void Do<A>(this A a, Action<A> f){
+            f(a);
+        }
+    }
     public static class ListAsStack
     {
         public static A Pop<A>(this List<A> self)
@@ -58,6 +67,9 @@ namespace DianaScript
         public DClsObj IntCls { get; }
         public DClsObj BoolCls { get; }
         public DClsObj FrameCls { get; }
+        public DClsObj GtorCls { get; }
+        public DGenerator CreateGenerator(DFrame frame, DObj val);
+
 
         public DTuple CreateTuple(DObj[] elts);
         public DNil Nil { get; }
@@ -69,7 +81,7 @@ namespace DianaScript
 
         public DError Err_InvalidJump(DObj d);
         public DError Err_NotBool(DObj d);
-        public DError Err_ArgCountMismatch(DFunc f, int n);
+        public DError Err_ArgMismatchForUserFunc(DFunc f, int n);
 
         public DFrame new_frame(DFunc func) => new DFrame
         {
@@ -132,7 +144,6 @@ namespace DianaScript
                     case CallSplit.Finished:
                         Frames.Pop_();
                         cur_frame = Frames.Peek(0);
-                        cur_frame.offset += 2;
                         cur_frame.vstack.Push(CurrentReturn);
                         break;
                 }
@@ -205,7 +216,7 @@ namespace DianaScript
                                 {
                                     if (operand < dfunc.code.narg)
                                     {
-                                        CurrentError = Err_ArgCountMismatch(dfunc, operand);
+                                        CurrentError = Err_ArgMismatchForUserFunc(dfunc, operand);
                                         return CallSplit.Error;
                                     }
                                     var narg = dfunc.code.narg;
@@ -232,6 +243,7 @@ namespace DianaScript
                                 }
                                 vstack.Pop_(); // pop func
                                 Frames.Push(new_frame(dfunc, new_locals));
+                                frame.offset += 2;
                                 return CallSplit.SubRoutine;
                             }
                             args = new StackViewArgs(operand, vstack);
@@ -316,11 +328,17 @@ namespace DianaScript
                         }
                     case CODE.RETURN:
                         CurrentReturn = vstack.Pop();
+                        frame.offset += 1;
                         return CallSplit.Finished;
                     case CODE.ERR_CLEAR:
                         ErrorFrames.Clear();
                         frame.offset += 1;
                         break;
+                    case CODE.YIELD:
+                        throw new NotImplementedException();
+                        // CurrentReturn = CreateGenerator(frame, vstack.Pop());
+                        // frame.offset += 1;
+                        // return CallSplit.Finished;
                 }
             }
         }

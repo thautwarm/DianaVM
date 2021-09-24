@@ -19,12 +19,14 @@ namespace DianaScript
     {
         public DClsObj GetCls { get; set; }
         public DStr name;
+
+        // __dict__ returns None if dict
+        public Dictionary<string, DObj> dict = null;
         public Func<DObj, string, DObj> get;
         public Func<DObj, string, DObj> set;
-
         public DObject_Call_t call;
-        public Func<DObj, string> reprfunc = o => o.GetCls.strfunc(o);
-        public Func<DObj, string> strfunc = o => o.native.ToString();
+        public Func<DObj, string> reprfunc = o => o.native.ToString();
+        public Func<DObj, string> strfunc = o => o.GetCls.strfunc(o);
         public Type native_type => ((DObj) this).native.GetType();
 
 
@@ -75,7 +77,6 @@ namespace DianaScript
     public class DInt: DObj{
         public DClsObj GetCls { get; set; }
         public int value;
-
         public object native => this.value;
     }
 
@@ -139,5 +140,11 @@ namespace DianaScript
         public object native => value;
     }
     
-
+    public class DGenerator: DObj{
+        public DClsObj GetCls { get; set; }
+        public DFrame frame;
+        public DObj yieldvalue;
+        public bool running => frame.offset <= frame.code.bc.Length;
+    }
+    
 }

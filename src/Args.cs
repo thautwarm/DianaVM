@@ -1,6 +1,7 @@
-namespace DianaScript{
-using System.Collections.Generic;
-public interface Args
+namespace DianaScript
+{
+    using System.Collections.Generic;
+    public interface Args
     {
         public int NArgs { get; }
         public DObj this[int i] { get; }
@@ -27,8 +28,9 @@ public interface Args
             get => vstack[vstack.Count - narg + i];
         }
 
-        public Args Prepend(DObj o){
-            return new PrependArgs(narg, vstack, new List<DObj> {o});
+        public Args Prepend(DObj o)
+        {
+            return new PrependArgs(narg, vstack, new List<DObj> { o });
         }
     }
 
@@ -66,11 +68,12 @@ public interface Args
             }
         }
 
-        public Args Prepend(DObj o){
+        public Args Prepend(DObj o)
+        {
             this.prepend.Push(o);
             return this;
         }
 
-    
-}
+
+    }
 }

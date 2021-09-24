@@ -5,7 +5,7 @@ using System.Linq;
 namespace DianaScript
 {
 
-    public class DianaVM : VM
+    public partial class DianaVM : VM
     {
         public VM vm => this;
         public Dictionary<Type, DClsObj> typemaps;
@@ -41,8 +41,8 @@ namespace DianaScript
             };
             MetaCls.GetCls = MetaCls;
             StrCls = _CreateCls();
-            StrCls.name = CreateStr("str");
-            MetaCls.name = CreateStr("meta");
+            StrCls.name = CreateStr("string");
+            MetaCls.name = CreateStr("Meta");
 
             ErrId_InvalidJump = NewErrId(CreateStr("InvalidJump"));
             ErrId_TypeError = NewErrId(CreateStr("TypeError"));
@@ -53,30 +53,33 @@ namespace DianaScript
             IntCls = CreateCls("int");
             FloatCls = CreateCls("float");
             BoolCls = CreateCls("bool");
-            NilCls = CreateCls("nil");
-            ErrorCls = CreateCls("err");
-            FrameCls = CreateCls("frame");
-            CodeCls = CreateCls("code");
-            TupleCls = CreateCls("tuple");
-            FuncCls = CreateCls("function");
-            BFunc0Cls = CreateCls("builtin_function0");
-            BFunc1Cls = CreateCls("builtin_function1");
-            BFunc2Cls = CreateCls("builtin_function2");
-            BFunc3Cls = CreateCls("builtin_function3");
+            NilCls = CreateCls("NoneClass");
+            ErrorCls = CreateCls("Error");
+            FrameCls = CreateCls("Frame");
+            CodeCls = CreateCls("Code");
+            TupleCls = CreateCls("Tuple");
+            FuncCls = CreateCls("Function"); // user function
+            BFunc0Cls = CreateCls("Func0");
+            BFunc1Cls = CreateCls("Func1");
+            BFunc2Cls = CreateCls("Func2");
+            BFunc3Cls = CreateCls("Func3");
+            GtorCls = CreateCls("Generator");
 
-            StrCls.reprfunc = o => ((DStr)o).value.Replace("\"", "\\\"");
+            StrCls.reprfunc = o => $"\"{((DStr)o).value.Replace("\"", "\\\"")}\"";
             StrCls.strfunc = o => ((DStr)o).value;
-            BoolCls.strfunc = o => ((DBool)o).value ? "True" : "False";
-            TupleCls.strfunc = o =>
+            BoolCls.reprfunc = o => ((DBool)o).value ? "true" : "false";
+            
+            TupleCls.reprfunc = o =>
             {
-                var s = String.Join(", ", ((DTuple)o).elts.Select(o => o.repr));
+                var s = seq_repr(((DTuple)o).elts);
+                if (s == null) return null;
                 if (((DTuple)o).elts.Length == 1)
                 {
                     s += ",";
                 }
                 return $"({s},)";
             };
-            NilCls.strfunc = o => "Nil";
+            NilCls.reprfunc = o => "None";
 
             Nil = new DNil
             {
@@ -91,8 +94,25 @@ namespace DianaScript
             BFunc1Cls.call = call_bfunc1;
             BFunc2Cls.call = call_bfunc2;
             BFunc3Cls.call = call_bfunc3;
-        }
 
+            ErrorCls.reprfunc = o => ReprErr(o as DError);
+        }
+        
+        public string seq_repr(IEnumerable<DObj> seq){
+            List<string> parts = new List<string>{};
+            foreach(var a in seq){
+                var s = a.repr;
+                if (s == null) return null;
+                parts.Add(s);
+            }
+            return String.Join(", ", parts);
+        }
+        private string ReprErr(DError err){
+            string errname = err_kinds[err.error_id].value;
+            var s = seq_repr(err.args);
+            if (s == null) return null;
+            return $@"{errname}({s})";
+        }
         private DObj call_bfunc0(DObj bfunc, Args args)
         {
             int narg = args.NArgs;
@@ -238,7 +258,7 @@ namespace DianaScript
             CurrentError = Err_CallError(cls, args.NArgs, CreateStr($"Metaclass object cannot get called with {args.NArgs} arguments"));
             return null;
         }
-
+    
         public DObj defaultGet(DObj o, string s)
         {
             CurrentError = Err_AttributeError(CreateStr(s), o);
@@ -394,6 +414,8 @@ namespace DianaScript
 
         public DClsObj FuncCls { get; set; }
 
+        public DClsObj GtorCls { get; set; }
+
         public DError Err_InvalidJump(DObj d)
         {
             return new DError
@@ -434,12 +456,21 @@ namespace DianaScript
             if (f_repr == null) return null;
             return Err_CallError(f, n, CreateStr($"{f_repr} expects {expect} arguments, got {n}."));
         }
-        public DError Err_ArgCountMismatch(DFunc f, int n)
+        public DError Err_ArgMismatchForUserFunc(DFunc f, int n)
         {
             string f_repr = ((DObj)f).repr;
             if (f_repr == null) return null;
             var expect = (f.code.varg ? ">=" : "") + $"{f.code.narg}";
             return Err_CallError(f, n, CreateStr($"{f_repr} takes expect {expect} arguments, got {n}."));
+        }
+
+        public DGenerator CreateGenerator(DFrame frame, DObj val)
+        {
+            return new DGenerator {
+                frame = frame,
+                GetCls = GtorCls,
+                yieldvalue = val
+            };
         }
     }
 

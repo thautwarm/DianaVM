@@ -19,6 +19,7 @@ namespace DianaScript
         JUMP_IF = 12,
         RETURN = 13,
         ERR_CLEAR = 14,
+        YIELD = 15,
     }
 
     public struct BC
