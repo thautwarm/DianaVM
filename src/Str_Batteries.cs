@@ -10,9 +10,6 @@ public partial class DianaVM{
         StrCls.dict[meth] = o;
     }
 
-    public DObj Join(DObj o, DObj sep, DObj seq){
-        
-    }
     public void IniStr(){
         StrCls.dict = new();
 

@@ -5,10 +5,18 @@ namespace DianaScript
 
     public static class Utils
     {
-        public static B Then<A, B>(this A a, Func<A, B> f){
+    
+        public static IEnumerable<B>  Map<A, B>(this IEnumerable<A> lst, Func<A, B> f){
+            foreach(var e in lst){
+                yield return f(e);
+            }
+        }
+        public static B Then<A, B>(this A a, Func<A, B> f)
+        {
             return f(a);
         }
-        public static void Do<A>(this A a, Action<A> f){
+        public static void Do<A>(this A a, Action<A> f)
+        {
             f(a);
         }
     }
@@ -50,9 +58,6 @@ namespace DianaScript
             }
         }
     }
-
-
-
 
     public enum CallSplit
     {
@@ -149,7 +154,8 @@ namespace DianaScript
                 }
             }
             Frames.Pop_();
-            if (aug_frame.estack.Count == 0){
+            if (aug_frame.estack.Count == 0)
+            {
                 return null;
             }
             return aug_frame.vstack.Pop();
