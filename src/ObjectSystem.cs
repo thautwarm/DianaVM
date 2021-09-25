@@ -531,7 +531,6 @@ namespace DianaScript
     {
         public static DNil Make() => unique;
         public static readonly DNil unique = new DNil();
-        public DClsObj GetCls { get; set; }
         public object Native => this;
     }
 
