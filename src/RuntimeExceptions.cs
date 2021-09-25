@@ -25,6 +25,11 @@ public class D_TypeError : Exception, DObj
     {
     }
 
+    public D_TypeError(string expect, string o): base($"expect an instance of {expect}, but got {o}.")
+    {
+    }
+
+
     public D_TypeError(DClsObj expect, DObj o, string message): base(message)
     {
     }
