@@ -44,6 +44,7 @@ public partial class DCode
   public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
+    DWrap.RegisterTypeMap(NativeType, this);
     Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
     {
       { "get_bc", (false, MK.CreateFunc(bind_get_bc)) },

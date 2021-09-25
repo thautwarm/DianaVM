@@ -326,6 +326,7 @@ class Codegen:
                     valid_argc.append(valid_argc[-1] + 1)
                     arg_check = "<"
                 elif param.is_varg:
+                    variadic = True
                     arg_check = "<"
                     arg_desc = ">="
                 else:
@@ -340,11 +341,13 @@ class Codegen:
             out_args: list[tuple[str, str]] = []
             def try_return(check=True):
                 if check:
-                    if i + 1 in valid_argc:
-                        if len(valid_argc) != 1:
-                            self << f"if (nargs == {i + 1})\n"
-                    else:
+                    if i + 1 not in valid_argc:
                         return
+                    if i + 1 == valid_argc[-1] and not variadic:
+                        pass
+                    else:
+                        self << f"if (nargs == {i + 1})\n"
+
                 if access_field_from_first:
                     call = f"{arguments[0]}.{meth_name}({','. join(arguments[1:])})"
                 elif meth_name == "new":
@@ -377,7 +380,6 @@ class Codegen:
                     in_t: Type = param.cast_from
                 argn = f"_arg{i}"
                 if param.is_varg:
-                    variadic = True
                     self << f"var {argn} = new {expect_t.as_str()}[nargs - {i} - 1];\n"
                     self << f"for(var _i = {i}; _i < nargs; _i++)\n"
                     self << f"  {argn}[_i - {i}] = _args[_i];\n"
@@ -501,7 +503,9 @@ class Codegen:
             self << f"public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {{get; set;}}\n"
             self << f"public Cls()\n"
             self << "{\n"
+            
             with self.tab():
+                self << "DWrap.RegisterTypeMap(NativeType, this);\n"
                 self << f"Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>\n"
                 self << "{\n"
                 with self.tab():

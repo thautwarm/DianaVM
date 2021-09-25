@@ -20,6 +20,7 @@ public partial class DFunc
   public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
+    DWrap.RegisterTypeMap(NativeType, this);
     Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
     {
       { "get_code", (false, MK.CreateFunc(bind_get_code)) },

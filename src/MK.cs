@@ -49,17 +49,17 @@ public static class MK{
     public static DObj create(string s) => String(s);
     
     // public static B cast<A, B>(THelper<B> _, A s) where B : A => (B) s;
-    public static DStr String(string s) => throw new NotImplementedException();
-    public static DInt Int(int s) => throw new NotImplementedException();
+    public static DStr String(string s) => DStr.Make(s);
+    public static DInt Int(int s) => DInt.Make(s);
 
     public static DObj create(int s) => Int(s);
-    public static DBool Bool(bool b) => throw new NotImplementedException();
+    public static DBool Bool(bool b) => DBool.Make(b);
 
     public static DObj create(bool s) => Bool(s);
-    public static DFloat Float(float b) => throw new NotImplementedException();
+    public static DFloat Float(float b) => DFloat.Make(b);
 
     public static DObj create(float s) => Float(s);
-    public static DNil Nil() => throw new NotImplementedException();
+    public static DNil Nil() => DNil.unique;
 
     public static DObj create() => Nil();
     public static DDict Dict(Dictionary<DObj, DObj> d) => throw new NotImplementedException();
@@ -83,15 +83,18 @@ public static class MK{
 
     public static DObj create<T>(T[] d) => Array(d);
 
-    public static DObj create<T>(T a) => throw new NotImplementedException();
+
+    public static DWrap Wrap(object o) => new DWrap(o);
+    public static DObj create<T>(T a) => Wrap(a);
 
     // public static A unbox<A>(DObj o){
     //     if (o is A){
             
     //     }
     // }
-    public static DFunc CreateFunc(Func<Args, DObj> f) => throw new NotImplementedException();
 
-    public static DFunc create(Func<Args, DObj> d) => CreateFunc(d);
+    public static DBuiltinFunc CreateFunc(Func<Args, DObj> f) => 
+    DBuiltinFunc.Make(f);
+    public static DBuiltinFunc create(Func<Args, DObj> d) => CreateFunc(d);
 }
 }

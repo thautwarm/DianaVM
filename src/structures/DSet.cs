@@ -123,6 +123,7 @@ public partial class DSet
   public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
+    DWrap.RegisterTypeMap(NativeType, this);
     Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
     {
       { "__or__", (false, MK.CreateFunc(bind___or__)) },

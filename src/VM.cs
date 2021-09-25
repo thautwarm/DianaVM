@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+
 namespace DianaScript
 {
 
     public static class Utils
     {
-    
-        public static IEnumerable<B>  Map<A, B>(this IEnumerable<A> lst, Func<A, B> f){
-            foreach(var e in lst){
+
+        public static IEnumerable<B> Map<A, B>(this IEnumerable<A> lst, Func<A, B> f)
+        {
+            foreach (var e in lst)
+            {
                 yield return f(e);
             }
         }
@@ -66,47 +70,54 @@ namespace DianaScript
         SubRoutine = 2
     }
 
-    public interface VM
+    public class VM
     {
-        public DClsObj FuncCls { get; }
-        public DClsObj IntCls { get; }
-        public DClsObj BoolCls { get; }
-        public DClsObj FrameCls { get; }
-        public DClsObj GtorCls { get; }
-        public DGenerator CreateGenerator(DFrame frame, DObj val);
+
+        public DNil Nil = MK.Nil();
 
 
-        public DTuple CreateTuple(DObj[] elts);
-        public DNil Nil { get; }
+        [NotNull]
+        public List<DFrame> Frames;
+        
+        [NotNull]
+        
+        public List<DFrame> ErrorFrames;
 
-        public List<DFrame> Frames { get; }
-        public List<DFrame> ErrorFrames { get; }
-        public DError CurrentError { get; set; }
-        public DObj CurrentReturn { get; set; }
+        public Exception CurrentError;
+        public DObj CurrentReturn;
+        
+        public VM(){
+            Frames = new List<DFrame>();
+            ErrorFrames = new List<DFrame>();
+        }
+        public Exception Err_InvalidJump(DObj d)
+        {
+            return new InvalidProgramException($"{d.__repr__} cannot be a jump target.");
+        }
+        public Exception Err_NotBool(DObj d)
+        {
+            return new InvalidProgramException($"{d.__repr__} is required to be bool.");
+        }
+        public Exception Err_ArgMismatchForUserFunc(DFunc f, int n)
+        {
 
-        public DError Err_InvalidJump(DObj d);
-        public DError Err_NotBool(DObj d);
-        public DError Err_ArgMismatchForUserFunc(DFunc f, int n);
+            string f_repr = ((DObj)f).__repr__;
+            if (f_repr == null) return null;
+            var expect = (f.code.varg ? ">=" : "") + $"{f.code.narg}";
+            return new ArgumentException($"{f_repr} takes expect {expect} arguments, got {n}.");
+        }
 
         public DFrame new_frame(DFunc func) => new DFrame
         {
             func = func,
             localvals = new DObj[] { },
-            GetCls = FrameCls,
             vstack = new List<DObj>(),
             estack = new List<(int, int)>(),
             offset = 0
         };
 
-        public DFrame new_frame(DFunc func, DObj[] localvals) => new DFrame
-        {
-            func = func,
-            localvals = localvals,
-            GetCls = FrameCls,
-            vstack = new List<DObj>(),
-            estack = new List<(int, int)>(),
-            offset = 0
-        };
+        public DFrame new_frame(DFunc func, DObj[] localvals) => DFrame.Make(func, localvals: localvals);
+
 
         public void restore_frame(DFrame frame)
         {
@@ -123,7 +134,7 @@ namespace DianaScript
         public DObj Run(DCode code)
         {
 
-            var func = new DFunc { code = code, freevals = new DObj[] { }, GetCls = FuncCls };
+            var func = DFunc.Make(code, freevals: new DObj[0]);
             var aug_frame = new_frame(func);
             var root_frame = new_frame(func);
             Frames.Add(aug_frame);
@@ -232,7 +243,7 @@ namespace DianaScript
                                         new_locals[i] = vstack[vstack.Count - operand + i];
                                     }
                                     var left = operand - narg;
-                                    var vararg = CreateTuple(new DObj[operand - narg]);
+                                    var vararg = MK.Tuple(new DObj[operand - narg]);
                                     for (var i = 0; i < left; i++)
                                     {
                                         vararg.elts[i] = vstack[vstack.Count - left + i];
@@ -252,23 +263,30 @@ namespace DianaScript
                                 frame.offset += 2;
                                 return CallSplit.SubRoutine;
                             }
-                            args = new StackViewArgs(operand, vstack);
-                            var fastcalled = fn.GetCls.call(fn, args);
-                            vstack.PopN_(operand + 1);
-                            if (fastcalled == null)
+                            args = new Args();
+                            for (var i = 0; i < operand; i++)
+                            {
+                                args.Add(vstack.Pop());
+                            }
+                            vstack.Pop_();
+
+                            try
+                            {
+                                var fastcalled = fn.__call__(args);
+                                vstack.Push(fastcalled);
+                                frame.offset += 2;
+                            }
+                            catch (Exception e)
                             {
                                 if (estack.Count == 0)
                                 {
+                                    CurrentError = e;
                                     return CallSplit.Error;
                                 }
                                 restore_frame(frame);
-                                vstack.Push(CurrentError);
-                                CurrentError = null;
-                            }
-                            else
-                            {
-                                vstack.Push(fastcalled);
-                                frame.offset += 2;
+                                vstack.Push(
+                                    MK.Wrap(CurrentError)
+                                );
                             }
                             break;
                         }
@@ -296,7 +314,8 @@ namespace DianaScript
                             else
                             {
                                 restore_frame(frame);
-                                vstack.Push(Err_InvalidJump(tos));
+                                vstack.Push(
+                                    MK.Wrap(Err_InvalidJump(tos)));
                             }
                             break;
                         }
@@ -328,7 +347,7 @@ namespace DianaScript
                             }
 
                             restore_frame(frame);
-                            vstack.Push(CurrentError);
+                            vstack.Push(MK.Wrap(CurrentError));
                             CurrentError = null;
                             break;
                         }

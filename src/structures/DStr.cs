@@ -89,7 +89,6 @@ public partial class DStr
       return MK.create(_return);
     }
     var _arg1 = MK.cast(THelper<Char[]>.val, MK.unbox<String>(_args[1]));
-    if (nargs == 2)
     {
       var _return = _arg0.TrimEnd(_arg1);
       return MK.create(_return);
@@ -108,7 +107,6 @@ public partial class DStr
       return MK.create(_return);
     }
     var _arg1 = MK.cast(THelper<Char[]>.val, MK.unbox<String>(_args[1]));
-    if (nargs == 2)
     {
       var _return = _arg0.TrimStart(_arg1);
       return MK.create(_return);
@@ -158,6 +156,7 @@ public partial class DStr
     if (nargs < 1)
       throw new D_TypeError($"calling str.format; needs at least >= (1) arguments, got {nargs}.");
     var _arg0 = MK.unbox<String>(_args[0]);
+    if (nargs == 1)
     {
       var _return = String.Format(_arg0);
       return MK.create(_return);
@@ -183,7 +182,6 @@ public partial class DStr
       return MK.create(_return);
     }
     var _arg2 = MK.unbox<Int32>(_args[2]);
-    if (nargs == 3)
     {
       var _return = _arg0.Substring(_arg1,_arg2);
       return MK.create(_return);
@@ -217,7 +215,6 @@ public partial class DStr
       return MK.create(_return);
     }
     var _arg2 = MK.unbox<Int32>(_args[2]);
-    if (nargs == 3)
     {
       var _return = _arg0.Remove(_arg1,_arg2);
       return MK.create(_return);
@@ -243,7 +240,6 @@ public partial class DStr
       return MK.create(_return);
     }
     var _arg3 = MK.unbox<Int32>(_args[3]);
-    if (nargs == 4)
     {
       var _return = _arg0.IndexOf(_arg1,_arg2,_arg3);
       return MK.create(_return);
@@ -257,6 +253,7 @@ public partial class DStr
   public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
+    DWrap.RegisterTypeMap(NativeType, this);
     Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
     {
       { "join", (false, MK.CreateFunc(bind_join)) },

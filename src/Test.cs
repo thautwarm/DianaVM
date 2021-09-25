@@ -1,5 +1,5 @@
 using System;
-// using DianaScript;
+using DianaScript;
 using System.Collections.Generic;
 using System.Collections;
 
@@ -14,51 +14,36 @@ public static class Test
             x = x_;
         }
     }
-    public static void test()
+ 
+
+    public static int Main(String[] args)
     {
-        
-        Func<object, int> f = (x) =>
-        {
-            return ((List<S>)x)[2].x;
+        var dvm = new VM();
+
+        var bytecode = new int[]{
+            (int)CODE.LOAD_CONST, 0, 
+            (int)CODE.LOAD_CONST, 1, 
+            (int)CODE.LOAD_CONST, 0, 
+            (int)CODE.LOAD_CONST, 1,
+            (int)CODE.CALL, 1,
+            (int)CODE.CALL, 2,
+            (int)CODE.RETURN
         };
-        var tlist = typeof(List<>);
-        var tslist = tlist.MakeGenericType(typeof(S));
-        var xs = Activator.CreateInstance(tslist);
-        
-        var xs_ = (ArrayList) xs;
-        xs_.Add(new S(1));
-        xs_.Add(new S(2));
-        xs_.Add(new S(3));
-        Console.WriteLine(f(xs));
+        var consts = new DObj[]{
+          MK.CreateFunc( (args) => {
+            var x = args[0];
+             Console.WriteLine(x.__repr__);
+             return dvm.Nil;
+
+          }),
+          MK.Int(1) 
+        };
+
+        var dcode = DCode.Make(bytecode,  consts: consts); 
+        if (null == dvm.Run(dcode)){
+            Console.WriteLine("unhandled error:" + ( MK.create(dvm.CurrentError)).__repr__);
+        }
+        Console.WriteLine("xxx");
+        return 0;
     }
-
-    // public static int Main(String[] args)
-    // {
-    //     var dvm = new DianaVM();
-
-    //     var bytecode = new int[]{
-    //         (int)CODE.LOAD_CONST, 0, 
-    //         (int)CODE.LOAD_CONST, 1, 
-    //         (int)CODE.LOAD_CONST, 0, 
-    //         (int)CODE.LOAD_CONST, 1,
-    //         (int)CODE.CALL, 1,
-    //         (int)CODE.CALL, 2,
-    //         (int)CODE.RETURN
-    //     };
-    //     var consts = new DObj[]{
-    //       dvm.CreateBFunc1( (DObj x) => {
-    //          Console.WriteLine(x.repr);
-    //          return dvm.Nil;
-
-    //       }),
-    //       dvm.CreateInt(1) 
-    //     };
-
-    //     var dcode = dvm.CreateCode(bytecode, new int[]{}, consts, ""); 
-    //     if (null == dvm.vm.Run(dcode)){
-    //         Console.WriteLine("unhandled error:" + ((DObj) dvm.vm.CurrentError).repr);
-    //     }
-    //     Console.WriteLine("xxx");
-    //     return 0;
-    // }
 }

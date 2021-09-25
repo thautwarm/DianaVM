@@ -74,6 +74,7 @@ public partial class DDict
   public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
+    DWrap.RegisterTypeMap(NativeType, this);
     Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
     {
       { "__contains__", (false, MK.CreateFunc(bind___contains__)) },

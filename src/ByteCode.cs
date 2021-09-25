@@ -20,21 +20,7 @@ namespace DianaScript
         RETURN = 13,
         ERR_CLEAR = 14,
         YIELD = 15,
-    }
 
-    public struct BC
-    {
-        CODE code;
-        int operand;
-        public BC(CODE code)
-        {
-            this.code = code;
-            operand = 0;
-        }
-        public BC(CODE code, int operand)
-        {
-            this.code = code;
-            this.operand = operand;
-        }
+        // TODO: load_global/store_global
     }
 }

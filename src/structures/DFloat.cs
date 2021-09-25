@@ -39,6 +39,7 @@ public partial class DFloat
   public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
+    DWrap.RegisterTypeMap(NativeType, this);
     Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
     {
       { "parse", (false, MK.CreateFunc(bind_parse)) },

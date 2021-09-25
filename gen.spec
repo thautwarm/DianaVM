@@ -15,6 +15,7 @@ boxedtypes {
     DWrap
 }
 
+builtin_function DBuiltinFunc Func<Args, DObj>{}
 frame DFrame DFrame{
     DFunc this.func as get_func
 }

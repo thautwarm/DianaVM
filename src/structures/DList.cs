@@ -97,7 +97,6 @@ public partial class DList
       return MK.Nil();
     }
     var _arg2 = MK.unbox<Int32>(_args[2]);
-    if (nargs == 3)
     {
       _arg0.IndexOf(_arg1,_arg2);
       return MK.Nil();
@@ -168,6 +167,7 @@ public partial class DList
   public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
+    DWrap.RegisterTypeMap(NativeType, this);
     Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
     {
       { "__contains__", (false, MK.CreateFunc(bind___contains__)) },

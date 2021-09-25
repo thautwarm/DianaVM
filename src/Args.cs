@@ -5,15 +5,15 @@ namespace DianaScript
 
 public class Args : IEnumerable<DObj>{
     public List<DObj> inner;
-    public int Count = this.inner.Count;
+    public int Count => inner.Count;
     public int NArgs => inner.Count;
     public Args(){
-        inner = new ();
+        inner = new List<DObj> ();
     }
 
     public Args(IEnumerable<DObj> xs){
         
-        inner = new (xs);
+        inner = new List<DObj> (xs);
     }
     public DObj this[int i] {
         get => inner[inner.Count - i - 1];

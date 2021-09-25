@@ -59,6 +59,7 @@ public partial class DTuple
   public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
+    DWrap.RegisterTypeMap(NativeType, this);
     Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
     {
       { "__len__", (false, MK.CreateFunc(bind___len__)) },

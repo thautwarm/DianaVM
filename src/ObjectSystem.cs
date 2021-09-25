@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using System.Diagnostics.CodeAnalysis;
 
 namespace DianaScript
 {
@@ -40,7 +40,7 @@ namespace DianaScript
         public DObj __call__(Args args) => throw new D_TypeError($"{this.GetCls.__repr__} instances are not callable");
 
         IEnumerable<DObj> __iter__ => throw new D_TypeError($"{this.GetCls.__repr__} instances are not iterable");
-        public string __repr__ => $"<object at {__hash__}>";
+        public string __repr__ => $"{Native.ToString()}";
         public string __str__ => __repr__;
 
         public DObj __add__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support + operator.");
@@ -92,10 +92,20 @@ namespace DianaScript
         public Array src;
 
         public object Native => src;
-        public DArray(DClsObj eltype, int n)
+        public static DArray Make(DClsObj eltype, int n)
         {
-            this.eltype = eltype;
-            src = System.Array.CreateInstance(eltype.NativeType, n);
+            return new DArray
+            {
+                eltype = eltype,
+                src = System.Array.CreateInstance(eltype.NativeType, n)
+            };
+        }
+        public static DArray Make<T>(T[] array)
+        {
+            var t = typeof(T);
+            var eltype = DWrap.TypeMapOrCache(t);
+
+            return new DArray { eltype = eltype, src = array as Array };
         }
 
         public DObj this[int i]
@@ -130,53 +140,6 @@ namespace DianaScript
         }
     }
 
-    // public class daccessor : DClsObj
-    // {
-    //     public static daccessor cls = new daccessor();
-    //     public Dictionary<string, DAccessor> accessors => null;
-
-    //     public string name => nameof(daccessor);
-    // }
-    // public class DAccessor : DInstObj
-    // {
-    //     public DObj Getter, Setter, Method;
-    //     DClsObj sourceclass;
-    //     public string attr;
-    //     public bool bound;
-
-    //     public DClsObj GetCls => daccessor.cls;
-
-    //     public object Native => this;
-
-    //     public string Repr => $"<{sourceclass.Repr}.{attr}>";
-
-    //     public DObj defaultSetter(Args args)
-    //     {
-    //         throw new D_AttributeError(
-    //             $"cannot set attribute {attr} for {sourceclass.Repr} instance.");
-    //     }
-
-    //     public DObj defaultGetter(Args args)
-    //     {
-    //         throw new D_AttributeError(
-    //             $"cannot get attribute {attr} for {sourceclass.Repr} instance.");
-    //     }
-
-    //     public DObj defaultMethod(Args args)
-    //     {
-    //         throw new D_TypeError(
-    //             $"no method {attr} for {sourceclass.Repr} instance.");
-    //     }
-    //     public DAccessor(DClsObj sourceclass, string attr, DObj getter=null,  DObj setter=null, DObj method=null, bool bound = true)
-    //     {
-    //         this.sourceclass = sourceclass;
-    //         this.Getter = getter??MK.FuncN(defaultGetter);
-    //         this.Setter = setter??MK.FuncN(defaultSetter);
-    //         this.Method = method??MK.FuncN(defaultMethod);
-    //         this.bound = bound;
-    //     }
-
-    // }
     public interface DClsObj : DObj
     {
 
@@ -229,6 +192,7 @@ namespace DianaScript
             {
                 return args[0].GetCls;
             }
+            // create user class
             throw new NotImplementedException();
         }
 
@@ -239,15 +203,44 @@ namespace DianaScript
         public object Native => this;
         public string __repr__ => "<codeobj>";
 
+        [NotNull]
         public int[] bc;
+        [NotNull]
         public DObj[] consts;
         public int nfree;
         public int narg;
         public int nlocal;
         public bool varg;
+
+        [NotNull]
+
         public string filename;
+        [NotNull]
         public string name;
+        [NotNull]
         public int[] locs;
+
+        public static DCode Make(
+            int[] bc, DObj[] consts = null,
+            int[] locs = null,
+            int nfree = 0, int narg = 0, int nlocal = 0,
+            bool varg = false, string filename = "",
+            string name = ""
+        )
+        {
+            return new DCode
+            {
+                bc = bc,
+                consts = consts ?? new DObj[0],
+                locs = locs ?? new int[0],
+                nfree = nfree,
+                narg = narg,
+                nlocal = nlocal,
+                varg = varg,
+                filename = filename,
+                name = name
+            };
+        }
     }
 
     public partial class DFunc : DObj
@@ -262,11 +255,32 @@ namespace DianaScript
         public DObj[] defaults;
 
         public string __repr__ => $"<code at {(this as DObj).__hash__}>";
+
+        public static DFunc Make(
+            DCode code, DObj[] freevals = null,
+            DObj[] defaults = null
+        )
+        {
+            return new DFunc
+            {
+                code = code,
+                freevals = freevals ?? new DObj[0],
+                defaults = new DObj[0]
+            };
+        }
     }
 
 
     public partial class DFrame : DObj
     {
+        public static DFrame Make(DFunc func, DObj[] localvals = null) => new DFrame
+        {
+            func = func,
+            localvals = localvals ?? new DObj[0],
+            vstack = new List<DObj>(),
+            estack = new List<(int, int)>(),
+            offset = 0
+        };
         public int offset;
         public List<DObj> vstack;
         public List<(int, int)> estack;
@@ -284,6 +298,7 @@ namespace DianaScript
 
     public partial class DInt : DObj
     {
+        public static DInt Make(int i) => new DInt { value = i };
         public partial class Cls
         {
             DObj DObj.__call__(Args args)
@@ -320,18 +335,28 @@ namespace DianaScript
 
     public partial class DRef : DObj
     {
+        public static DRef Make(DObj self, Func<DObj, DObj> getter, Action<DObj, DObj> setter)
+        {
+            return new DRef
+            {
+                self = self,
+                _setter = setter,
+                _getter = getter
+            };
+        }
         public object Native => this;
         public string __repr__ => $"<DRef at {(this as DObj).__hash__}>";
         public DObj self;
         public Func<DObj, DObj> _getter;
-        public Func<DObj, DObj, DObj> _setter;
+        public Action<DObj, DObj> _setter;
         public DObj get_contents() => _getter(self);
-        public DObj set_contents(DObj v) => _setter(self, v);
+        public void set_contents(DObj v) => _setter(self, v);
 
     }
 
     public partial class DBool : DObj
     {
+        public static DBool Make(bool i) => new DBool { value = i };
         public bool value;
         public object Native => value;
 
@@ -369,6 +394,7 @@ namespace DianaScript
 
     public partial class DFloat : DObj
     {
+        public static DFloat Make(float i) => new DFloat { value = i };
         public partial class Cls
         {
             DObj DObj.__call__(Args args)
@@ -408,6 +434,7 @@ namespace DianaScript
     public partial class DStr : DObj
     {
 
+        public static DStr Make(string i) => new DStr { value = i };
         public partial class Cls
         {
             public DObj __call__(Args args)
@@ -441,6 +468,7 @@ namespace DianaScript
     public partial class DTuple : DObj
     {
 
+        public static DTuple Make(DObj[] v) => new DTuple { elts = v };
         public object Native => elts;
 
         public int Length => elts.Length;
@@ -470,7 +498,8 @@ namespace DianaScript
         {
             if (o is DTuple another_tuple && another_tuple.elts.Length == elts.Length)
             {
-                for(var i = 0; i < elts.Length; i ++){
+                for (var i = 0; i < elts.Length; i++)
+                {
                     if (elts[i].__ne__(another_tuple.elts[i]))
                         return false;
                 }
@@ -484,7 +513,8 @@ namespace DianaScript
 
     public class DNil : DObj
     {
-        public readonly DNil unique = new DNil();
+        public static DNil Make() => unique;
+        public static readonly DNil unique = new DNil();
         public DClsObj GetCls { get; set; }
         public object Native => this;
     }
@@ -512,17 +542,30 @@ namespace DianaScript
         public DClsObj GetCls => _cls;
         protected static Dictionary<Type, DClsObj> typemaps = new Dictionary<Type, DClsObj>();
 
+        public static DClsObj TypeMapOrCache(Type t)
+        {
+            if (typemaps.TryGetValue(t, out var cls))
+            {
+                return cls;
+            }
+            else
+            {
+                var cls_ = new DWrap.Cls();
+                cls_.NativeType = t;
+                typemaps[t] = cls_;
+                return cls_;
+            }
+        }
+
+        public static void RegisterTypeMap(Type t, DClsObj cls)
+        {
+            typemaps[t] = cls;
+        }
+
         public DWrap(object d)
         {
             value = d;
-            var t = d.GetType();
-            if (typemaps.TryGetValue(t, out _cls))
-            {
-                var cls = new DWrap.Cls();
-                cls.NativeType = t;
-                typemaps[t] = cls;
-                _cls = cls;
-            }
+            _cls = TypeMapOrCache(d.GetType());
 
         }
         public object value;
@@ -531,16 +574,40 @@ namespace DianaScript
 
     public partial class DDict : DObj
     {
+
+        public static DDict Make(Dictionary<DObj, DObj> v) => new DDict { src = v };
         public Dictionary<DObj, DObj> src;
-        public DDict(Dictionary<DObj, DObj> _src)
-        {
-            src = _src;
-        }
         public object Native => src;
 
         public DObj __getitem__(DObj k) => src[k];
         public void __setitem__(DObj k, DObj v) => src[k] = v;
         public void __delitem__(DObj k) => src.Remove(k);
+    }
+
+    public partial class DList : DObj
+    {
+        public static DList Make(List<DObj> v) => new DList { src = v };
+        public List<DObj> src;
+        public object Native => src;
+
+    }
+
+    public partial class DSet : DObj
+    {
+        public static DSet Make(HashSet<DObj> v) => new DSet { src = v };
+        public HashSet<DObj> src;
+        public object Native => src;
+
+    }
+    public partial class DBuiltinFunc: DObj{
+
+        public Func<Args, DObj> func;
+        public static DBuiltinFunc Make(Func<Args, DObj> f){
+            return new DBuiltinFunc { func = f };
+        }
+        public object Native => func;
+
+        public DObj __call__(Args args) => func(args);
     }
 
 }
