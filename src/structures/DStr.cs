@@ -63,7 +63,8 @@ public partial class DStr
       throw new D_TypeError($"accessing str.__len__; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<String>(arg).Length;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public static DObj bind_strip(Args _args)
   {
     var nargs = _args.NArgs;

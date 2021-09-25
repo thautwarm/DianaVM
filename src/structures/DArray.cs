@@ -12,7 +12,8 @@ public partial class DArray
       throw new D_TypeError($"accessing array.__len__; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<DArray>(arg).Count;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public partial class Cls : DClsObj  {
   public string name => "array";
   public static Cls unique = new Cls();

@@ -205,24 +205,35 @@ namespace DianaScript
 
         [NotNull]
         public int[] bc;
+
+
         [NotNull]
-        public DObj[] consts;
+        public DObj[] consts; // constant objects
+
+        [NotNull]
+        public string[] strings; // constant strings
+
         public int nfree;
         public int narg;
         public int nlocal;
         public bool varg;
 
         [NotNull]
-
         public string filename;
         [NotNull]
         public string name;
+
+        
+        /*
+        locs = [(offset1, lineno1), ..., (offsetn, lineo2)]
+        */
         [NotNull]
-        public int[] locs;
+        public (int, int)[] locs;
+
 
         public static DCode Make(
             int[] bc, DObj[] consts = null,
-            int[] locs = null,
+            (int, int)[] locs = null, string[] strings=null,
             int nfree = 0, int narg = 0, int nlocal = 0,
             bool varg = false, string filename = "",
             string name = ""
@@ -232,7 +243,8 @@ namespace DianaScript
             {
                 bc = bc,
                 consts = consts ?? new DObj[0],
-                locs = locs ?? new int[0],
+                locs = locs ?? new (int, int)[0],
+                strings = strings ?? new string[0],
                 nfree = nfree,
                 narg = narg,
                 nlocal = nlocal,
@@ -252,20 +264,22 @@ namespace DianaScript
         public DCode code;
 
         public DObj[] freevals;
-        public DObj[] defaults;
-
+        public DObj[] defaults; // TODO: support fast default arguments
+        
+        public Dictionary<string, DObj> name_space;
         public string __repr__ => $"<code at {(this as DObj).__hash__}>";
 
         public static DFunc Make(
             DCode code, DObj[] freevals = null,
-            DObj[] defaults = null
+            DObj[] defaults = null, Dictionary<string, DObj> name_space = null
         )
         {
             return new DFunc
             {
                 code = code,
                 freevals = freevals ?? new DObj[0],
-                defaults = new DObj[0]
+                defaults = defaults ?? new DObj[0],
+                name_space = name_space ?? new Dictionary<string, DObj>()
             };
         }
     }
@@ -290,6 +304,8 @@ namespace DianaScript
         public DCode code => func.code;
 
         public DObj[] freevals => func.freevals;
+        public string[] strings => func.code.strings;        
+        public Dictionary<string, DObj> name_space => func.name_space;
 
         public object Native => this;
 
@@ -511,7 +527,7 @@ namespace DianaScript
     }
 
 
-    public class DNil : DObj
+    public partial class DNil : DObj
     {
         public static DNil Make() => unique;
         public static readonly DNil unique = new DNil();

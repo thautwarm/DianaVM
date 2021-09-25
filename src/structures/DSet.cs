@@ -103,7 +103,8 @@ public partial class DSet
       throw new D_TypeError($"accessing set.__len__; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<HashSet<DObj>>(arg).Count;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public static DObj bind_clear(Args _args)
   {
     var nargs = _args.NArgs;

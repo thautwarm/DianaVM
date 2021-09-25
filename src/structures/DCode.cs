@@ -12,7 +12,8 @@ public partial class DCode
       throw new D_TypeError($"accessing code.get_bc; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<DCode>(arg).bc;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public static DObj bind_get_consts(Args _args)
   {
     var nargs = _args.NArgs;
@@ -20,7 +21,8 @@ public partial class DCode
       throw new D_TypeError($"accessing code.get_consts; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<DCode>(arg).consts;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public static DObj bind_get_nfree(Args _args)
   {
     var nargs = _args.NArgs;
@@ -28,7 +30,8 @@ public partial class DCode
       throw new D_TypeError($"accessing code.get_nfree; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<DCode>(arg).nfree;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public static DObj bind_get_narg(Args _args)
   {
     var nargs = _args.NArgs;
@@ -36,7 +39,8 @@ public partial class DCode
       throw new D_TypeError($"accessing code.get_narg; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<DCode>(arg).narg;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public partial class Cls : DClsObj  {
   public string name => "code";
   public static Cls unique = new Cls();

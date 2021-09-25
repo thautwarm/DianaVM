@@ -12,7 +12,8 @@ public partial class DFunc
       throw new D_TypeError($"accessing function.get_code; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<DFunc>(arg).code;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public partial class Cls : DClsObj  {
   public string name => "function";
   public static Cls unique = new Cls();

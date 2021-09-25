@@ -147,7 +147,8 @@ public partial class DList
       throw new D_TypeError($"accessing list.__len__; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<List<DObj>>(arg).Count;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public static DObj bind_clear(Args _args)
   {
     var nargs = _args.NArgs;

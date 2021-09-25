@@ -45,7 +45,7 @@ toptype : type2_part1 type2_part2 type2_part3 -> toptype
 
 methodname : "this" "." (CNAME|SPECIAL)   -> instmeth
            | CNAME  "." (CNAME|SPECIAL)   -> extmeth
-           | CNAME            -> clsmeth
+           | CNAME                        -> clsmeth
 
 
 bindnames : seplist{",", bindname} -> just
@@ -450,9 +450,9 @@ class Codegen:
             self << f"var arg = _args[0];\n"
             self << f"var ret = {accept_arg(self.impl_type, 'arg')}.{x.methname._};\n"
             if x.ret.cast_from:
-                self << f"return MK.create({cast(x.ret.t, 'ret')});"
+                self << f"return MK.create({cast(x.ret.t, 'ret')});\n"
             else:
-                self << f"return MK.create(ret);"
+                self << f"return MK.create(ret);\n"
         self << "}\n"
 
     def bind_property(self, x: MethodDecl):

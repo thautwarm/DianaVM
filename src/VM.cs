@@ -78,17 +78,27 @@ namespace DianaScript
 
         [NotNull]
         public List<DFrame> Frames;
-        
+
         [NotNull]
-        
+
         public List<DFrame> ErrorFrames;
 
         public Exception CurrentError;
         public DObj CurrentReturn;
-        
-        public VM(){
+
+        public VM()
+        {
             Frames = new List<DFrame>();
             ErrorFrames = new List<DFrame>();
+        }
+
+        public Exception Err_InvalidCode(DObj d)
+        {
+            return new D_TypeError(DCode.Cls.unique, d);
+        }
+        public Exception Err_Name(string d)
+        {
+            return new D_NameError(d);
         }
         public Exception Err_InvalidJump(DObj d)
         {
@@ -107,14 +117,6 @@ namespace DianaScript
             return new ArgumentException($"{f_repr} takes expect {expect} arguments, got {n}.");
         }
 
-        public DFrame new_frame(DFunc func) => new DFrame
-        {
-            func = func,
-            localvals = new DObj[] { },
-            vstack = new List<DObj>(),
-            estack = new List<(int, int)>(),
-            offset = 0
-        };
 
         public DFrame new_frame(DFunc func, DObj[] localvals) => DFrame.Make(func, localvals: localvals);
 
@@ -134,9 +136,10 @@ namespace DianaScript
         public DObj Run(DCode code)
         {
 
-            var func = DFunc.Make(code, freevals: new DObj[0]);
-            var aug_frame = new_frame(func);
-            var root_frame = new_frame(func);
+            var ns = GlobalNamespace.GetGlonal();
+            var func = DFunc.Make(code, freevals: new DObj[0], name_space: ns);
+            var aug_frame = DFrame.Make(func);
+            var root_frame = DFrame.Make(func);
             Frames.Add(aug_frame);
             Frames.Add(root_frame);
             aug_frame.estack.Push((0, 0));
@@ -153,6 +156,11 @@ namespace DianaScript
                             cur_frame = Frames.Peek(0);
                         } while (cur_frame.estack.Count == 0);
                         restore_frame(cur_frame);
+                        if (CurrentError == null)
+                        {
+                            throw new InvalidProgramException("system fatal error: error not set.");
+                        }
+                        cur_frame.vstack.Push(MK.Wrap(CurrentError));
                         break;
                     case CallSplit.SubRoutine:
                         cur_frame = Frames.Peek(0);
@@ -167,53 +175,139 @@ namespace DianaScript
             Frames.Pop_();
             if (aug_frame.estack.Count == 0)
             {
-                return null;
+                var err = aug_frame.vstack.Pop();
+                if (err.Native is Exception e) throw ExceptionWithFrames.Make(ErrorFrames, e);
+                throw new InvalidProgramException($"Fatal: non-exception object raised, got {err.__repr__}.");
             }
             return aug_frame.vstack.Pop();
+
+
         }
         public CallSplit Scheduler(DFrame frame)
         {
 
 
-            var bc = frame.code.bc;
-            var vstack = frame.vstack;
-            var estack = frame.estack;
+            int[] bytecode = frame.code.bc;
+            List<DObj> vstack = frame.vstack;
+            List<(int, int)> estack = frame.estack;
             Args args;
             int operand;
+            string attr;
+            DObj tos, tos2, tos3;
             while (true)
             {
-
-                switch ((CODE)bc[frame.offset])
+                switch ((CODE)bytecode[frame.offset])
                 {
+                    case CODE.LOAD_ATTR:
+                        operand = bytecode[frame.offset + 1];
+                        attr = frame.strings[operand];
+                        tos = vstack.Pop();
+                        try
+                        {
+                            tos = tos.Get(attr);
+                        }
+                        catch (Exception e)
+                        {
+                            CurrentError = e;
+                            goto HANDLE_ERROR;
+                        }
+                        vstack.Push(tos);
+                        frame.offset += 2;
+                        continue;
+
+                    case CODE.STORE_ATTR:
+                        operand = bytecode[frame.offset + 1];
+                        attr = frame.strings[operand];
+                        tos = vstack.Pop();
+                        tos2 = vstack.Pop();
+                        try
+                        {
+                            tos.Set(attr, tos2);
+                        }
+                        catch (Exception e)
+                        {
+                            CurrentError = e;
+                            goto HANDLE_ERROR;
+                        }
+                        frame.offset += 2;
+                        continue;
+                    case CODE.LOAD_ITEM:
+                        tos = vstack.Pop();
+                        tos2 = vstack.Pop();
+                        try
+                        {
+                            tos = tos.__getitem__(tos2);
+                        }
+                        catch (Exception e)
+                        {
+                            CurrentError = e;
+                            goto HANDLE_ERROR;
+                        }
+                        vstack.Push(tos);
+                        frame.offset += 1;
+                        continue;
+                    case CODE.STORE_ITEM:
+                        tos = vstack.Pop();
+                        tos2 = vstack.Pop();
+                        tos3 = vstack.Pop();
+                        try
+                        {
+                            tos.__setitem__(tos2, tos3);
+                        }
+                        catch (Exception e)
+                        {
+                            CurrentError = e;
+                            goto HANDLE_ERROR;
+                        }
+                        frame.offset += 1;
+                        continue;
+                    case CODE.LOAD_GLOBAL:
+                        operand = bytecode[frame.offset + 1];
+                        attr = frame.strings[operand];
+
+                        if (frame.name_space.TryGetValue(attr, out tos))
+                        {
+                            vstack.Push(tos);
+                            frame.offset += 2;
+                            continue;
+                        }
+                        CurrentError = Err_Name(attr);
+                        goto HANDLE_ERROR;
+                    case CODE.STORE_GLOBAL:
+                        operand = bytecode[frame.offset + 1];
+                        attr = frame.strings[operand];
+                        tos = vstack.Pop();
+                        frame.name_space[attr] = tos;
+                        break;
                     case CODE.LOAD_CELL:
-                        operand = bc[frame.offset + 1];
+                        operand = bytecode[frame.offset + 1];
                         vstack.Push(frame.freevals[operand]);
                         frame.offset += 2;
                         break;
                     case CODE.STORE_CELL:
-                        operand = bc[frame.offset + 1];
+                        operand = bytecode[frame.offset + 1];
                         frame.freevals[operand] = vstack.Pop();
                         frame.offset += 2;
                         break;
                     case CODE.LOAD_LOCAL:
-                        operand = bc[frame.offset + 1];
+                        operand = bytecode[frame.offset + 1];
                         vstack.Push(frame.localvals[operand]);
                         frame.offset += 2;
                         break;
                     case CODE.STORE_LOCAL:
-                        operand = bc[frame.offset + 1];
+                        operand = bytecode[frame.offset + 1];
                         frame.localvals[operand] = vstack.Pop();
                         frame.offset += 2;
                         break;
                     case CODE.LOAD_CONST:
                         // Console.WriteLine(frame.offset);
-                        operand = bc[frame.offset + 1];
+                        operand = bytecode[frame.offset + 1];
                         // Console.WriteLine(operand);
                         vstack.Push(frame.code.consts[operand]);
                         frame.offset += 2;
                         break;
                     case CODE.PEEK:
-                        operand = bc[frame.offset + 1];
+                        operand = bytecode[frame.offset + 1];
                         vstack.Push(vstack.Peek(operand));
                         frame.offset += 2;
                         break;
@@ -221,9 +315,57 @@ namespace DianaScript
                         vstack.Pop_();
                         frame.offset += 1;
                         break;
+                    case CODE.MAKE_FUNCTION:
+                        operand = bytecode[frame.offset + 1];
+                        // operand & 0x001 defaults
+                        // operand & 0x010 free
+                        DObj[] freevals = null, defaults = null;
+                        DObj code = code = vstack.Pop();
+                        if (code is DCode unwrap_code)
+                        {
+                        }
+                        else
+                        {
+                            CurrentError = Err_InvalidCode(code);
+                            goto HANDLE_ERROR;
+                        }
+                        if ((operand & 0b001) == 1)
+                        {
+                            try
+                            {
+                                defaults = MK.unbox<DTuple>(vstack.Pop()).elts;
+                            }
+                            catch (Exception e)
+                            {
+                                CurrentError = e;
+                                goto HANDLE_ERROR;
+                            }
+                        }
+                        if ((operand & 0b010) == 1)
+                        {
+                            try
+                            {
+                                freevals = MK.unbox<DTuple>(vstack.Pop()).elts;
+                            }
+                            catch (Exception e)
+                            {
+                                CurrentError = e;
+                                goto HANDLE_ERROR;
+                            }
+                        }
+                        vstack.Push(
+                            DFunc.Make(
+                                unwrap_code,
+                                freevals,
+                                default,
+                                frame.name_space
+                            ));
+                        frame.offset += 2;
+                        break;
+
                     case CODE.CALL:
                         {
-                            operand = bc[frame.offset + 1];
+                            operand = bytecode[frame.offset + 1];
                             var fn = vstack.Peek(operand);
                             DObj[] new_locals = null;
                             if (fn is DFunc dfunc)
@@ -234,29 +376,36 @@ namespace DianaScript
                                     if (operand < dfunc.code.narg)
                                     {
                                         CurrentError = Err_ArgMismatchForUserFunc(dfunc, operand);
-                                        return CallSplit.Error;
+                                        goto HANDLE_ERROR;
                                     }
                                     var narg = dfunc.code.narg;
-                                    new_locals = new DObj[dfunc.code.nlocal];
-                                    for (var i = 0; i < narg; i++)
-                                    {
-                                        new_locals[i] = vstack[vstack.Count - operand + i];
-                                    }
                                     var left = operand - narg;
+
                                     var vararg = MK.Tuple(new DObj[operand - narg]);
                                     for (var i = 0; i < left; i++)
                                     {
-                                        vararg.elts[i] = vstack[vstack.Count - left + i];
+                                        vararg.elts[left - i - 1] = vstack.Pop();
                                     }
+                                    new_locals = new DObj[dfunc.code.nlocal];
                                     new_locals[narg] = vararg;
+
+                                    for (var i = 0; i < narg; i++)
+                                    {
+                                        new_locals[narg - i - 1] = vstack.Pop();
+                                    }
                                 }
                                 else if (dfunc.code.narg == operand)
                                 {
                                     new_locals = new DObj[dfunc.code.nlocal];
                                     for (var i = 0; i < operand; i++)
                                     {
-                                        new_locals[i] = vstack[vstack.Count - operand + i];
+                                        new_locals[i] = vstack.Pop();
                                     }
+                                }
+                                else
+                                {
+                                    CurrentError = Err_ArgMismatchForUserFunc(dfunc, operand);
+                                    goto HANDLE_ERROR;
                                 }
                                 vstack.Pop_(); // pop func
                                 Frames.Push(new_frame(dfunc, new_locals));
@@ -269,7 +418,6 @@ namespace DianaScript
                                 args.Add(vstack.Pop());
                             }
                             vstack.Pop_();
-
                             try
                             {
                                 var fastcalled = fn.__call__(args);
@@ -278,20 +426,13 @@ namespace DianaScript
                             }
                             catch (Exception e)
                             {
-                                if (estack.Count == 0)
-                                {
-                                    CurrentError = e;
-                                    return CallSplit.Error;
-                                }
-                                restore_frame(frame);
-                                vstack.Push(
-                                    MK.Wrap(CurrentError)
-                                );
+                                CurrentError = e;
+                                goto HANDLE_ERROR;
                             }
                             break;
                         }
                     case CODE.PUSH_BLOCK:
-                        operand = bc[frame.offset + 1];
+                        operand = bytecode[frame.offset + 1];
                         estack.Push((operand, vstack.Count));
                         frame.offset += 2;
                         break;
@@ -301,23 +442,14 @@ namespace DianaScript
                         break;
                     case CODE.JUMP:
                         {
-                            var tos = vstack.Pop();
+                            tos = vstack.Pop();
                             if (tos is DInt dint)
                             {
                                 frame.offset = dint.value;
+                                continue;
                             }
-                            else if (estack.Count == 0)
-                            {
-                                CurrentError = Err_InvalidJump(tos);
-                                return CallSplit.Error;
-                            }
-                            else
-                            {
-                                restore_frame(frame);
-                                vstack.Push(
-                                    MK.Wrap(Err_InvalidJump(tos)));
-                            }
-                            break;
+                            CurrentError = Err_InvalidJump(tos);
+                            goto HANDLE_ERROR;
                         }
                     case CODE.JUMP_IF:
                         {
@@ -328,28 +460,17 @@ namespace DianaScript
                             {
                                 if (target is DInt dint)
                                 {
-                                    frame.offset = dbool.value ? dint.value : frame.offset + 2;
+                                    frame.offset = dbool.value ? dint.value : frame.offset + 1;
                                     continue;
                                 }
-                                else
-                                {
-                                    CurrentError = Err_InvalidJump(target);
-                                }
 
+                                CurrentError = Err_InvalidJump(target);
                             }
                             else
                             {
                                 CurrentError = Err_NotBool(test);
                             }
-                            if (estack.Count == 0)
-                            {
-                                return CallSplit.Error;
-                            }
-
-                            restore_frame(frame);
-                            vstack.Push(MK.Wrap(CurrentError));
-                            CurrentError = null;
-                            break;
+                            goto HANDLE_ERROR;
                         }
                     case CODE.RETURN:
                         CurrentReturn = vstack.Pop();
@@ -361,9 +482,22 @@ namespace DianaScript
                         break;
                     case CODE.YIELD:
                         throw new NotImplementedException();
-                        // CurrentReturn = CreateGenerator(frame, vstack.Pop());
-                        // frame.offset += 1;
-                        // return CallSplit.Finished;
+                    // CurrentReturn = CreateGenerator(frame, vstack.Pop());
+                    // frame.offset += 1;
+                    // return CallSplit.Finished;
+                    case CODE.NO_ARG:
+                        throw new InvalidProgramException("NO_ARG instruction cannot appear here!");
+                    default:
+                        throw new NotImplementedException();
+                    HANDLE_ERROR:
+                        if (estack.Count == 0)
+                        {
+                            return CallSplit.Error;
+                        }
+                        restore_frame(frame);
+                        vstack.Push(MK.Wrap(CurrentError));
+                        CurrentError = null;
+                        break;
                 }
             }
         }

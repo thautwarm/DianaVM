@@ -12,7 +12,8 @@ public partial class DTuple
       throw new D_TypeError($"accessing tuple.__len__; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<DTuple>(arg).Length;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public static DObj bind___contains__(Args _args)
   {
     var nargs = _args.NArgs;

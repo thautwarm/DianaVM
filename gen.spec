@@ -15,6 +15,12 @@ boxedtypes {
     DWrap
 }
 
+GlobalNamespace GlobalNamespace GlobalNamespace{
+    void Print(*DObj) as print
+}
+
+NoneType DNil DNil{}
+
 builtin_function DBuiltinFunc Func<Args, DObj>{}
 frame DFrame DFrame{
     DFunc this.func as get_func

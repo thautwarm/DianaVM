@@ -12,7 +12,8 @@ public partial class DFrame
       throw new D_TypeError($"accessing frame.get_func; needs only 1 argument, got {nargs}.");
     var arg = _args[0];
     var ret = MK.unbox<DFrame>(arg).func;
-    return MK.create(ret);  }
+    return MK.create(ret);
+  }
   public partial class Cls : DClsObj  {
   public string name => "frame";
   public static Cls unique = new Cls();
