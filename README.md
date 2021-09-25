@@ -1,6 +1,8 @@
 # DianaScript
 
-![diana...](./static/diana.png)
+<p align="center">
+<img width="250px" src="https://raw.githubusercontent.com/thautwarm/DianaScript/master/static/diana.png"/>
+</p>
 
 ## Features
 
