@@ -4,7 +4,7 @@ namespace DianaScript
 {
 
     public enum BIN_OP{
-        ADD, SUB, MUL, 
+        ADD, SUB, MUL, POW,
         FLOORDIV, TRUEDIV, MOD, 
         LSHIFT, RSHIFT, AND, 
         OR, XOR,

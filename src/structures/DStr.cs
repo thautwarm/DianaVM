@@ -11,7 +11,7 @@ public partial class DStr
     if (nargs != 2)
       throw new D_TypeError($"calling str.join; needs at least  (2) arguments, got {nargs}.");
     var _arg0 = MK.unbox<String>(_args[0]);
-    var _arg1 = MK.cast(THelper<String[]>.val, MK.unbox<DObj>(_args[1]));
+    var _arg1 = MK.cast(THint<String[]>.val, MK.unbox<DObj>(_args[1]));
     {
       var _return = String.Join(_arg0,_arg1);
       return MK.create(_return);
@@ -23,7 +23,7 @@ public partial class DStr
     var nargs = _args.NArgs;
     if (nargs != 1)
       throw new D_TypeError($"calling str.concat; needs at least  (1) arguments, got {nargs}.");
-    var _arg0 = MK.cast(THelper<String[]>.val, MK.unbox<DObj>(_args[0]));
+    var _arg0 = MK.cast(THint<String[]>.val, MK.unbox<DObj>(_args[0]));
     {
       var _return = String.Concat(_arg0);
       return MK.create(_return);
@@ -71,7 +71,7 @@ public partial class DStr
     if (nargs != 2)
       throw new D_TypeError($"calling str.strip; needs at least  (2) arguments, got {nargs}.");
     var _arg0 = MK.unbox<String>(_args[0]);
-    var _arg1 = MK.cast(THelper<Char[]>.val, MK.unbox<String>(_args[1]));
+    var _arg1 = MK.cast(THint<Char[]>.val, MK.unbox<String>(_args[1]));
     {
       var _return = _arg0.Trim(_arg1);
       return MK.create(_return);
@@ -89,7 +89,7 @@ public partial class DStr
       var _return = _arg0.TrimEnd();
       return MK.create(_return);
     }
-    var _arg1 = MK.cast(THelper<Char[]>.val, MK.unbox<String>(_args[1]));
+    var _arg1 = MK.cast(THint<Char[]>.val, MK.unbox<String>(_args[1]));
     {
       var _return = _arg0.TrimEnd(_arg1);
       return MK.create(_return);
@@ -107,7 +107,7 @@ public partial class DStr
       var _return = _arg0.TrimStart();
       return MK.create(_return);
     }
-    var _arg1 = MK.cast(THelper<Char[]>.val, MK.unbox<String>(_args[1]));
+    var _arg1 = MK.cast(THint<Char[]>.val, MK.unbox<String>(_args[1]));
     {
       var _return = _arg0.TrimStart(_arg1);
       return MK.create(_return);

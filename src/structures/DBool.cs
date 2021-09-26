@@ -27,7 +27,7 @@ public partial class DBool
     var _arg1 = MK.unbox<Boolean>(_out_1.get_contents());
     {
       var _return = Boolean.TryParse(_arg0,out _arg1);
-      _out_1.set_contents(MK.cast(THelper<DObj>.val, _arg1));
+      _out_1.set_contents(MK.cast(THint<DObj>.val, _arg1));
       return MK.create(_return);
     }
     throw new D_TypeError($"call bool.try_parse; needs at most (2) arguments, got {nargs}.");

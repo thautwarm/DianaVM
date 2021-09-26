@@ -271,7 +271,7 @@ def cast(target_t: str | Type, arg_repr: str):
         target_t = target_t.as_str()
     if target_t == 'void':
         return arg_repr
-    return f"MK.cast(THelper<{target_t}>.val, {arg_repr})"
+    return f"MK.cast(THint<{target_t}>.val, {arg_repr})"
 
 @dataclass
 class TypedExpr:

@@ -63,7 +63,7 @@ public partial class DDict
     var _arg2 = MK.unbox<DObj>(_out_2.get_contents());
     {
       var _return = _arg0.TryGetValue(_arg1,out _arg2);
-      _out_2.set_contents(MK.cast(THelper<DObj>.val, _arg2));
+      _out_2.set_contents(MK.cast(THint<DObj>.val, _arg2));
       return MK.create(_return);
     }
     throw new D_TypeError($"call dict.search; needs at most (3) arguments, got {nargs}.");

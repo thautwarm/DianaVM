@@ -1,7 +1,10 @@
+from __future__ import annotations
 from ast import *
 from dataclasses import dataclass, field
+from enum import Enum
 import struct
 import contextlib
+from typing import Mapping
 
 
 class BIN_OP:
@@ -82,12 +85,32 @@ def _perform_set_loc(f):
             pass
         return f(self, node)
 
-def auto_set_loc(self, cls):
+def auto_set_loc(cls):
     for k in cls.__dict__:
-        
         if k.startswith("visit_") and str.isupper(k[len("visit_")]):
-            setattr(cls, _perform_set_loc(getattr(cls, k)))
+            setattr(cls, k, _perform_set_loc(getattr(cls, k)))
 
+
+
+class VarKind(Enum):
+    Local = 0
+    Cell = 1 # local and is cell
+    Global = 2
+
+class VarCtx(Enum):
+    LOAD = 0
+    STORE = 1
+    DEL = 2
+    REF = 3
+
+@dataclass
+class Var:
+    name: str
+    ctx : VarCtx
+    loc : int
+    kind: VarKind = VarKind.Local
+
+    
 @auto_set_loc
 class AIRGenerator(NodeVisitor):
     def __init__(self, filename: str):
@@ -99,7 +122,7 @@ class AIRGenerator(NodeVisitor):
         return DCode(self.filename, "", False, 0, 0, 0, [], [], [], bytearray())
 
     def MK_TUPLE(self, n: int):
-        self.code.bc.append(CODE.MK_TUPLE)
+        raise
     
     @contextlib.contextmanager
     def enter(self, code: DCode):
@@ -140,3 +163,9 @@ class AIRGenerator(NodeVisitor):
     
         if new_code.nfree:
             self.MK_TUPLE(new_code.nfree)
+
+
+v = parse("""
+a = 1
+""")
+

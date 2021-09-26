@@ -37,7 +37,7 @@ public partial class DList
     if (nargs != 2)
       throw new D_TypeError($"calling list.extend; needs at least  (2) arguments, got {nargs}.");
     var _arg0 = MK.unbox<List<DObj>>(_args[0]);
-    var _arg1 = MK.cast(THelper<IEnumerable<DObj>>.val, MK.unbox<DObj>(_args[1]));
+    var _arg1 = MK.cast(THint<IEnumerable<DObj>>.val, MK.unbox<DObj>(_args[1]));
     {
       _arg0.AddRange(_arg1);
       return MK.Nil();

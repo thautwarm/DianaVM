@@ -23,7 +23,7 @@ namespace DianaScript
         public const byte Code = 7;
     }
 
-    public class AIRParser
+    public partial class AIRParser
     {
         FileStream fileStream;
         byte[] cache_4byte;
@@ -46,17 +46,22 @@ namespace DianaScript
             fileStream = fs;
             setup_cache();
         }
+
+        public int Read(THint<int> _) => ReadInt();
         public int ReadInt()
         {
             fileStream.Read(cache_4byte, 0, 4);
             return BitConverter.ToInt32(cache_4byte, 0);
         }
+
+        public float Read(THint<float> _) => ReadFloat();
         public float ReadFloat()
         {
             fileStream.Read(cache_4byte, 0, 4);
             return BitConverter.ToSingle(cache_4byte, 0);
         }
 
+        public string Read(THint<string> _) => ReadStr();
         public string ReadStr()
         {
 
@@ -87,6 +92,7 @@ namespace DianaScript
 
         }
 
+        public bool Read(THint<bool> _) => ReadBool();
         public bool ReadBool()
         {
             fileStream.Read(cache_4byte, 0, 1);
@@ -96,7 +102,8 @@ namespace DianaScript
             }
             throw new InvalidDataException("invalid data format for boolean.");
         }
-
+        
+        
         public DCode ReadCode()
         {
             string filename = ReadStr();

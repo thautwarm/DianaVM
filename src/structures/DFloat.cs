@@ -27,7 +27,7 @@ public partial class DFloat
     var _arg1 = MK.unbox<Single>(_out_1.get_contents());
     {
       var _return = Single.TryParse(_arg0,out _arg1);
-      _out_1.set_contents(MK.cast(THelper<DObj>.val, _arg1));
+      _out_1.set_contents(MK.cast(THint<DObj>.val, _arg1));
       return MK.create(_return);
     }
     throw new D_TypeError($"call float.try_parse; needs at most (2) arguments, got {nargs}.");
