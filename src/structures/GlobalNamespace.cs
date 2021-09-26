@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class GlobalNamespace
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind_print(Args _args)
+  public static DObj bind_print(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs < 0)

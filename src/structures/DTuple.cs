@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DTuple
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind___len__(Args _args)
+  public static DObj bind___len__(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -14,7 +14,7 @@ public partial class DTuple
     var ret = MK.unbox<DTuple>(arg).Length;
     return MK.create(ret);
   }
-  public static DObj bind___contains__(Args _args)
+  public static DObj bind___contains__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -27,7 +27,7 @@ public partial class DTuple
     }
     throw new D_TypeError($"call tuple.__contains__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind___eq__(Args _args)
+  public static DObj bind___eq__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -40,7 +40,7 @@ public partial class DTuple
     }
     throw new D_TypeError($"call tuple.__eq__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind___add__(Args _args)
+  public static DObj bind___add__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)

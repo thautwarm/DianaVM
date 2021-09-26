@@ -193,11 +193,87 @@ namespace DianaScript
             Args args;
             int operand;
             string attr;
-            DObj tos, tos2, tos3;
+            DObj tos, tos2;
             while (true)
             {
                 switch ((CODE)bytecode[frame.offset])
                 {
+                    case CODE.BIN:
+                        operand = bytecode[frame.offset + 1];
+                        tos = vstack.Pop();
+                        tos2 = vstack.Pop();
+                        try
+                        {
+                            switch ((BIN_OP)operand)
+                            {
+                                case BIN_OP.ADD:
+                                    tos = tos2.__add__(tos);
+                                    break;
+                                case BIN_OP.SUB:
+                                    tos = tos2.__sub__(tos);
+                                    break;
+                                case BIN_OP.MUL:
+                                    tos = tos2.__mul__(tos);
+                                    break;
+                                case BIN_OP.FLOORDIV:
+                                    tos = tos2.__floordiv__(tos);
+                                    break;
+                                case BIN_OP.TRUEDIV:
+                                    tos = tos2.__truediv__(tos);
+                                    break;
+                                case BIN_OP.IN:
+                                    tos = MK.Bool(tos.__contains__(tos2));
+                                    break;
+                                case BIN_OP.MOD:
+                                    tos = tos2.__mod__(tos);
+                                    break;
+                                case BIN_OP.LSHIFT:
+                                    tos = tos2.__lshift__(tos);
+                                    break;
+                                case BIN_OP.RSHIFT:
+                                    tos = tos2.__rshift__(tos);
+                                    break;
+                                case BIN_OP.AND:
+                                    tos = tos2.__and__(tos);
+                                    break;
+                                case BIN_OP.OR:
+                                    tos = tos2.__or__(tos);
+                                    break;
+                                case BIN_OP.XOR:
+                                    tos = tos2.__xor__(tos);
+                                    break;
+                                case BIN_OP.EQ:
+                                    tos = MK.Bool(tos2.__eq__(tos));
+                                    break;
+                                case BIN_OP.NE:
+                                    tos = MK.Bool(tos2.__ne__(tos));
+                                    break;
+                                default:
+                                    throw new NotImplementedException($"unknown binary operand {operand}");
+
+                            }
+                            frame.offset += 2;
+                            vstack.Push(tos);
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            CurrentError = e;
+                            goto HANDLE_ERROR;
+                        }
+                    case CODE.INVERT:
+                        tos = vstack.Pop();
+                        try
+                        {
+                            tos = tos.__invert__;
+                        }
+                        catch (Exception e)
+                        {
+                            CurrentError = e;
+                            goto HANDLE_ERROR;
+                        }
+                        vstack.Push(tos);
+                        break;
                     case CODE.LOAD_ATTR:
                         operand = bytecode[frame.offset + 1];
                         attr = frame.strings[operand];
@@ -232,35 +308,59 @@ namespace DianaScript
                         frame.offset += 2;
                         continue;
                     case CODE.LOAD_ITEM:
-                        tos = vstack.Pop();
-                        tos2 = vstack.Pop();
-                        try
                         {
-                            tos = tos.__getitem__(tos2);
+
+                            var item = vstack.Pop();
+                            var ob = vstack.Pop();
+                            try
+                            {
+                                tos = ob.__getitem__(item);
+                            }
+                            catch (Exception e)
+                            {
+                                CurrentError = e;
+                                goto HANDLE_ERROR;
+                            }
+                            vstack.Push(tos);
+                            frame.offset += 1;
+                            continue;
                         }
-                        catch (Exception e)
-                        {
-                            CurrentError = e;
-                            goto HANDLE_ERROR;
-                        }
-                        vstack.Push(tos);
-                        frame.offset += 1;
-                        continue;
                     case CODE.STORE_ITEM:
-                        tos = vstack.Pop();
-                        tos2 = vstack.Pop();
-                        tos3 = vstack.Pop();
-                        try
                         {
-                            tos.__setitem__(tos2, tos3);
+                            var val = vstack.Pop();
+                            var ob = vstack.Pop();
+                            var item = vstack.Pop();
+                            try
+                            {
+                                ob.__setitem__(item, val);
+                            }
+                            catch (Exception e)
+                            {
+                                CurrentError = e;
+                                goto HANDLE_ERROR;
+                            }
+                            frame.offset += 1;
+                            continue;
                         }
-                        catch (Exception e)
+                    case CODE.DEL_ITEM:
                         {
-                            CurrentError = e;
-                            goto HANDLE_ERROR;
+
+                            var item = vstack.Pop();
+                            var ob = vstack.Pop();
+                            try
+                            {
+                                ob.__delitem__(item);
+                            }
+                            catch (Exception e)
+                            {
+                                CurrentError = e;
+                                goto HANDLE_ERROR;
+                            }
+
+                            frame.offset += 1;
+                            continue;
                         }
-                        frame.offset += 1;
-                        continue;
+
                     case CODE.LOAD_GLOBAL:
                         operand = bytecode[frame.offset + 1];
                         attr = frame.strings[operand];
@@ -279,6 +379,11 @@ namespace DianaScript
                         tos = vstack.Pop();
                         frame.name_space[attr] = tos;
                         break;
+                    case CODE.REF_GLOBAL:
+                        operand = bytecode[frame.offset + 1];
+                        vstack.Push(DRef.MakeStrDictRef(frame.name_space, frame.strings[operand]));
+                        frame.offset += 2;
+                        break;
                     case CODE.LOAD_CELL:
                         operand = bytecode[frame.offset + 1];
                         vstack.Push(frame.freevals[operand]);
@@ -289,6 +394,7 @@ namespace DianaScript
                         frame.freevals[operand] = vstack.Pop();
                         frame.offset += 2;
                         break;
+
                     case CODE.LOAD_LOCAL:
                         operand = bytecode[frame.offset + 1];
                         vstack.Push(frame.localvals[operand]);
@@ -297,6 +403,11 @@ namespace DianaScript
                     case CODE.STORE_LOCAL:
                         operand = bytecode[frame.offset + 1];
                         frame.localvals[operand] = vstack.Pop();
+                        frame.offset += 2;
+                        break;
+                    case CODE.REF_LOCAL:
+                        operand = bytecode[frame.offset + 1];
+                        vstack.Push(DRef.MakeFrameRef(frame, operand));
                         frame.offset += 2;
                         break;
                     case CODE.LOAD_CONST:
@@ -378,7 +489,7 @@ namespace DianaScript
                                         CurrentError = Err_ArgMismatchForUserFunc(dfunc, operand);
                                         goto HANDLE_ERROR;
                                     }
-                                    var narg = dfunc.code.narg;
+                                    var narg = dfunc.code.narg - 1;
                                     var left = operand - narg;
 
                                     var vararg = MK.Tuple(new DObj[operand - narg]);
@@ -454,22 +565,23 @@ namespace DianaScript
                     case CODE.JUMP_IF:
                         {
                             var target = vstack.Pop();
-                            var test = vstack.Pop();
 
-                            if (test is DBool dbool)
+                            try
                             {
+                                var dbool = vstack.Pop().__bool__;
                                 if (target is DInt dint)
                                 {
-                                    frame.offset = dbool.value ? dint.value : frame.offset + 1;
+                                    frame.offset = dbool ? dint.value : frame.offset + 1;
                                     continue;
                                 }
 
                                 CurrentError = Err_InvalidJump(target);
                             }
-                            else
+                            catch (Exception e)
                             {
-                                CurrentError = Err_NotBool(test);
+                                CurrentError = e;
                             }
+
                             goto HANDLE_ERROR;
                         }
                     case CODE.RETURN:

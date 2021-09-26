@@ -33,3 +33,15 @@ vm.Run(code);
 
 An exception will get raised to .NET side if it is not handled in DianaScript/DVM.
 The exception type is compatible to both runtime.
+
+
+    string filename,
+    string name
+    bool varg
+    int narg
+    int nlocal
+    int nfree
+    string[] strings
+    DObj[] consts
+    (int, int)[] locs
+    int[] bc

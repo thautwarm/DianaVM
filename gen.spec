@@ -19,6 +19,9 @@ GlobalNamespace GlobalNamespace GlobalNamespace{
     void Print(*DObj) as print
 }
 
+cell DCell DCell{
+}
+
 NoneType DNil DNil{}
 
 builtin_function DBuiltinFunc Func<Args, DObj>{}
@@ -47,6 +50,8 @@ dict DDict Dictionary<DObj, DObj> {
     void this.Remove(DObj) as __delitem__
     void this.Clear() as clear
     bool this.TryGetValue(DObj, out DObj) as search
+    this[DObj] = DObj as __setitem__
+    DObj this[DObj] as __getitem__
 }
 
 str DStr String {
@@ -112,6 +117,8 @@ list DList List<DObj> {
     DObj[] this.ToArray() as array
     int this.Count as __len__
     void this.Clear() as clear
+    this[int] = DObj as __setitem__
+    DObj this[int] as __getitem__
 }
 
 

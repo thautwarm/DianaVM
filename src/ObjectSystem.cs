@@ -47,7 +47,9 @@ namespace DianaScript
 
         public DObj __sub__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support - operator.");
 
-        public DObj __div__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support / operator.");
+        public DObj __truediv__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support / operator.");
+
+        public DObj __floordiv__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support // operator.");
         public DObj __mul__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support * operator.");
 
         public DObj __mod__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support % operator.");
@@ -63,7 +65,7 @@ namespace DianaScript
         public DObj __xor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support ^ operator.");
 
 
-        public DObj __invert__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support ~ operator.");
+        public DObj __invert__ => throw new D_TypeError($"{this.GetCls.__repr__} does not support ~ operator.");
 
         public DObj __getitem__(DObj ind) => throw new D_TypeError($"{this.GetCls.__repr__} does not support item get.");
 
@@ -223,7 +225,7 @@ namespace DianaScript
         [NotNull]
         public string name;
 
-        
+
         /*
         locs = [(offset1, lineno1), ..., (offsetn, lineo2)]
         */
@@ -233,7 +235,7 @@ namespace DianaScript
 
         public static DCode Make(
             int[] bc, DObj[] consts = null,
-            (int, int)[] locs = null, string[] strings=null,
+            (int, int)[] locs = null, string[] strings = null,
             int nfree = 0, int narg = 0, int nlocal = 0,
             bool varg = false, string filename = "",
             string name = ""
@@ -265,7 +267,7 @@ namespace DianaScript
 
         public DObj[] freevals;
         public DObj[] defaults; // TODO: support fast default arguments
-        
+
         public Dictionary<string, DObj> name_space;
         public string __repr__ => $"<code at {(this as DObj).__hash__}>";
 
@@ -304,7 +306,7 @@ namespace DianaScript
         public DCode code => func.code;
 
         public DObj[] freevals => func.freevals;
-        public string[] strings => func.code.strings;        
+        public string[] strings => func.code.strings;
         public Dictionary<string, DObj> name_space => func.name_space;
 
         public object Native => this;
@@ -351,7 +353,43 @@ namespace DianaScript
 
     public partial class DRef : DObj
     {
-        public static DRef Make(DObj self, Func<DObj, DObj> getter, Action<DObj, DObj> setter)
+
+        public class FrameRef
+        {
+            public DFrame frame;
+            public int ind;
+
+            public static Func<object, DObj> RefGetter = (self) =>
+            {
+                var me = self as FrameRef;
+                return me.frame.localvals[me.ind] ?? throw new D_ValueError($"local variable {me.frame.code.strings[me.ind]} not defined.");
+            };
+
+            public static Action<object, DObj> RefSetter = (self, o) =>
+            {
+                var me = self as FrameRef;
+                me.frame.localvals[me.ind] = o;
+            };
+        }
+
+        public class StrDictRef
+        {
+            public Dictionary<string, DObj> dict;
+            public string key;
+
+            public static Func<object, DObj> RefGetter = (self) =>
+            {
+                var me = self as StrDictRef;
+                return me.dict[me.key] ?? throw new D_ValueError($"global variable {me.key} not found.");
+            };
+
+            public static Action<object, DObj> RefSetter = (self, o) =>
+            {
+                var me = self as FrameRef;
+                me.frame.localvals[me.ind] = o;
+            };
+        }
+        public static DRef Make(object self, Func<object, DObj> getter, Action<object, DObj> setter)
         {
             return new DRef
             {
@@ -362,17 +400,30 @@ namespace DianaScript
         }
         public object Native => this;
         public string __repr__ => $"<DRef at {(this as DObj).__hash__}>";
-        public DObj self;
-        public Func<DObj, DObj> _getter;
-        public Action<DObj, DObj> _setter;
+        public object self;
+        public Func<object, DObj> _getter;
+        public Action<object, DObj> _setter;
         public DObj get_contents() => _getter(self);
         public void set_contents(DObj v) => _setter(self, v);
+
+
+        
+        public static DRef MakeFrameRef(DFrame frame, int i)
+        {
+            return Make(new FrameRef{ frame = frame, ind = i }, FrameRef.RefGetter, FrameRef.RefSetter);
+        }
+
+        public static DRef MakeStrDictRef(Dictionary<string, DObj> dict, string key)
+        {
+            return Make(new StrDictRef{ dict = dict, key = key }, StrDictRef.RefGetter, StrDictRef.RefSetter);
+        }
 
     }
 
     public partial class DBool : DObj
     {
-        public static DBool Make(bool i) => new DBool { value = i };
+        public static DBool True = new DBool { value = true }, False = new DBool { value = false };
+        public static DBool Make(bool i) => i ? True : False;
         public bool value;
         public object Native => value;
 
@@ -614,15 +665,25 @@ namespace DianaScript
         public object Native => src;
 
     }
-    public partial class DBuiltinFunc: DObj{
+    public partial class DBuiltinFunc : DObj
+    {
 
         public Func<Args, DObj> func;
-        public static DBuiltinFunc Make(Func<Args, DObj> f){
+        public static DBuiltinFunc Make(Func<Args, DObj> f)
+        {
             return new DBuiltinFunc { func = f };
         }
         public object Native => func;
 
         public DObj __call__(Args args) => func(args);
+    }
+
+    public partial class DCell: DObj
+    {
+        public object Native => this;
+        public DObj cell_contents;
+        public static DCell Make(DObj inner) => new DCell { cell_contents = inner };
+
     }
 
 }

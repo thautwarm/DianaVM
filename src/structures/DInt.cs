@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DInt
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind_parse(Args _args)
+  public static DObj bind_parse(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -17,7 +17,7 @@ public partial class DInt
     }
     throw new D_TypeError($"call int.parse; needs at most (1) arguments, got {nargs}.");
   }
-  public static DObj bind_try_parse(Args _args)
+  public static DObj bind_try_parse(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -32,14 +32,14 @@ public partial class DInt
     }
     throw new D_TypeError($"call int.try_parse; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_max(Args _args)
+  public static DObj bind_max(Args _args) // bind cls prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 0)
       throw new D_TypeError($"accessing int.max; needs 0 arguments, got {nargs}.");
     var ret = Int32.MaxValue;
     return MK.create(ret);  }
-  public static DObj bind_min(Args _args)
+  public static DObj bind_min(Args _args) // bind cls prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 0)

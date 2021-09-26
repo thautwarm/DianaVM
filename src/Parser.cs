@@ -27,6 +27,7 @@ namespace DianaScript
     {
         FileStream fileStream;
         byte[] cache_4byte;
+        
         byte[] cache_32byte;
 
         public void setup_cache()

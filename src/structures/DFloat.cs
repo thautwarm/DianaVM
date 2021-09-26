@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DFloat
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind_parse(Args _args)
+  public static DObj bind_parse(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -17,7 +17,7 @@ public partial class DFloat
     }
     throw new D_TypeError($"call float.parse; needs at most (1) arguments, got {nargs}.");
   }
-  public static DObj bind_try_parse(Args _args)
+  public static DObj bind_try_parse(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)

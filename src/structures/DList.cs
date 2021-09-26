@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DList
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind___contains__(Args _args)
+  public static DObj bind___contains__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -18,7 +18,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.__contains__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_append(Args _args)
+  public static DObj bind_append(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -31,7 +31,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.append; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_extend(Args _args)
+  public static DObj bind_extend(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -44,7 +44,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.extend; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_insert(Args _args)
+  public static DObj bind_insert(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 3)
@@ -58,7 +58,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.insert; needs at most (3) arguments, got {nargs}.");
   }
-  public static DObj bind_remove(Args _args)
+  public static DObj bind_remove(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -71,7 +71,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.remove; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_find(Args _args)
+  public static DObj bind_find(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -84,7 +84,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.find; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_index(Args _args)
+  public static DObj bind_index(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs < 2)
@@ -103,7 +103,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.index; needs at most (3) arguments, got {nargs}.");
   }
-  public static DObj bind___delitem__(Args _args)
+  public static DObj bind___delitem__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -116,7 +116,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.__delitem__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_sort(Args _args)
+  public static DObj bind_sort(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -128,7 +128,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.sort; needs at most (1) arguments, got {nargs}.");
   }
-  public static DObj bind_array(Args _args)
+  public static DObj bind_array(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -140,7 +140,7 @@ public partial class DList
     }
     throw new D_TypeError($"call list.array; needs at most (1) arguments, got {nargs}.");
   }
-  public static DObj bind___len__(Args _args)
+  public static DObj bind___len__(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -149,7 +149,7 @@ public partial class DList
     var ret = MK.unbox<List<DObj>>(arg).Count;
     return MK.create(ret);
   }
-  public static DObj bind_clear(Args _args)
+  public static DObj bind_clear(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -160,6 +160,27 @@ public partial class DList
       return MK.Nil();
     }
     throw new D_TypeError($"call list.clear; needs at most (1) arguments, got {nargs}.");
+  }
+  public static DObj bind___setitem__(Args _args) // bind this.[ind]=val 
+  {
+    var nargs = _args.NArgs;
+    if (nargs != 3)
+      throw new D_ValueError("calling list.__setitem__; needs 3 arguments, got {nargs}.");
+    var _arg0 = MK.unbox<List<DObj>>(_args[0]);
+    var _arg1 = MK.unbox<int>(_args[1]);
+    var _arg2 = MK.unbox<DObj>(_args[2]);
+    _arg0[_arg1] = _arg2;
+    return MK.Nil();
+  }
+  public static DObj bind___getitem__(Args _args) // bind this.[ind] 
+  {
+    var nargs = _args.NArgs;
+    if (nargs != 2)
+      throw new D_ValueError("calling list.__getitem__; needs 2 arguments, got {nargs}.");
+    var _arg0 = MK.unbox<List<DObj>>(_args[0]);
+    var _arg1 = MK.unbox<int>(_args[1]);
+    var _return = _arg0[_arg1];
+    return MK.create(_return);
   }
   public partial class Cls : DClsObj  {
   public string name => "list";
@@ -183,6 +204,8 @@ public partial class DList
       { "array", (false, MK.CreateFunc(bind_array)) },
       { "__len__", (false, MK.CreateFunc(bind___len__)) },
       { "clear", (false, MK.CreateFunc(bind_clear)) },
+      { "__setitem__", (false, MK.CreateFunc(bind___setitem__)) },
+      { "__getitem__", (false, MK.CreateFunc(bind___getitem__)) },
     };
   }
   }

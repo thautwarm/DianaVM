@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DArray
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind___len__(Args _args)
+  public static DObj bind___len__(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)

@@ -19,7 +19,10 @@ OP  : "+" | "-" | "*" | "/" | "%"
     | "&" | "|" | "^" | "<<" | ">>"
     | "==" | "!="
 
-bindname : (SPECIAL | CNAME | OP) -> asstr
+bindname0 : (SPECIAL | CNAME | OP) -> asstr
+bindname : bindname0               -> methbind
+         | "set" bindname0         -> setbind
+         | "get" bindname0         -> getbind
 
 seplist{sep, e} : e (sep e)* -> many
                 | -> empty
@@ -48,16 +51,15 @@ methodname : "this" "." (CNAME|SPECIAL)   -> instmeth
            | CNAME                        -> clsmeth
 
 
-bindnames : seplist{",", bindname} -> just
-
 op_special : (OP|SPECIAL) -> asstr
 
 ops    : op_special ("," op_special)* -> many
 
-method :  toptype methodname "(" typelist ")" "as" bindnames -> bindmeth
-       |  toptype methodname "as" bindnames -> bindproperty
-       |  "operator" "{" ops "}" -> autu_operator
-       |  "operator" "all" -> all_operator
+method :  toptype methodname "(" typelist ")" "as" bindname -> bindmeth
+       |  toptype methodname "as" bindname -> bindproperty
+       |  toptype "this" "[" toptype "]" "as" bindname -> bindgetitem
+       |  "this" "[" toptype "]"  "=" toptype "as" bindname -> bindsetitem
+       
 
 
 boxedtypes : "boxedtypes" "{" CNAME* "}" -> boxedtypes
@@ -95,6 +97,7 @@ class TGeneric:
         return f"{self.base.as_str()}<{args}>"
 
 
+
 Type = TName | TArray | TGeneric
 
 @dataclass
@@ -127,32 +130,45 @@ class MethodDecl:
     ret: TParam
     methname: MethName
     params : tuple[TParam, ...] | None
-    bindings: tuple[str]
+    binding: Bind
+    is_getitem: bool = False
+    is_setitem: bool = False
 
 all_ops = (
     "+" , "-" , "*" , "/" , "%"
     , "&" , "|" , "^" , "<<" , ">>"
     , "==" , "!="
 )
-@dataclass
-class AutoOperatorDecl:
-    ops : tuple[str, ...] = all_ops
 
 @dataclass
 class ClassBind:
     bindname: str
     clswraptype: str
     clstype: Type
-    methods: tuple[MethodDecl | AutoOperatorDecl, ...]
+    methods: tuple[MethodDecl, ...]
     emit: str = ""
 
 
-
+@dataclass
+class Bind:
+    _: str
+    is_setter: bool = False
+    is_getter: bool = False
+    
 boxed_types = {}
 @v_args(inline=True)
 class Trans(Transformer):
     def __init__(self):
         self.current_emit = ""
+
+    def getbind(self, a):
+        return Bind(a, is_getter=True)
+    
+    def setbind(self, a):
+        return Bind(a, is_setter=True)
+
+    def methbind(self, a):
+        return Bind(a)
 
     def start(self, _, *ast_seq):
         return ast_seq
@@ -196,17 +212,15 @@ class Trans(Transformer):
         return ExtMethName(str(srcclass), str(name))
     def clsmeth(self, name):
         return ClassMethName(str(name))
-    def bindmeth(self, ret, methname, params, bindnames):
-        return MethodDecl(ret, methname, params, bindnames)
+    def bindmeth(self, ret, methname, params, bindname):
+        return MethodDecl(ret, methname, params, bindname)
+    def bindgetitem(self, ret, param, bindname):
+        return MethodDecl(ret, InstMethName("__getitem__"), (param, ), bindname, is_getitem=True)
+    def bindsetitem(self, param, value, bindname):
+        return MethodDecl(TParam(TName("void")), InstMethName("__getitem__"), (param, value), bindname, is_setitem=True)
+    def bindproperty(self, ret, methname, bindname):
+        return MethodDecl(ret, methname, None, bindname)
 
-    def bindproperty(self, ret, methname, bindnames):
-        return MethodDecl(ret, methname, None, bindnames)
-
-    def auto_operator(self, a):
-        return AutoOperatorDecl(a)
-
-    def all_operator(self):
-        return AutoOperatorDecl()
 
     def clsbind(self, a, b, c, d):
         return ClassBind(str(a), str(b), c, d)
@@ -275,6 +289,7 @@ class Codegen:
         self.cls_name = "" # name that user see in the script language
         self.indent = ""
         self.getters = []
+        self.setters = []
     def __lshift__(self, other: str):
         self.IO.write(self.indent)
         self.IO.write(other)
@@ -291,16 +306,86 @@ class Codegen:
         finally:
             self.indent = indent
 
-    def declare(self, name: str, func):
-        self.getters.append('{ "%s", (false, MK.CreateFunc(%s)) },\n' % (name, func) )
+    def declare(self, name: str, func, is_setter=False, is_getter=False):
+        if is_setter:
+            self.setters.append('{ "%s", MK.CreateFunc(%s) },\n' % (name, func) )
+            return
+        
+        getter_desc = "true" if is_getter else "false"
+        self.getters.append('{ "%s", (%s, MK.CreateFunc(%s)) },\n' % (name, getter_desc, func) )
+        
         return self
+    
+    def bind_getitem(self, x: MethodDecl):
+        assert x.params is not None
+        bind_name = x.binding._
+        name = f"bind_{bind_name}"
+        params = [TParam(TName(self.impl_type)), *x.params]
+        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
 
+        self  << f"public static DObj {name}(Args _args) // bind this.[ind] \n"
+        self << "{\n"
+        with self.tab():
+            self << "var nargs = _args.NArgs;\n"
+            self << f"if (nargs != 2)\n"
+            error_msg = f"calling {self.cls_name}.{bind_name}; needs 2 arguments, got {{nargs}}."
+            self << f"  throw new D_ValueError({dumps(error_msg)});\n"
+            for i in range(2):
+                arg_repr = f"_args[{i}]"
+                param: TParam = params[i]
+                expect_t : Type = param.t
+                if param.cast_from is None:
+                    in_t: Type = param.t
+                else:
+                    in_t: Type = param.cast_from
+                arg_repr = accept_arg(in_t, arg_repr)
+                if in_t.as_str() != expect_t.as_str():
+                    arg_repr = cast(expect_t, arg_repr)
+                self << f"var _arg{i} = {arg_repr};\n"
+            ret = "_return"
+            self << f"var {ret} = _arg0[_arg1];\n"
+            
+            if x.ret.cast_from:
+                ret = cast(x.ret.t, ret)
+            self << "return MK.create(_return);\n"
+        self << "}\n"
+
+    def bind_setitem(self, x: MethodDecl):
+        assert x.params is not None
+        bind_name = x.binding._
+        name = f"bind_{bind_name}"
+        params = [TParam(TName(self.impl_type)), *x.params]
+        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
+
+        self  << f"public static DObj {name}(Args _args) // bind this.[ind]=val \n"
+        self << "{\n"
+        with self.tab():
+            self << "var nargs = _args.NArgs;\n"
+            self << f"if (nargs != 3)\n"
+            error_msg = f"calling {self.cls_name}.{bind_name}; needs 3 arguments, got {{nargs}}."
+            self << f"  throw new D_ValueError({dumps(error_msg)});\n"
+            for i in range(3):
+                arg_repr = f"_args[{i}]"
+                param: TParam = params[i]
+                expect_t : Type = param.t
+                if param.cast_from is None:
+                    in_t: Type = param.t
+                else:
+                    in_t: Type = param.cast_from
+                arg_repr = accept_arg(in_t, arg_repr)
+                if in_t.as_str() != expect_t.as_str():
+                    arg_repr = cast(expect_t, arg_repr)
+                self << f"var _arg{i} = {arg_repr};\n"
+            self << "_arg0[_arg1] = _arg2;\n"
+            self << "return MK.Nil();\n"
+        self << "}\n"
     def bind_method(self, x: MethodDecl):
-        bind_name = x.bindings[0]
-        name = f"bind_{x.bindings[0]}"
-        for each in x.bindings:
-            self.declare(each, name)
-        self  << f"public static DObj {name}(Args _args)\n"
+        assert x.params is not None
+        bind_name = x.binding._
+        name = f"bind_{bind_name}"
+        
+        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
+        self  << f"public static DObj {name}(Args _args) // bind method \n"
         self << "{\n"
         variadic = False
         with self.tab():
@@ -320,6 +405,8 @@ class Codegen:
                     params = x.params
                 case ExtMethName(field_from_class, meth_name):
                     params = x.params
+                case _:
+                    raise TypeError
 
             for param in params:
                 if param.is_optional:
@@ -410,11 +497,11 @@ class Codegen:
         self << "}\n"
 
     def bind_cls_property(self, cls_name, x : MethodDecl):
-        bind_name = x.bindings[0]
-        name = f"bind_{x.bindings[0]}"
-        for each in x.bindings:
-            self.declare(each, name)
-        self  << f"public static DObj {name}(Args _args)\n"
+        bind_name = x.binding._
+        name = f"bind_{bind_name}"
+        
+        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
+        self  << f"public static DObj {name}(Args _args) // bind cls prop \n"
         self << "{\n"
         with self.tab():
             self << "var nargs = _args.NArgs;\n"
@@ -436,11 +523,10 @@ class Codegen:
 
 
     def bind_this_property(self,  x : MethodDecl):
-        bind_name = x.bindings[0]
-        name = f"bind_{x.bindings[0]}"
-        for each in x.bindings:
-            self.declare(each, name)
-        self  << f"public static DObj {name}(Args _args)\n"
+        bind_name = x.binding._
+        name = f"bind_{bind_name}"
+        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
+        self  << f"public static DObj {name}(Args _args) // bind `this` prop \n"
         self << "{\n"
         with self.tab():
             self << "var nargs = _args.NArgs;\n"
@@ -492,6 +578,10 @@ class Codegen:
                     match method:
                         case MethodDecl() if method.params is None:
                             self.bind_property(method)
+                        case MethodDecl() if method.is_setitem:
+                            self.bind_setitem(method)
+                        case MethodDecl() if method.is_getitem:
+                            self.bind_getitem(method)
                         case MethodDecl():
                             self.bind_method(method)
 

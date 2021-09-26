@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DCode
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind_get_bc(Args _args)
+  public static DObj bind_get_bc(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -14,7 +14,7 @@ public partial class DCode
     var ret = MK.unbox<DCode>(arg).bc;
     return MK.create(ret);
   }
-  public static DObj bind_get_consts(Args _args)
+  public static DObj bind_get_consts(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -23,7 +23,7 @@ public partial class DCode
     var ret = MK.unbox<DCode>(arg).consts;
     return MK.create(ret);
   }
-  public static DObj bind_get_nfree(Args _args)
+  public static DObj bind_get_nfree(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -32,7 +32,7 @@ public partial class DCode
     var ret = MK.unbox<DCode>(arg).nfree;
     return MK.create(ret);
   }
-  public static DObj bind_get_narg(Args _args)
+  public static DObj bind_get_narg(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)

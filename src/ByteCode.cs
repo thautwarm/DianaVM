@@ -3,6 +3,13 @@ using System;
 namespace DianaScript
 {
 
+    public enum BIN_OP{
+        ADD, SUB, MUL, 
+        FLOORDIV, TRUEDIV, MOD, 
+        LSHIFT, RSHIFT, AND, 
+        OR, XOR,
+        EQ, NE, IN
+    }
     public enum CODE
     {
 
@@ -12,6 +19,8 @@ namespace DianaScript
         ERR_CLEAR,
         LOAD_ITEM,
         STORE_ITEM,
+        DEL_ITEM,
+        INVERT,
 
         NO_ARG,
         JUMP,
@@ -22,10 +31,12 @@ namespace DianaScript
         STORE_ATTR,
         LOAD_GLOBAL,
         STORE_GLOBAL,
+        REF_GLOBAL,
         LOAD_CELL,
         LOAD_LOCAL,
         STORE_CELL,
         STORE_LOCAL,
+        REF_LOCAL,
         LOAD_CONST,
         PEEK,
         CALL,
@@ -33,7 +44,9 @@ namespace DianaScript
         
         YIELD, // TODO
 
-        MAKE_FUNCTION,        
+        MAKE_FUNCTION,   
+
+        BIN     
 
     }
 }

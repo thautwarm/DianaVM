@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DSet
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind___or__(Args _args)
+  public static DObj bind___or__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -18,7 +18,7 @@ public partial class DSet
     }
     throw new D_TypeError($"call set.__or__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind___and__(Args _args)
+  public static DObj bind___and__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -31,7 +31,7 @@ public partial class DSet
     }
     throw new D_TypeError($"call set.__and__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_subset(Args _args)
+  public static DObj bind_subset(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -44,7 +44,7 @@ public partial class DSet
     }
     throw new D_TypeError($"call set.subset; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_superset(Args _args)
+  public static DObj bind_superset(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -57,7 +57,7 @@ public partial class DSet
     }
     throw new D_TypeError($"call set.superset; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind___contains__(Args _args)
+  public static DObj bind___contains__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -70,7 +70,7 @@ public partial class DSet
     }
     throw new D_TypeError($"call set.__contains__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_add(Args _args)
+  public static DObj bind_add(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -83,7 +83,7 @@ public partial class DSet
     }
     throw new D_TypeError($"call set.add; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_remove(Args _args)
+  public static DObj bind_remove(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -96,7 +96,7 @@ public partial class DSet
     }
     throw new D_TypeError($"call set.remove; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind___len__(Args _args)
+  public static DObj bind___len__(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -105,7 +105,7 @@ public partial class DSet
     var ret = MK.unbox<HashSet<DObj>>(arg).Count;
     return MK.create(ret);
   }
-  public static DObj bind_clear(Args _args)
+  public static DObj bind_clear(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)

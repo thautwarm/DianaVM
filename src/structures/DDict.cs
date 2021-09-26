@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DDict
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind___contains__(Args _args)
+  public static DObj bind___contains__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -18,7 +18,7 @@ public partial class DDict
     }
     throw new D_TypeError($"call dict.__contains__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind___len__(Args _args)
+  public static DObj bind___len__(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -27,7 +27,7 @@ public partial class DDict
     var ret = MK.unbox<Dictionary<DObj, DObj>>(arg).Count;
     return MK.create(ret);
   }
-  public static DObj bind___delitem__(Args _args)
+  public static DObj bind___delitem__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -40,7 +40,7 @@ public partial class DDict
     }
     throw new D_TypeError($"call dict.__delitem__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_clear(Args _args)
+  public static DObj bind_clear(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -52,7 +52,7 @@ public partial class DDict
     }
     throw new D_TypeError($"call dict.clear; needs at most (1) arguments, got {nargs}.");
   }
-  public static DObj bind_search(Args _args)
+  public static DObj bind_search(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 3)
@@ -67,6 +67,27 @@ public partial class DDict
       return MK.create(_return);
     }
     throw new D_TypeError($"call dict.search; needs at most (3) arguments, got {nargs}.");
+  }
+  public static DObj bind___setitem__(Args _args) // bind this.[ind]=val 
+  {
+    var nargs = _args.NArgs;
+    if (nargs != 3)
+      throw new D_ValueError("calling dict.__setitem__; needs 3 arguments, got {nargs}.");
+    var _arg0 = MK.unbox<Dictionary<DObj, DObj>>(_args[0]);
+    var _arg1 = MK.unbox<DObj>(_args[1]);
+    var _arg2 = MK.unbox<DObj>(_args[2]);
+    _arg0[_arg1] = _arg2;
+    return MK.Nil();
+  }
+  public static DObj bind___getitem__(Args _args) // bind this.[ind] 
+  {
+    var nargs = _args.NArgs;
+    if (nargs != 2)
+      throw new D_ValueError("calling dict.__getitem__; needs 2 arguments, got {nargs}.");
+    var _arg0 = MK.unbox<Dictionary<DObj, DObj>>(_args[0]);
+    var _arg1 = MK.unbox<DObj>(_args[1]);
+    var _return = _arg0[_arg1];
+    return MK.create(_return);
   }
   public partial class Cls : DClsObj  {
   public string name => "dict";
@@ -83,6 +104,8 @@ public partial class DDict
       { "__delitem__", (false, MK.CreateFunc(bind___delitem__)) },
       { "clear", (false, MK.CreateFunc(bind_clear)) },
       { "search", (false, MK.CreateFunc(bind_search)) },
+      { "__setitem__", (false, MK.CreateFunc(bind___setitem__)) },
+      { "__getitem__", (false, MK.CreateFunc(bind___getitem__)) },
     };
   }
   }

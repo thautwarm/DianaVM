@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DFunc
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind_get_code(Args _args)
+  public static DObj bind_get_code(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)

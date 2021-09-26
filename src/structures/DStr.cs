@@ -5,7 +5,7 @@ namespace DianaScript
 public partial class DStr
 {
   public DClsObj GetCls => Cls.unique;
-  public static DObj bind_join(Args _args)
+  public static DObj bind_join(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -18,7 +18,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.join; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_concat(Args _args)
+  public static DObj bind_concat(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -30,7 +30,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.concat; needs at most (1) arguments, got {nargs}.");
   }
-  public static DObj bind_endswith(Args _args)
+  public static DObj bind_endswith(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -43,7 +43,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.endswith; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_startswith(Args _args)
+  public static DObj bind_startswith(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -56,7 +56,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.startswith; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind___len__(Args _args)
+  public static DObj bind___len__(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -65,7 +65,7 @@ public partial class DStr
     var ret = MK.unbox<String>(arg).Length;
     return MK.create(ret);
   }
-  public static DObj bind_strip(Args _args)
+  public static DObj bind_strip(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -78,7 +78,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.strip; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_rstrip(Args _args)
+  public static DObj bind_rstrip(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs < 1)
@@ -96,7 +96,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.rstrip; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_lstrip(Args _args)
+  public static DObj bind_lstrip(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs < 1)
@@ -114,7 +114,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.lstrip; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_lower(Args _args)
+  public static DObj bind_lower(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -126,7 +126,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.lower; needs at most (1) arguments, got {nargs}.");
   }
-  public static DObj bind_upper(Args _args)
+  public static DObj bind_upper(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 1)
@@ -138,7 +138,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.upper; needs at most (1) arguments, got {nargs}.");
   }
-  public static DObj bind___contains__(Args _args)
+  public static DObj bind___contains__(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 2)
@@ -151,7 +151,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.__contains__; needs at most (2) arguments, got {nargs}.");
   }
-  public static DObj bind_format(Args _args)
+  public static DObj bind_format(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs < 1)
@@ -170,7 +170,7 @@ public partial class DStr
       return MK.create(_return);
     }
   }
-  public static DObj bind_substr(Args _args)
+  public static DObj bind_substr(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs < 2)
@@ -189,7 +189,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.substr; needs at most (3) arguments, got {nargs}.");
   }
-  public static DObj bind_insert(Args _args)
+  public static DObj bind_insert(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs != 3)
@@ -203,7 +203,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.insert; needs at most (3) arguments, got {nargs}.");
   }
-  public static DObj bind_remove(Args _args)
+  public static DObj bind_remove(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs < 2)
@@ -222,7 +222,7 @@ public partial class DStr
     }
     throw new D_TypeError($"call str.remove; needs at most (3) arguments, got {nargs}.");
   }
-  public static DObj bind_index(Args _args)
+  public static DObj bind_index(Args _args) // bind method 
   {
     var nargs = _args.NArgs;
     if (nargs < 2)

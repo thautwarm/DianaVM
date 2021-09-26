@@ -1,0 +1,3 @@
+
+class DObj:
+    pass
