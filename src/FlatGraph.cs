@@ -36,17 +36,9 @@ public class Stmt_DelDerefName
 
 public class Stmt_DeleteItem
 {
-    public Ptr value;
+    public slot value;
 
-    public Ptr item;
-
-}
-
-public class Stmt_Assign
-{
-    public Ptr targets;
-
-    public Ptr value;
+    public slot item;
 
 }
 
@@ -562,7 +554,6 @@ public enum CODE
     Stmt_DelLocalName,
     Stmt_DelDerefName,
     Stmt_DeleteItem,
-    Stmt_Assign,
     Stmt_AddAssign,
     Stmt_SubAssign,
     Stmt_MutAssign,
@@ -644,8 +635,6 @@ public class DFlatGraphCode
     public Stmt_DelDerefName[] stmt_delderefnames;
 
     public Stmt_DeleteItem[] stmt_deleteitems;
-
-    public Stmt_Assign[] stmt_assigns;
 
     public Stmt_AddAssign[] stmt_addassigns;
 

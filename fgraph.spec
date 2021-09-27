@@ -1,29 +1,13 @@
 Stmt = {
     FunctionDef(metadataInd: int, code: Ptr)
-        
-    end
     Return(value: Ptr)
     Del$Name(slot: int) from { Global Local Deref }
-    DeleteItem(value: Ptr, item: Ptr)
-    Assign(targets: Ptr, value: Ptr)
-        x1 = eval.rhs value
-        for each in targets{
-            push x1 to valuestack
-            eval.rhs each
-        }
-    end    
+    DeleteItem(value: slot, item: slot)
 
     $Assign(target: Ptr, value: Ptr) from {
         Add Sub Mut TrueDiv FloorDiv Mod Pow LShift RShift BitOr BitAnd BitXor
     }
-        eval.rhs target
-        pop valuestack to x1
-        eval.rhs value
-        pop valuestack to x2
-        r  <- extern.op_$(x2, x1) (check exception)
-        push r to valuestack
-    end
-
+    
     For(target: Ptr, iter: Ptr, body: Ptr)
     While(cond: Ptr, body: Ptr)
     If(cond: Ptr, then: Ptr, orelse: Ptr)

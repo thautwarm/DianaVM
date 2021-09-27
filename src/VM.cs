@@ -6,6 +6,7 @@ namespace DianaScript
 
     using CallStack = Stack<DBigFrame>;
     using MiniFrame = Stack<Ptr>;
+    using NameSpace = Dictionary<InternString, DObj>;
     public static class StackClassExtensions
     {
         public static void Add<T>(this Stack<T> self, T a) => self.Push(a);
@@ -13,6 +14,29 @@ namespace DianaScript
     }
 
 
+    public class Ref : DObj
+    {
+        public DObj cell_contents;
+        public Ref(DObj c)
+        {
+            this.cell_contents = cell_contents;
+        }
+    }
+
+    public class Frame
+    {
+
+        public DObj[] vstack;
+
+        public NameSpace nameSpace;
+        public void Push(DObj v) => throw new NotImplementedException();
+
+        public DObj Pop() => throw new NotImplementedException();
+
+        public DObj Access(int i) => throw new NotImplementedException();
+
+
+    }
     public class VM
     {
 
@@ -28,7 +52,8 @@ namespace DianaScript
         public static int state_bit3 = 0b01 << 11;
         public static int state_bit4 = 0b01 << 12;
 
-        public static DCode code;
+        public DCode code;
+        public DFlatGraphCode flatGraph;
         public Dictionary<InternString, Dictionary<InternString, DObj>> modules;
 
         public static void assert(bool a, string msg)
@@ -36,93 +61,42 @@ namespace DianaScript
             if (!a)
                 throw new Exception($"assertion failed, {msg}.");
         }
-        public void Execute(int func_ind)
+
+        public Ptr ptr;
+        public DObj val;
+
+        public IEnumerable<Ptr> Execute(Frame frame, Ptr ptr)
         {
-            DFlatGraphCode flatGraph = code.flatGraph;
-            DObj[] constObjPool = code.constObjPool;
-            InternString[] constStrPool = code.constStrPool;
-            FuncMeta[] funcMetas = code.funcMetas;
-
-            var augmentedFrame = DBigFrame.Make(GlobalNamespace.Globals, new DObj[1], default(Ptr), default(int));
-            augmentedFrame.catchingException = true;
-            var curPtr = new Ptr(CODE.Stmt_FunctionDef, func_ind);
-            CallStack callStack = new CallStack { };
-            CallStack errorStack = new CallStack { };
-            MiniFrame curMiniFrame = augmentedFrame.miniFrame;
-            Dictionary<InternString, DObj> curGlobal = augmentedFrame.globals;
-            DObj[] curVStack = augmentedFrame.valueStack;
-            DObj[] curFreeVals = augmentedFrame.freeVals;
-            Stack<int> curSrcPosInds = augmentedFrame.srcPosIndices;
-            DBigFrame curBigFrame = augmentedFrame;
-            int vstackOffset = augmentedFrame.vstackOffset;
-            Exception e = null;
-
-        handle_frames:
-        frame_return:
-
-        void popBigFrame_(){ throw new NotImplementedException(); }
-
-        handle_exception:
-        while (!curBigFrame.catchingException)
-            popBigFrame_();
-
-        graph_code_maybe_exec:
-
-        graph_code_must_exec:
-            curPtr = curMiniFrame.Pop();
-
-            switch (curPtr.code & instr_mask)
+            switch (ptr.code)
             {
-                case (int)CODE.Stmt_FunctionDef:
-                    
-                    int metadataInd = flatGraph.stmt_functiondefs[curPtr.ind].metadataInd;
-                    var funcMeta = funcMetas[metadataInd];
-                    var newFreevals = new DObj[funcMeta.freeslots.Length];
-                    for (var i = 0; i < funcMeta.freeslots.Length; i++)
-                    {
-                        var slot = funcMeta.freeslots[i];
-                        newFreevals[i] = (slot < 0) ? curFreeVals[-i - 1] : curVStack[i];
-                    }
+                case CODE.Stmt_FunctionDef:
 
-                    curVStack[vstackOffset++] = DFunc.Make(flatGraph.stmt_functiondefs[curPtr.ind].code, metadataInd, newFreevals, curGlobal);
-                    goto graph_code_must_exec;
-                case (int)CODE.Stmt_Return:
-                    if (e != null){
-                        goto graph_code_must_exec;
-                    }
-                        
-                    if ((curPtr.code & state_bit0) == 1)
+                    int metadataInd = flatGraph.stmt_functiondefs[ptr.ind].metadataInd;
+                    var funcMeta = code.funcMetas[metadataInd];
+                    if (funcMeta.freeslots.Length == 0)
                     {
-                        var valuePtr = flatGraph.stmt_returns[curPtr.ind].value;
-                        curMiniFrame.Push(valuePtr);
-                        goto graph_code_must_exec;
+                        frame.Push(
+                            DFunc.Make(flatGraph.stmt_functiondefs[ptr.ind].code, metadataInd, name_space: frame.nameSpace));
                     }
                     else
                     {
-                        assert((curPtr.code >> instr_nbits) == 0, "invalid return state");
-                        curPtr.code |= state_bit0;
-                        curMiniFrame.Push(curPtr);
-                        goto frame_return;
+                        frame.Push(
+                            DFunc.Make(flatGraph.stmt_functiondefs[ptr.ind].code, metadataInd, name_space: frame.nameSpace));
                     }
-                case (int)CODE.Stmt_DelLocalName:
-                    curVStack[flatGraph.stmt_dellocalnames[curPtr.ind].slot] = null;
-                    goto graph_code_must_exec;
+                    yield break;
+
+
+                case CODE.Stmt_Return:
+                    yield return flatGraph.stmt_returns[ptr.ind].value;
+                    yield break;
+                case CODE.Stmt_DelLocalName:
+                    frame.vstack[flatGraph.stmt_dellocalnames[ptr.ind].slot] = null;
+                    yield break;
                 
-                case (int)CODE.Stmt_DelGlobalName:
-                    var globalname = code.constStrPool[curPtr.ind];
-                    if (!curGlobal.Remove(globalname)){
-                        e = new KeyNotFoundException(globalname.ToString());
-                        goto handle_exception;
-                    }
-                    goto graph_code_must_exec;
-                
-
-
-
+                    
+                    
 
             }
-
-
 
 
         }

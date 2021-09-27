@@ -40,14 +40,8 @@ public partial class AIRParser
 
     public Stmt_DeleteItem Read(THint<Stmt_DeleteItem> _) => new Stmt_DeleteItem
     {
-        value = Read(THint<Ptr>.val),
-        item = Read(THint<Ptr>.val),
-    };
-
-    public Stmt_Assign Read(THint<Stmt_Assign> _) => new Stmt_Assign
-    {
-        targets = Read(THint<Ptr>.val),
-        value = Read(THint<Ptr>.val),
+        value = Read(THint<slot>.val),
+        item = Read(THint<slot>.val),
     };
 
     public Stmt_AddAssign Read(THint<Stmt_AddAssign> _) => new Stmt_AddAssign
@@ -442,7 +436,6 @@ public partial class AIRParser
         stmt_dellocalnames = Read(THint<Stmt_DelLocalName[]>.val),
         stmt_delderefnames = Read(THint<Stmt_DelDerefName[]>.val),
         stmt_deleteitems = Read(THint<Stmt_DeleteItem[]>.val),
-        stmt_assigns = Read(THint<Stmt_Assign[]>.val),
         stmt_addassigns = Read(THint<Stmt_AddAssign[]>.val),
         stmt_subassigns = Read(THint<Stmt_SubAssign[]>.val),
         stmt_mutassigns = Read(THint<Stmt_MutAssign[]>.val),
@@ -618,16 +611,6 @@ public partial class AIRParser
         for (var i = 0; i < src.Length; i++)
         {
             src[i] = Read(Stmt_DeleteItem_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Stmt_Assign> Stmt_Assign_hint = THint<Stmt_Assign>.val;
-    public Stmt_Assign[] Read(THint<Stmt_Assign[]> _)
-    {
-        Stmt_Assign[] src = new Stmt_Assign[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Stmt_Assign_hint);
         }
         return src;
     }
