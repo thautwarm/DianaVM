@@ -1,9 +1,3 @@
-import struct
-
-special_bit = 0b10000000
-bool_bit = 0b10000010
-none_bit = 0b10000000
-from dataclasses import dataclass
 
 """
 from "src/Parser.cs": for Object Encoding
@@ -26,7 +20,12 @@ from "src/Parser.cs": for Object Encoding
         public const byte Code = 7;
     }
 """
+import struct
 
+special_bit = 0b10000000
+bool_bit = 0b10000010
+none_bit = 0b10000000
+from dataclasses import dataclass
 
 obj_box_tags: dict[type, int| None] = {
     int: 0,
@@ -72,12 +71,14 @@ def serialize_(o, barr: bytearray):
                 serialize_(v, barr)
         case _:
             o.serialize_(barr)
+
+
+class InternString(str):
+    pass
+
     
 
 if __name__ == '__main__':
     b = bytearray()
     serialize_([1, 2, 3], b)
     print(len(b))
-
-
-        

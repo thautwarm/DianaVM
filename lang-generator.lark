@@ -1,0 +1,46 @@
+%import common.WS
+%import common.CNAME
+%import common.ESCAPED_STRING
+%import common.LETTER
+%import common.DIGIT
+%ignore WS
+%ignore COMMENT
+
+COMMENT: /\s*/ "//" /[^\n]/*
+TNAME: ("_"|"$"|LETTER) ("_"|"$"|LETTER|DIGIT)*
+
+
+
+id : TNAME -> asstr
+template_id : TNAME -> asstr
+
+seplist{sep, e} : e (sep e)* -> many
+                | -> empty
+
+list{e} : e e* -> many
+                | -> empty
+
+type : id                              -> typename
+     | type "[" "]"                    -> array_type
+     | "(" type ("," type)* ")"        -> tuple_type
+     | type "<" seplist{",", type} ">" -> generic_type
+
+param : id ":" type -> param
+
+from  : -> none
+      | "from" "{" id+ "}" -> many
+node : 
+
+codeemit : "emit"  code -> code
+topl : template_id "(" seplist{",", param} ")"  from  code  -> node
+     | "static" codeemit -> staticmethod
+     | "local" codeemit -> localmethod
+     | "dataclass" id "(" seplist{",", param} ")" -> dataclass
+
+language : "language" id list{topl} -> language
+start : language  -> just
+
+code : ESCAPED_CODE -> asstr
+CODE_INNER: /.*?/
+CODE_ESC_INNER: CODE_INNER /(?<!\\)(\\\\)*?/
+ESCAPED_CODE : /\[%[^%]*?%\]/

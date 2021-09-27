@@ -221,6 +221,7 @@ namespace DianaScript
 
         [NotNull]
         public string[] strings; // constant strings
+        
 
         public int nfree;
         public int narg;

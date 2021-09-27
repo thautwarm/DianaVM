@@ -2,771 +2,432 @@ using System;
 using System.Collections.Generic;
 namespace DianaScript
 {
-public class Stmt_FunctionDef
+public struct Catch
 {
+    public int exc_target;
+    public int exc_type;
+    public Block body;
+
+    public static Catch Make(int exc_target, int exc_type, Block body) => new Catch
+    {
+        exc_target = exc_target,
+
+        exc_type = exc_type,
+
+        body = body,
+
+    };
+}
+public struct FuncMeta
+{
+    public bool is_vararg;
+    public int narg;
+    public int[] freeslots;
+    public InternString name;
+    public InternString modname;
+    public string filename;
+
+    public static FuncMeta Make(bool is_vararg, int narg, int[] freeslots, InternString name, InternString modname, string filename) => new FuncMeta
+    {
+        is_vararg = is_vararg,
+
+        narg = narg,
+
+        freeslots = freeslots,
+
+        name = name,
+
+        modname = modname,
+
+        filename = filename,
+
+    };
+}
+public struct Loc
+{
+    public (int,int)[] location_data;
+
+    public static Loc Make((int,int)[] location_data) => new Loc
+    {
+        location_data = location_data,
+
+    };
+}
+public struct Block
+{
+    public Ptr[] codes;
+    public int location_data;
+
+    public static Block Make(Ptr[] codes, int location_data) => new Block
+    {
+        codes = codes,
+
+        location_data = location_data,
+
+    };
+}
+public struct Diana_FunctionDef
+{
+    public int target;
     public int metadataInd;
-
-    public Ptr code;
-
-}
-
-public class Stmt_Return
-{
-    public Ptr value;
+    public Block code;
 
 }
-
-public class Stmt_DelGlobalName
+public struct Diana_Return
 {
-    public int slot;
+    public int reg;
 
 }
-
-public class Stmt_DelLocalName
+public struct Diana_DelVar
 {
-    public int slot;
+    public int target;
 
 }
-
-public class Stmt_DelDerefName
+public struct Diana_SetVar
 {
-    public int slot;
+    public int target;
+    public int s_val;
 
 }
-
-public class Stmt_DeleteItem
+public struct Diana_JumpIf
 {
-    public slot value;
-
-    public slot item;
+    public int s_val;
+    public int offset;
 
 }
-
-public class Stmt_AddAssign
+public struct Diana_Jump
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int offset;
 
 }
-
-public class Stmt_SubAssign
+public struct Diana_Raise
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int s_exc;
 
 }
-
-public class Stmt_MutAssign
+public struct Diana_Assert
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int value;
+    public int msg;
 
 }
-
-public class Stmt_TrueDivAssign
+public struct Diana_Control
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int token;
 
 }
-
-public class Stmt_FloorDivAssign
+public struct Diana_Try
 {
-    public Ptr target;
-
-    public Ptr value;
+    public Block body;
+    public Catch[] except_handlers;
+    public Block final_body;
 
 }
-
-public class Stmt_ModAssign
+public struct Diana_For
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int target;
+    public int s_iter;
+    public Block body;
 
 }
-
-public class Stmt_PowAssign
+public struct Diana_With
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int s_resource;
+    public int s_as;
+    public Block body;
 
 }
-
-public class Stmt_LShiftAssign
+public struct Diana_DelItem
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int s_value;
+    public int s_item;
 
 }
-
-public class Stmt_RShiftAssign
+public struct Diana_GetItem
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int target_and_value;
+    public int s_item;
 
 }
-
-public class Stmt_BitOrAssign
+public struct Diana_BinaryOp_add
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_BitAndAssign
+public struct Diana_BinaryOp_sub
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_BitXorAssign
+public struct Diana_BinaryOp_mul
 {
-    public Ptr target;
-
-    public Ptr value;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_For
+public struct Diana_BinaryOp_truediv
 {
-    public Ptr target;
-
-    public Ptr iter;
-
-    public Ptr body;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_While
+public struct Diana_BinaryOp_floordiv
 {
-    public Ptr cond;
-
-    public Ptr body;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_If
+public struct Diana_BinaryOp_mod
 {
-    public Ptr cond;
-
-    public Ptr then;
-
-    public Ptr orelse;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_With
+public struct Diana_BinaryOp_pow
 {
-    public Ptr expr;
-
-    public Ptr body;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_Raise
+public struct Diana_BinaryOp_lshift
 {
-    public Ptr value;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_RaiseFrom
+public struct Diana_BinaryOp_rshift
 {
-    public Ptr value;
-
-    public Ptr from_;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_Try
+public struct Diana_BinaryOp_bitor
 {
-    public Ptr body;
-
-    public int err_slot;
-
-    public Ptr except_handlers;
-
-    public Ptr final_body;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_Assert
+public struct Diana_BinaryOp_bitand
 {
-    public Ptr value;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_ExprStmt
+public struct Diana_BinaryOp_bitxor
 {
-    public Ptr value;
+    public int target_and_left;
+    public int right;
 
 }
-
-public class Stmt_Control
+public struct Diana_UnaryOp_invert
 {
-    public int kind;
+    public int target_and_value;
 
 }
-
-public class Stmt_Block
+public struct Diana_UnaryOp_not
 {
-    public Ptr[] stmts;
+    public int target_and_value;
 
 }
-
-public class Expr_AddOp
+public struct Diana_Dict
 {
-    public Ptr left;
-
-    public Ptr right;
+    public int target;
+    public (int, int)[] s_kvs;
 
 }
-
-public class Expr_SubOp
+public struct Diana_Set
 {
-    public Ptr left;
-
-    public Ptr right;
+    public int target;
+    public int[] s_elts;
 
 }
-
-public class Expr_MutOp
+public struct Diana_List
 {
-    public Ptr left;
-
-    public Ptr right;
+    public int target;
+    public int[] s_elts;
 
 }
-
-public class Expr_TrueDivOp
+public struct Diana_Generator
 {
-    public Ptr left;
-
-    public Ptr right;
+    public int target_and_func;
 
 }
-
-public class Expr_FloorDivOp
+public struct Diana_Call
 {
-    public Ptr left;
-
-    public Ptr right;
+    public int target;
+    public int s_f;
+    public int[] s_args;
 
 }
-
-public class Expr_ModOp
+public struct Diana_Format
 {
-    public Ptr left;
-
-    public Ptr right;
-
-}
-
-public class Expr_PowOp
-{
-    public Ptr left;
-
-    public Ptr right;
-
-}
-
-public class Expr_LShiftOp
-{
-    public Ptr left;
-
-    public Ptr right;
-
-}
-
-public class Expr_RShiftOp
-{
-    public Ptr left;
-
-    public Ptr right;
-
-}
-
-public class Expr_BitOrOp
-{
-    public Ptr left;
-
-    public Ptr right;
-
-}
-
-public class Expr_BitAndOp
-{
-    public Ptr left;
-
-    public Ptr right;
-
-}
-
-public class Expr_BitXorOp
-{
-    public Ptr left;
-
-    public Ptr right;
-
-}
-
-public class Expr_GlobalBinder
-{
-    public int slot;
-
-}
-
-public class Expr_LocalBinder
-{
-    public int slot;
-
-}
-
-public class Expr_DerefBinder
-{
-    public int slot;
-
-}
-
-public class Expr_AndOp
-{
-    public Ptr left;
-
-    public Ptr right;
-
-}
-
-public class Expr_OrOp
-{
-    public Ptr left;
-
-    public Ptr right;
-
-}
-
-public class Expr_InvertOp
-{
-    public Ptr value;
-
-}
-
-public class Expr_NotOp
-{
-    public Ptr value;
-
-}
-
-public class Expr_Lambda
-{
-    public int[] frees;
-
-    public int code;
-
-}
-
-public class Expr_IfExpr
-{
-    public Ptr cond;
-
-    public Ptr then;
-
-    public Ptr orelse;
-
-}
-
-public class Expr_Dict
-{
-    public Ptr[] keys;
-
-    public Ptr[] values;
-
-}
-
-public class Expr_Set
-{
-    public Ptr[] elts;
-
-}
-
-public class Expr_List
-{
-    public Ptr[] elts;
-
-}
-
-public class Expr_Generator
-{
-    public Ptr target;
-
-    public Ptr iter;
-
-    public Ptr body;
-
-}
-
-public class Expr_Comprehension
-{
-    public Ptr adder;
-
-    public Ptr target;
-
-    public Ptr iter;
-
-    public Ptr body;
-
-}
-
-public class Expr_Call
-{
-    public Ptr f;
-
-    public Ptr args;
-
-}
-
-public class Expr_Format
-{
+    public int target;
     public int format;
-
-    public Ptr args;
-
-}
-
-public class Expr_Const
-{
-    public int constInd;
+    public int[] args;
 
 }
-
-public class Expr_Attr
+public struct Diana_Const
 {
-    public Ptr value;
-
-    public int attr;
+    public int target;
+    public int p_const;
 
 }
-
-public class Expr_GlobalName
+public struct Diana_GetAttr
 {
+    public int target_and_value;
+    public int p_attr;
+
+}
+public struct Diana_MoveVar
+{
+    public int target;
     public int slot;
 
 }
-
-public class Expr_LocalName
+public struct Diana_Tuple
 {
-    public int slot;
+    public int target;
+    public int[] s_elts;
 
 }
-
-public class Expr_DerefName
+public struct Diana_PackTuple
 {
-    public int slot;
+    public int[] targets;
+    public int s_value;
 
 }
-
-public class Expr_Item
-{
-    public Ptr value;
-
-    public Ptr item;
-
-}
-
-public class Expr_Tuple
-{
-    public Ptr[] elts;
-
-}
-
-public class Arg_GlobalNameOut
-{
-    public int ind;
-
-}
-
-public class Arg_LocalNameOut
-{
-    public int ind;
-
-}
-
-public class Arg_DerefNameOut
-{
-    public int ind;
-
-}
-
-public class Arg_ItemOut
-{
-    public Ptr value;
-
-    public Ptr item;
-
-}
-
-public class Arg_AttrOut
-{
-    public Ptr value;
-
-    public int attr;
-
-}
-
-public class Arg_Val
-{
-    public Ptr value;
-
-}
-
-public class ExceptHandler_ArbitraryCatch
-{
-    public int assign_slot;
-
-    public Ptr body;
-
-}
-
-public class ExceptHandler_TypeCheckCatch
-{
-    public Ptr type;
-
-    public int assign_slot;
-
-    public Ptr body;
-
-}
-
 public enum CODE
 {
-    Stmt_FunctionDef,
-    Stmt_Return,
-    Stmt_DelGlobalName,
-    Stmt_DelLocalName,
-    Stmt_DelDerefName,
-    Stmt_DeleteItem,
-    Stmt_AddAssign,
-    Stmt_SubAssign,
-    Stmt_MutAssign,
-    Stmt_TrueDivAssign,
-    Stmt_FloorDivAssign,
-    Stmt_ModAssign,
-    Stmt_PowAssign,
-    Stmt_LShiftAssign,
-    Stmt_RShiftAssign,
-    Stmt_BitOrAssign,
-    Stmt_BitAndAssign,
-    Stmt_BitXorAssign,
-    Stmt_For,
-    Stmt_While,
-    Stmt_If,
-    Stmt_With,
-    Stmt_Raise,
-    Stmt_RaiseFrom,
-    Stmt_Try,
-    Stmt_Assert,
-    Stmt_ExprStmt,
-    Stmt_Control,
-    Stmt_Block,
-    Expr_AddOp,
-    Expr_SubOp,
-    Expr_MutOp,
-    Expr_TrueDivOp,
-    Expr_FloorDivOp,
-    Expr_ModOp,
-    Expr_PowOp,
-    Expr_LShiftOp,
-    Expr_RShiftOp,
-    Expr_BitOrOp,
-    Expr_BitAndOp,
-    Expr_BitXorOp,
-    Expr_GlobalBinder,
-    Expr_LocalBinder,
-    Expr_DerefBinder,
-    Expr_AndOp,
-    Expr_OrOp,
-    Expr_InvertOp,
-    Expr_NotOp,
-    Expr_Lambda,
-    Expr_IfExpr,
-    Expr_Dict,
-    Expr_Set,
-    Expr_List,
-    Expr_Generator,
-    Expr_Comprehension,
-    Expr_Call,
-    Expr_Format,
-    Expr_Const,
-    Expr_Attr,
-    Expr_GlobalName,
-    Expr_LocalName,
-    Expr_DerefName,
-    Expr_Item,
-    Expr_Tuple,
-    Arg_GlobalNameOut,
-    Arg_LocalNameOut,
-    Arg_DerefNameOut,
-    Arg_ItemOut,
-    Arg_AttrOut,
-    Arg_Val,
-    ExceptHandler_ArbitraryCatch,
-    ExceptHandler_TypeCheckCatch,
+    Diana_FunctionDef,
+    Diana_Return,
+    Diana_DelVar,
+    Diana_SetVar,
+    Diana_JumpIf,
+    Diana_Jump,
+    Diana_Raise,
+    Diana_Assert,
+    Diana_Control,
+    Diana_Try,
+    Diana_For,
+    Diana_With,
+    Diana_DelItem,
+    Diana_GetItem,
+    Diana_BinaryOp_add,
+    Diana_BinaryOp_sub,
+    Diana_BinaryOp_mul,
+    Diana_BinaryOp_truediv,
+    Diana_BinaryOp_floordiv,
+    Diana_BinaryOp_mod,
+    Diana_BinaryOp_pow,
+    Diana_BinaryOp_lshift,
+    Diana_BinaryOp_rshift,
+    Diana_BinaryOp_bitor,
+    Diana_BinaryOp_bitand,
+    Diana_BinaryOp_bitxor,
+    Diana_UnaryOp_invert,
+    Diana_UnaryOp_not,
+    Diana_Dict,
+    Diana_Set,
+    Diana_List,
+    Diana_Generator,
+    Diana_Call,
+    Diana_Format,
+    Diana_Const,
+    Diana_GetAttr,
+    Diana_MoveVar,
+    Diana_Tuple,
+    Diana_PackTuple,
 }
 
 public class DFlatGraphCode
 {
-    public Stmt_FunctionDef[] stmt_functiondefs;
+    public Catch[] catchs;
 
-    public Stmt_Return[] stmt_returns;
+    public FuncMeta[] funcmetas;
 
-    public Stmt_DelGlobalName[] stmt_delglobalnames;
+    public Loc[] locs;
 
-    public Stmt_DelLocalName[] stmt_dellocalnames;
+    public Block[] blocks;
 
-    public Stmt_DelDerefName[] stmt_delderefnames;
+    public Diana_FunctionDef[] diana_functiondefs;
 
-    public Stmt_DeleteItem[] stmt_deleteitems;
+    public Diana_Return[] diana_returns;
 
-    public Stmt_AddAssign[] stmt_addassigns;
+    public Diana_DelVar[] diana_delvars;
 
-    public Stmt_SubAssign[] stmt_subassigns;
+    public Diana_SetVar[] diana_setvars;
 
-    public Stmt_MutAssign[] stmt_mutassigns;
+    public Diana_JumpIf[] diana_jumpifs;
 
-    public Stmt_TrueDivAssign[] stmt_truedivassigns;
+    public Diana_Jump[] diana_jumps;
 
-    public Stmt_FloorDivAssign[] stmt_floordivassigns;
+    public Diana_Raise[] diana_raises;
 
-    public Stmt_ModAssign[] stmt_modassigns;
+    public Diana_Assert[] diana_asserts;
 
-    public Stmt_PowAssign[] stmt_powassigns;
+    public Diana_Control[] diana_controls;
 
-    public Stmt_LShiftAssign[] stmt_lshiftassigns;
+    public Diana_Try[] diana_trys;
 
-    public Stmt_RShiftAssign[] stmt_rshiftassigns;
+    public Diana_For[] diana_fors;
 
-    public Stmt_BitOrAssign[] stmt_bitorassigns;
+    public Diana_With[] diana_withs;
 
-    public Stmt_BitAndAssign[] stmt_bitandassigns;
+    public Diana_DelItem[] diana_delitems;
 
-    public Stmt_BitXorAssign[] stmt_bitxorassigns;
+    public Diana_GetItem[] diana_getitems;
 
-    public Stmt_For[] stmt_fors;
+    public Diana_BinaryOp_add[] diana_binaryop_adds;
 
-    public Stmt_While[] stmt_whiles;
+    public Diana_BinaryOp_sub[] diana_binaryop_subs;
 
-    public Stmt_If[] stmt_ifs;
+    public Diana_BinaryOp_mul[] diana_binaryop_muls;
 
-    public Stmt_With[] stmt_withs;
+    public Diana_BinaryOp_truediv[] diana_binaryop_truedivs;
 
-    public Stmt_Raise[] stmt_raises;
+    public Diana_BinaryOp_floordiv[] diana_binaryop_floordivs;
 
-    public Stmt_RaiseFrom[] stmt_raisefroms;
+    public Diana_BinaryOp_mod[] diana_binaryop_mods;
 
-    public Stmt_Try[] stmt_trys;
+    public Diana_BinaryOp_pow[] diana_binaryop_pows;
 
-    public Stmt_Assert[] stmt_asserts;
+    public Diana_BinaryOp_lshift[] diana_binaryop_lshifts;
 
-    public Stmt_ExprStmt[] stmt_exprstmts;
+    public Diana_BinaryOp_rshift[] diana_binaryop_rshifts;
 
-    public Stmt_Control[] stmt_controls;
+    public Diana_BinaryOp_bitor[] diana_binaryop_bitors;
 
-    public Stmt_Block[] stmt_blocks;
+    public Diana_BinaryOp_bitand[] diana_binaryop_bitands;
 
-    public Expr_AddOp[] expr_addops;
+    public Diana_BinaryOp_bitxor[] diana_binaryop_bitxors;
 
-    public Expr_SubOp[] expr_subops;
+    public Diana_UnaryOp_invert[] diana_unaryop_inverts;
 
-    public Expr_MutOp[] expr_mutops;
+    public Diana_UnaryOp_not[] diana_unaryop_nots;
 
-    public Expr_TrueDivOp[] expr_truedivops;
+    public Diana_Dict[] diana_dicts;
 
-    public Expr_FloorDivOp[] expr_floordivops;
+    public Diana_Set[] diana_sets;
 
-    public Expr_ModOp[] expr_modops;
+    public Diana_List[] diana_lists;
 
-    public Expr_PowOp[] expr_powops;
+    public Diana_Generator[] diana_generators;
 
-    public Expr_LShiftOp[] expr_lshiftops;
+    public Diana_Call[] diana_calls;
 
-    public Expr_RShiftOp[] expr_rshiftops;
+    public Diana_Format[] diana_formats;
 
-    public Expr_BitOrOp[] expr_bitorops;
+    public Diana_Const[] diana_consts;
 
-    public Expr_BitAndOp[] expr_bitandops;
+    public Diana_GetAttr[] diana_getattrs;
 
-    public Expr_BitXorOp[] expr_bitxorops;
+    public Diana_MoveVar[] diana_movevars;
 
-    public Expr_GlobalBinder[] expr_globalbinders;
+    public Diana_Tuple[] diana_tuples;
 
-    public Expr_LocalBinder[] expr_localbinders;
-
-    public Expr_DerefBinder[] expr_derefbinders;
-
-    public Expr_AndOp[] expr_andops;
-
-    public Expr_OrOp[] expr_orops;
-
-    public Expr_InvertOp[] expr_invertops;
-
-    public Expr_NotOp[] expr_notops;
-
-    public Expr_Lambda[] expr_lambdas;
-
-    public Expr_IfExpr[] expr_ifexprs;
-
-    public Expr_Dict[] expr_dicts;
-
-    public Expr_Set[] expr_sets;
-
-    public Expr_List[] expr_lists;
-
-    public Expr_Generator[] expr_generators;
-
-    public Expr_Comprehension[] expr_comprehensions;
-
-    public Expr_Call[] expr_calls;
-
-    public Expr_Format[] expr_formats;
-
-    public Expr_Const[] expr_consts;
-
-    public Expr_Attr[] expr_attrs;
-
-    public Expr_GlobalName[] expr_globalnames;
-
-    public Expr_LocalName[] expr_localnames;
-
-    public Expr_DerefName[] expr_derefnames;
-
-    public Expr_Item[] expr_items;
-
-    public Expr_Tuple[] expr_tuples;
-
-    public Arg_GlobalNameOut[] arg_globalnameouts;
-
-    public Arg_LocalNameOut[] arg_localnameouts;
-
-    public Arg_DerefNameOut[] arg_derefnameouts;
-
-    public Arg_ItemOut[] arg_itemouts;
-
-    public Arg_AttrOut[] arg_attrouts;
-
-    public Arg_Val[] arg_vals;
-
-    public ExceptHandler_ArbitraryCatch[] excepthandler_arbitrarycatchs;
-
-    public ExceptHandler_TypeCheckCatch[] excepthandler_typecheckcatchs;
+    public Diana_PackTuple[] diana_packtuples;
 
 }
 }

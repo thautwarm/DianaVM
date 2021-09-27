@@ -1,837 +1,525 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from dianascript.serialize import Ptr, serialize_
+from dianascript.serialize import *
 
 
 @dataclass(frozen=True)
-class Stmt_FunctionDef:
-    metadataInd: int
-    code: Ptr
+class Catch:
+    exc_target: int
+    exc_type: int
+    body: Block
     TAG : int = 0
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.exc_target, arr)
+        serialize_(self.exc_type, arr)
+        serialize_(self.body, arr)
+
+
+@dataclass(frozen=True)
+class FuncMeta:
+    is_vararg: bool
+    narg: int
+    freeslots: list[int]
+    name: InternString
+    modname: InternString
+    filename: str
+    TAG : int = 1
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.is_vararg, arr)
+        serialize_(self.narg, arr)
+        serialize_(self.freeslots, arr)
+        serialize_(self.name, arr)
+        serialize_(self.modname, arr)
+        serialize_(self.filename, arr)
+
+
+@dataclass(frozen=True)
+class Loc:
+    location_data: list[tuple[int, int]]
+    TAG : int = 2
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.location_data, arr)
+
+
+@dataclass(frozen=True)
+class Block:
+    codes: list[Ptr]
+    location_data: int
+    TAG : int = 3
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.codes, arr)
+        serialize_(self.location_data, arr)
+
+
+@dataclass(frozen=True)
+class Diana_FunctionDef:
+    target: int
+    metadataInd: int
+    code: Block
+    TAG : int = 4
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target, arr)
         serialize_(self.metadataInd, arr)
         serialize_(self.code, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_Return:
-    value: Ptr
-    TAG : int = 1
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_DelGlobalName:
-    slot: int
-    TAG : int = 2
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.slot, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_DelLocalName:
-    slot: int
-    TAG : int = 3
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.slot, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_DelDerefName:
-    slot: int
-    TAG : int = 4
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.slot, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_DeleteItem:
-    value: slot
-    item: slot
+class Diana_Return:
+    reg: int
     TAG : int = 5
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.value, arr)
-        serialize_(self.item, arr)
+        serialize_(self.reg, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_AddAssign:
-    target: Ptr
-    value: Ptr
+class Diana_DelVar:
+    target: int
     TAG : int = 6
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
         serialize_(self.target, arr)
-        serialize_(self.value, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_SubAssign:
-    target: Ptr
-    value: Ptr
+class Diana_SetVar:
+    target: int
+    s_val: int
     TAG : int = 7
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
         serialize_(self.target, arr)
-        serialize_(self.value, arr)
+        serialize_(self.s_val, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_MutAssign:
-    target: Ptr
-    value: Ptr
+class Diana_JumpIf:
+    s_val: int
+    offset: int
     TAG : int = 8
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.value, arr)
+        serialize_(self.s_val, arr)
+        serialize_(self.offset, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_TrueDivAssign:
-    target: Ptr
-    value: Ptr
+class Diana_Jump:
+    offset: int
     TAG : int = 9
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.value, arr)
+        serialize_(self.offset, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_FloorDivAssign:
-    target: Ptr
-    value: Ptr
+class Diana_Raise:
+    s_exc: int
     TAG : int = 10
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.value, arr)
+        serialize_(self.s_exc, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_ModAssign:
-    target: Ptr
-    value: Ptr
+class Diana_Assert:
+    value: int
+    msg: int
     TAG : int = 11
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target, arr)
         serialize_(self.value, arr)
+        serialize_(self.msg, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_PowAssign:
-    target: Ptr
-    value: Ptr
+class Diana_Control:
+    token: int
     TAG : int = 12
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.value, arr)
+        serialize_(self.token, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_LShiftAssign:
-    target: Ptr
-    value: Ptr
+class Diana_Try:
+    body: Block
+    except_handlers: list[Catch]
+    final_body: Block
     TAG : int = 13
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_RShiftAssign:
-    target: Ptr
-    value: Ptr
-    TAG : int = 14
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_BitOrAssign:
-    target: Ptr
-    value: Ptr
-    TAG : int = 15
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_BitAndAssign:
-    target: Ptr
-    value: Ptr
-    TAG : int = 16
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_BitXorAssign:
-    target: Ptr
-    value: Ptr
-    TAG : int = 17
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_For:
-    target: Ptr
-    iter: Ptr
-    body: Ptr
-    TAG : int = 18
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.target, arr)
-        serialize_(self.iter, arr)
         serialize_(self.body, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_While:
-    cond: Ptr
-    body: Ptr
-    TAG : int = 19
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.cond, arr)
-        serialize_(self.body, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_If:
-    cond: Ptr
-    then: Ptr
-    orelse: Ptr
-    TAG : int = 20
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.cond, arr)
-        serialize_(self.then, arr)
-        serialize_(self.orelse, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_With:
-    expr: Ptr
-    body: Ptr
-    TAG : int = 21
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.expr, arr)
-        serialize_(self.body, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_Raise:
-    value: Ptr
-    TAG : int = 22
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_RaiseFrom:
-    value: Ptr
-    from_: Ptr
-    TAG : int = 23
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.value, arr)
-        serialize_(self.from_, arr)
-
-
-@dataclass(frozen=True)
-class Stmt_Try:
-    body: Ptr
-    err_slot: int
-    except_handlers: Ptr
-    final_body: Ptr
-    TAG : int = 24
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.body, arr)
-        serialize_(self.err_slot, arr)
         serialize_(self.except_handlers, arr)
         serialize_(self.final_body, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_Assert:
-    value: Ptr
+class Diana_For:
+    target: int
+    s_iter: int
+    body: Block
+    TAG : int = 14
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target, arr)
+        serialize_(self.s_iter, arr)
+        serialize_(self.body, arr)
+
+
+@dataclass(frozen=True)
+class Diana_With:
+    s_resource: int
+    s_as: int
+    body: Block
+    TAG : int = 15
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.s_resource, arr)
+        serialize_(self.s_as, arr)
+        serialize_(self.body, arr)
+
+
+@dataclass(frozen=True)
+class Diana_DelItem:
+    s_value: int
+    s_item: int
+    TAG : int = 16
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.s_value, arr)
+        serialize_(self.s_item, arr)
+
+
+@dataclass(frozen=True)
+class Diana_GetItem:
+    target_and_value: int
+    s_item: int
+    TAG : int = 17
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target_and_value, arr)
+        serialize_(self.s_item, arr)
+
+
+@dataclass(frozen=True)
+class Diana_BinaryOp_add:
+    target_and_left: int
+    right: int
+    TAG : int = 18
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
+
+
+@dataclass(frozen=True)
+class Diana_BinaryOp_sub:
+    target_and_left: int
+    right: int
+    TAG : int = 19
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
+
+
+@dataclass(frozen=True)
+class Diana_BinaryOp_mul:
+    target_and_left: int
+    right: int
+    TAG : int = 20
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
+
+
+@dataclass(frozen=True)
+class Diana_BinaryOp_truediv:
+    target_and_left: int
+    right: int
+    TAG : int = 21
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
+
+
+@dataclass(frozen=True)
+class Diana_BinaryOp_floordiv:
+    target_and_left: int
+    right: int
+    TAG : int = 22
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
+
+
+@dataclass(frozen=True)
+class Diana_BinaryOp_mod:
+    target_and_left: int
+    right: int
+    TAG : int = 23
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
+
+
+@dataclass(frozen=True)
+class Diana_BinaryOp_pow:
+    target_and_left: int
+    right: int
+    TAG : int = 24
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
+
+
+@dataclass(frozen=True)
+class Diana_BinaryOp_lshift:
+    target_and_left: int
+    right: int
     TAG : int = 25
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.value, arr)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_ExprStmt:
-    value: Ptr
+class Diana_BinaryOp_rshift:
+    target_and_left: int
+    right: int
     TAG : int = 26
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.value, arr)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_Control:
-    kind: int
+class Diana_BinaryOp_bitor:
+    target_and_left: int
+    right: int
     TAG : int = 27
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.kind, arr)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
 
 
 @dataclass(frozen=True)
-class Stmt_Block:
-    stmts: list[Ptr]
+class Diana_BinaryOp_bitand:
+    target_and_left: int
+    right: int
     TAG : int = 28
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.stmts, arr)
+        serialize_(self.target_and_left, arr)
+        serialize_(self.right, arr)
 
 
 @dataclass(frozen=True)
-class Expr_AddOp:
-    left: Ptr
-    right: Ptr
+class Diana_BinaryOp_bitxor:
+    target_and_left: int
+    right: int
     TAG : int = 29
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.left, arr)
+        serialize_(self.target_and_left, arr)
         serialize_(self.right, arr)
 
 
 @dataclass(frozen=True)
-class Expr_SubOp:
-    left: Ptr
-    right: Ptr
+class Diana_UnaryOp_invert:
+    target_and_value: int
     TAG : int = 30
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
+        serialize_(self.target_and_value, arr)
 
 
 @dataclass(frozen=True)
-class Expr_MutOp:
-    left: Ptr
-    right: Ptr
+class Diana_UnaryOp_not:
+    target_and_value: int
     TAG : int = 31
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
+        serialize_(self.target_and_value, arr)
 
 
 @dataclass(frozen=True)
-class Expr_TrueDivOp:
-    left: Ptr
-    right: Ptr
+class Diana_Dict:
+    target: int
+    s_kvs: list[tuple[int, int]]
     TAG : int = 32
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
+        serialize_(self.target, arr)
+        serialize_(self.s_kvs, arr)
 
 
 @dataclass(frozen=True)
-class Expr_FloorDivOp:
-    left: Ptr
-    right: Ptr
+class Diana_Set:
+    target: int
+    s_elts: list[int]
     TAG : int = 33
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
+        serialize_(self.target, arr)
+        serialize_(self.s_elts, arr)
 
 
 @dataclass(frozen=True)
-class Expr_ModOp:
-    left: Ptr
-    right: Ptr
+class Diana_List:
+    target: int
+    s_elts: list[int]
     TAG : int = 34
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
+        serialize_(self.target, arr)
+        serialize_(self.s_elts, arr)
 
 
 @dataclass(frozen=True)
-class Expr_PowOp:
-    left: Ptr
-    right: Ptr
+class Diana_Generator:
+    target_and_func: int
     TAG : int = 35
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
+        serialize_(self.target_and_func, arr)
 
 
 @dataclass(frozen=True)
-class Expr_LShiftOp:
-    left: Ptr
-    right: Ptr
+class Diana_Call:
+    target: int
+    s_f: int
+    s_args: list[int]
     TAG : int = 36
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
+        serialize_(self.target, arr)
+        serialize_(self.s_f, arr)
+        serialize_(self.s_args, arr)
 
 
 @dataclass(frozen=True)
-class Expr_RShiftOp:
-    left: Ptr
-    right: Ptr
+class Diana_Format:
+    target: int
+    format: int
+    args: list[int]
     TAG : int = 37
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
-
-
-@dataclass(frozen=True)
-class Expr_BitOrOp:
-    left: Ptr
-    right: Ptr
-    TAG : int = 38
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
-
-
-@dataclass(frozen=True)
-class Expr_BitAndOp:
-    left: Ptr
-    right: Ptr
-    TAG : int = 39
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
-
-
-@dataclass(frozen=True)
-class Expr_BitXorOp:
-    left: Ptr
-    right: Ptr
-    TAG : int = 40
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
-
-
-@dataclass(frozen=True)
-class Expr_GlobalBinder:
-    slot: int
-    TAG : int = 41
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.slot, arr)
-
-
-@dataclass(frozen=True)
-class Expr_LocalBinder:
-    slot: int
-    TAG : int = 42
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.slot, arr)
-
-
-@dataclass(frozen=True)
-class Expr_DerefBinder:
-    slot: int
-    TAG : int = 43
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.slot, arr)
-
-
-@dataclass(frozen=True)
-class Expr_AndOp:
-    left: Ptr
-    right: Ptr
-    TAG : int = 44
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
-
-
-@dataclass(frozen=True)
-class Expr_OrOp:
-    left: Ptr
-    right: Ptr
-    TAG : int = 45
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.left, arr)
-        serialize_(self.right, arr)
-
-
-@dataclass(frozen=True)
-class Expr_InvertOp:
-    value: Ptr
-    TAG : int = 46
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class Expr_NotOp:
-    value: Ptr
-    TAG : int = 47
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class Expr_Lambda:
-    frees: list[int]
-    code: int
-    TAG : int = 48
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.frees, arr)
-        serialize_(self.code, arr)
-
-
-@dataclass(frozen=True)
-class Expr_IfExpr:
-    cond: Ptr
-    then: Ptr
-    orelse: Ptr
-    TAG : int = 49
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.cond, arr)
-        serialize_(self.then, arr)
-        serialize_(self.orelse, arr)
-
-
-@dataclass(frozen=True)
-class Expr_Dict:
-    keys: list[Ptr]
-    values: list[Ptr]
-    TAG : int = 50
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.keys, arr)
-        serialize_(self.values, arr)
-
-
-@dataclass(frozen=True)
-class Expr_Set:
-    elts: list[Ptr]
-    TAG : int = 51
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.elts, arr)
-
-
-@dataclass(frozen=True)
-class Expr_List:
-    elts: list[Ptr]
-    TAG : int = 52
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.elts, arr)
-
-
-@dataclass(frozen=True)
-class Expr_Generator:
-    target: Ptr
-    iter: Ptr
-    body: Ptr
-    TAG : int = 53
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
         serialize_(self.target, arr)
-        serialize_(self.iter, arr)
-        serialize_(self.body, arr)
-
-
-@dataclass(frozen=True)
-class Expr_Comprehension:
-    adder: Ptr
-    target: Ptr
-    iter: Ptr
-    body: Ptr
-    TAG : int = 54
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.adder, arr)
-        serialize_(self.target, arr)
-        serialize_(self.iter, arr)
-        serialize_(self.body, arr)
-
-
-@dataclass(frozen=True)
-class Expr_Call:
-    f: Ptr
-    args: Ptr
-    TAG : int = 55
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.f, arr)
-        serialize_(self.args, arr)
-
-
-@dataclass(frozen=True)
-class Expr_Format:
-    format: int
-    args: Ptr
-    TAG : int = 56
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
         serialize_(self.format, arr)
         serialize_(self.args, arr)
 
 
 @dataclass(frozen=True)
-class Expr_Const:
-    constInd: int
-    TAG : int = 57
+class Diana_Const:
+    target: int
+    p_const: int
+    TAG : int = 38
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.constInd, arr)
+        serialize_(self.target, arr)
+        serialize_(self.p_const, arr)
 
 
 @dataclass(frozen=True)
-class Expr_Attr:
-    value: Ptr
-    attr: int
-    TAG : int = 58
+class Diana_GetAttr:
+    target_and_value: int
+    p_attr: int
+    TAG : int = 39
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.value, arr)
-        serialize_(self.attr, arr)
+        serialize_(self.target_and_value, arr)
+        serialize_(self.p_attr, arr)
 
 
 @dataclass(frozen=True)
-class Expr_GlobalName:
+class Diana_MoveVar:
+    target: int
     slot: int
-    TAG : int = 59
+    TAG : int = 40
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.target, arr)
         serialize_(self.slot, arr)
 
 
 @dataclass(frozen=True)
-class Expr_LocalName:
-    slot: int
-    TAG : int = 60
+class Diana_Tuple:
+    target: int
+    s_elts: list[int]
+    TAG : int = 41
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.slot, arr)
+        serialize_(self.target, arr)
+        serialize_(self.s_elts, arr)
 
 
 @dataclass(frozen=True)
-class Expr_DerefName:
-    slot: int
-    TAG : int = 61
+class Diana_PackTuple:
+    targets: list[int]
+    s_value: int
+    TAG : int = 42
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.slot, arr)
-
-
-@dataclass(frozen=True)
-class Expr_Item:
-    value: Ptr
-    item: Ptr
-    TAG : int = 62
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.value, arr)
-        serialize_(self.item, arr)
-
-
-@dataclass(frozen=True)
-class Expr_Tuple:
-    elts: list[Ptr]
-    TAG : int = 63
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.elts, arr)
-
-
-@dataclass(frozen=True)
-class Arg_GlobalNameOut:
-    ind: int
-    TAG : int = 64
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.ind, arr)
-
-
-@dataclass(frozen=True)
-class Arg_LocalNameOut:
-    ind: int
-    TAG : int = 65
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.ind, arr)
-
-
-@dataclass(frozen=True)
-class Arg_DerefNameOut:
-    ind: int
-    TAG : int = 66
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.ind, arr)
-
-
-@dataclass(frozen=True)
-class Arg_ItemOut:
-    value: Ptr
-    item: Ptr
-    TAG : int = 67
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.value, arr)
-        serialize_(self.item, arr)
-
-
-@dataclass(frozen=True)
-class Arg_AttrOut:
-    value: Ptr
-    attr: int
-    TAG : int = 68
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.value, arr)
-        serialize_(self.attr, arr)
-
-
-@dataclass(frozen=True)
-class Arg_Val:
-    value: Ptr
-    TAG : int = 69
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.value, arr)
-
-
-@dataclass(frozen=True)
-class ExceptHandler_ArbitraryCatch:
-    assign_slot: int
-    body: Ptr
-    TAG : int = 70
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.assign_slot, arr)
-        serialize_(self.body, arr)
-
-
-@dataclass(frozen=True)
-class ExceptHandler_TypeCheckCatch:
-    type: Ptr
-    assign_slot: int
-    body: Ptr
-    TAG : int = 71
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.type, arr)
-        serialize_(self.assign_slot, arr)
-        serialize_(self.body, arr)
+        serialize_(self.targets, arr)
+        serialize_(self.s_value, arr)
 
 

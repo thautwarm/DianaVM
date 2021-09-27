@@ -29,6 +29,8 @@ namespace DianaScript
         public DObj[] vstack;
 
         public NameSpace nameSpace;
+
+        public Ref[] freevals;
         public void Push(DObj v) => throw new NotImplementedException();
 
         public DObj Pop() => throw new NotImplementedException();
@@ -54,6 +56,7 @@ namespace DianaScript
 
         public DCode code;
         public DFlatGraphCode flatGraph;
+
         public Dictionary<InternString, Dictionary<InternString, DObj>> modules;
 
         public static void assert(bool a, string msg)
@@ -65,8 +68,11 @@ namespace DianaScript
         public Ptr ptr;
         public DObj val;
 
-        public IEnumerable<Ptr> Execute(Frame frame, Ptr ptr)
+        
+        public IEnumerable<Ptr> Stmt(Frame frame, Ptr ptr)
         {
+            
+
             switch (ptr.code)
             {
                 case CODE.Stmt_FunctionDef:
@@ -92,13 +98,45 @@ namespace DianaScript
                 case CODE.Stmt_DelLocalName:
                     frame.vstack[flatGraph.stmt_dellocalnames[ptr.ind].slot] = null;
                     yield break;
+
+                case CODE.Stmt_DelGlobalName:
+                    InternString globalNameIStr = code.constStrPool[flatGraph.stmt_delglobalnames[ptr.ind].slot];
+                    if (!frame.nameSpace.Remove(globalNameIStr))
+                        throw new KeyNotFoundException($"cannot delete global name {globalNameIStr.ToString()}: does not exist.");
+                    yield break;
                 
-                    
-                    
+                case CODE.Stmt_DelDerefName:
+                    var d = frame.freevals[flatGraph.stmt_delderefnames[ptr.ind].slot];
+                    if (d.cell_contents == null)
+                        throw new NullReferenceException("");
+                    d.cell_contents = null;
+                    yield break;
+                case CODE.Stmt_DeleteItem:
+                {
+                    yield return flatGraph.stmt_deleteitems[ptr.ind].value;
+                    var value = val;
+                    yield return flatGraph.stmt_deleteitems[ptr.ind].item;
+                    var item = val;
+                    value.__delitem__(item);
+                    yield break;
+                }
 
+                case CODE.Stmt_AddAssign:
+                {
+                    yield return flatGraph.stmt_deleteitems[ptr.ind].value;
+                    var left = val;
+                    yield return flatGraph.stmt_deleteitems[ptr.ind].item;
+                    var right = val;
+                    left.__add__(right);
+                    
+                    flatGraph.stmt_deleteitems[ptr.ind].value;
+                    yield break;
+                }
             }
+        }
 
-
+        public IEnumerable<Ptr> LHSExpr(Frame frame, Ptr ptr){
+            throw new NotImplementedException();
         }
     }
 }

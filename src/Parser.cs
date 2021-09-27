@@ -46,7 +46,13 @@ namespace DianaScript
             fileStream = fs;
             setup_cache();
         }
-
+        
+        public (int, int) Read(THint<(int, int)> _){
+            return (ReadInt(), ReadInt());
+        }
+        public InternString Read(THint<InternString> _){
+            return ReadStr().ToIStr();
+        }
         public int Read(THint<int> _) => ReadInt();
         public int ReadInt()
         {

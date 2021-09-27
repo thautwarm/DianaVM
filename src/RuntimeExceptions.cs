@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+
 namespace DianaScript
 {
 
 
 
+    
     public class ExceptionWithFrames : Exception
     {
+
         public System.Collections.Generic.List<DFrame> frames;
         public Exception e;
         public ExceptionWithFrames(List<DFrame> frames, Exception e) : base("Unhandled exception in the VM side.")
