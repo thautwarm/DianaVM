@@ -1,9 +1,11 @@
 from __future__ import annotations
 from collections import defaultdict
 from functools import wraps
+import functools
 from lark import Lark, Transformer, v_args
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from contextlib import contextmanager
+from json.decoder import scanstring
 import io
 
 grammar = r"""
@@ -33,16 +35,49 @@ param : id ":" type -> param
 from  : -> none
       | "from" "{" id+ "}" -> many
 node : template_id "(" seplist{",", param} ")"  from -> node
-category : id "=" "{" node+ "}" -> category
+meth : type id "(" seplist{",", param} ")" -> meth
+
+topl : meth -> just
+     | node -> just
+category : id "=" "{" topl* "}" -> category
+
 start : category* -> many
+"""
+
+
+type_grammar = r"""
+%import common.WS
+%import common.CNAME
+%ignore WS
+%ignore COMMENT
+
+COMMENT: /\s*/ "//" /[^\n]/*
+
+id : CNAME -> asstr
+
+seplist{sep, e} : e (sep e)* -> many
+                | -> empty
+
+type : id                              -> typename
+     | type "[" "]"                    -> array_type
+     | type "<" seplist{",", type} ">" -> generic_type
+
+start : type -> just
 """
 
 
 
 @v_args(inline=True)
 class Trans(Transformer):
+    def just(self, a):
+        return a
+    def unesc(self, s):
+        return scanstring(scanstring(s, 1)[0])
     def param(self, a, b):
         return a, b
+    def meth(self, a, b, c):
+        r = Method(a, b, c)
+        return r
     def asstr(self, s):
         return str(s)
     def typename(self, s):
@@ -50,6 +85,8 @@ class Trans(Transformer):
     def array_type(self, t):
         return t + "[]"
     def generic_type(self, t, args):
+        if t == 'Tuple':
+            return f"({', '.join(args)})"
         return f"{t}<{', '.join(args)}>"
     def empty(self):
         return ()
@@ -73,13 +110,54 @@ class Node:
 class Category:
     typename: str
     nodes: list[Node]
+    emits = []
+
+@dataclass
+class Method:
+    ret: str
+    name: str
+    params: list[tuple[str, str]]
+    support_case: list[str] = field(default_factory=list)
+
+
+parser = Lark(
+    grammar,
+    transformer=Trans(),
+    parser="lalr",
+    start="start",
+    debug=True,
+)
+
+
+@v_args(inline=True)
+class TypeTrans(Trans):
+    def typename(self, s):
+        return {"List": 'list', 'Tuple': 'tuple'}.get(s, s)
+    def array_type(self, t):
+        return f"list[{t}]"
+    def generic_type(self, t, args):
+        return f"{t}[{', '.join(args)}]"
+type_parser = Lark(
+    type_grammar,
+    transformer=TypeTrans(),
+    parser="lalr",
+    start="start",
+    debug=True,
+)
+
+
+
+CODE = "CODE"
 
 
 class Codegen:
     IO: io.TextIOWrapper
+    gen_seqs : list[tuple[str, list[tuple[str, str]]]] = []
+
     def __init__(self):
         self.indent = ""
         self.enums = defaultdict(list)
+        self.methods: dict[str, list[Method]] = defaultdict(list)
     
     @contextmanager
     def tab(self, do=True):
@@ -96,20 +174,27 @@ class Codegen:
         self.IO.write(self.indent)
         self.IO.write(other)
         self.IO.write('\n')
+        return self
 
     @property
     def newline(self):
         self.IO.write("\n")
-    def __call__(self, categories: list[Category]):
+    
+    
+
+    def graph_code_def(self, categories: list[Category]):
         self << "using System;"
-        self << "using System.IO;"
         self << "using System.Collections.Generic;"
         self << "namespace DianaScript"
         self << "{"
-
+        
+        
+        
         assert categories
-        gen_seqs : list[tuple[str, list[tuple[str, str]]]]= []
+        gen_seqs = self.gen_seqs
         for each in categories:
+            for e in each.emits:
+                self << e
             match each:
                 case Category(typename, nodes):
                     pass
@@ -120,17 +205,30 @@ class Codegen:
             for node in nodes:
                 match node:
                     case Node(template_id, params, temp_args) if temp_args:
+                        meths = self.methods[typename]
                         for temp_arg in temp_args:
-                            kind_name = template_id.replace('$', temp_arg)
+                            kind_name = typename + '_' + template_id.replace('$', temp_arg)
                             gen_seqs.append((kind_name, params))
                             self.enums[typename].append(kind_name)
+                            for meth in meths:
+                                meth.support_case.append(kind_name)
+                                print("+", typename)
 
 
                     case Node(kind_name, params, None):
+                        kind_name = typename + "_" + kind_name
                         self.enums[typename].append(kind_name)
                         gen_seqs.append((kind_name, params))
-                    case _:
-                        raise
+                        meths = self.methods[typename]
+                        for meth in meths:
+                                meth.support_case.append(kind_name)
+                                
+
+                    case Method() as a:
+                        self.methods[typename].append(a)
+                        pass
+                    case a:
+                        raise Exception(a)
         for kind_name, params in gen_seqs:
             
             self << f"public class {kind_name}"
@@ -141,63 +239,59 @@ class Codegen:
                     self << f"public {type} {field};"
                     self.newline
                 
-                def_p = ', '.join(f"{type} {field}" for field, type in params)
-                self << f"public static {kind_name} Make({def_p}) => new {kind_name}"
-                self << "{"
-                with self.tab():
-                    for field, type in params:
-                        self << f"{field} = {field},"
-                self << "};"
+                # def_p = ', '.join(f"{type} {field}" for field, type in params)
+                # self << f"public static {kind_name} Make({def_p}) => new {kind_name}"
+                # self << "{"
+                # with self.tab():
+                #     for field, type in params:
+                #         self << f"{field} = {field},"
+                # self << "};"
 
             self << "}"
             self.newline
         
-        for enum_category,  kinds in self.enums.items():
-            self << f"public enum {enum_category}: int"
-            self << "{"
+        self << f"public enum {CODE}"
+        self << "{"
+        for _, kinds in self.enums.items():
             with self.tab():
                 for kind in kinds:
                     self << f"{kind},"
-            self << "}"
-            self.newline
+        self << "}"
+        self.newline
         
-        self << "public partial class DFlatGraphCode"
+        self << "public class DFlatGraphCode"
         self << "{"
         with self.tab():
             for kind,  params in gen_seqs:
-                
                 self << f"public {kind}[] {kind.lower()}s;"
                 self.newline
-                    
         self << "}"
-
+        self << "}"
+    def gen_parser(self, categories):
+        self << "using System;"
+        self << "using System.IO;"
+        self << "using System.Collections.Generic;"
+        self << "namespace DianaScript"
+        self << "{"
+        for each in categories:
+            for e in each.emits:
+                self << e
+        gen_seqs = self.gen_seqs
+        
         self << "public partial class AIRParser"
         self << "{"
 
+        
         with self.tab():
-            for enum_category,  kinds in self.enums.items():
+            self << f"public {CODE} Read{CODE}()"
+            self << "{"
+            self << "    fileStream.Read(cache_4byte, 0, 1);"
+            self << f"    return ({CODE})cache_4byte[0];"
+            self << "}"
+            self.newline
 
-                self << f"public {enum_category} Read{enum_category}Tag()"
-                self << "{"
-                self << "    fileStream.Read(cache_4byte, 0, 1);"
-                self << f"    return ({enum_category})cache_4byte[0];"
-                self << "}"
-                self.newline
-
-                
-                self << f"public Ptr<{enum_category}> Read(THint<Ptr<{enum_category}>> _)"
-                self << "{"
-                with self.tab():
-                    self << f"var tag = Read{enum_category}Tag();"
-                    self << f"switch(tag)"
-                    self << "{"
-                    with self.tab():
-                        for kind in kinds:
-                            self << f"case {enum_category}.{kind}: return new Ptr<{enum_category}>(tag, ReadInt());"
-                        self << f'default: throw new InvalidDataException($"invalid tag {{tag}} for {enum_category}.");'
-                    self << "}"
-                self << "}"
-
+            self << f"public Ptr Read(THint<Ptr> _) => new Ptr(Read{CODE}(), ReadInt());"
+            
             for kind, params in gen_seqs:
                 self << f"public {kind} Read(THint<{kind}> _) => new {kind}"
                 self << "{"
@@ -215,17 +309,42 @@ class Codegen:
             self << "};"
             self.newline
             
-            for t in ["int", "string", "float", "bool", "DFlatGraphCode", *(x[0] for x in gen_seqs),
-                        *(f"Ptr<{x}>" for x in self.enums.keys()),
-                    ]:
+            for t in ["int", "string", "float", "bool", "DFlatGraphCode", *(x[0] for x in gen_seqs), "Ptr" ]:
                 generate_array_read(self, t)
                     
-        self << "}"
-        
-        
-        self << "}"
+        self << "}" << "}"
     
     
+    def gen_python_code_builder(self, _):
+        self << "from __future__ import annotations"
+        self << "from dataclasses import dataclass"
+        self << "from dianascript.serialize import Ptr, serialize_"
+        self.newline
+        self.newline
+        
+        @functools.lru_cache()
+        def py_parse(s):
+            return type_parser.parse(s)
+
+        for i, (kind, params) in enumerate(self.gen_seqs):
+            self << "@dataclass(frozen=True)"
+            self << f"class {kind}:"
+            with self.tab():
+                for field, type in params:
+                    py_type = py_parse(type)
+                    self << f"{field}: {py_type}"
+                self << f"TAG : int = {i}"
+                
+                self.newline
+                self << "def serialize_(self, arr: bytearray):"
+                with self.tab():
+                    self << "arr.append(self.TAG)"
+                    for field, type in params:
+                        self << f"serialize_(self.{field}, arr)"
+
+            self.newline
+            self.newline
+        
     
 def generate_array_read(self: Codegen, tname: str):
     hint_name = tname.replace('<', '__').replace('>', '__')
@@ -242,13 +361,7 @@ def generate_array_read(self: Codegen, tname: str):
     self << "}"
 
 
-parser = Lark(
-    grammar,
-    transformer=Trans(),
-    parser="lalr",
-    start="start",
-    debug=True,
-)
+
 
 
 seq = parser.parse(open("fgraph.spec").read())
@@ -258,4 +371,11 @@ install_extras(['dataclasses'])
 
 cg = Codegen()
 cg.IO = open("src/FlatGraph.cs", 'w', encoding='utf8')
-cg(seq)
+cg.graph_code_def(seq)
+
+
+cg.IO = open("src/FlatGraphParser.cs", 'w', encoding='utf8')
+cg.gen_parser(seq)
+
+cg.IO = open(f"dianascript/code_cons.py", 'w', encoding='utf8')
+cg.gen_python_code_builder(seq)

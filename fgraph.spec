@@ -1,59 +1,84 @@
-
 Stmt = {
-    FunctionDef(frees: int[], code: int)
-    Return(value: Ptr<Expr>)
+    FunctionDef(metadataInd: int, code: Ptr)
+        
+    end
+    Return(value: Ptr)
     Del$Name(slot: int) from { Global Local Deref }
-    DeleteItem(value: Ptr<Expr>, item: Ptr<Expr>)
-    Assign(targets: Ptr<Expr>, value: Ptr<Expr>)
-    $Assign(target: Ptr<Expr>, value: Ptr<Expr>) from {
+    DeleteItem(value: Ptr, item: Ptr)
+    Assign(targets: Ptr, value: Ptr)
+        x1 = eval.rhs value
+        for each in targets{
+            push x1 to valuestack
+            eval.rhs each
+        }
+    end    
+
+    $Assign(target: Ptr, value: Ptr) from {
         Add Sub Mut TrueDiv FloorDiv Mod Pow LShift RShift BitOr BitAnd BitXor
     }
-    For(target: Ptr<Expr>, iter: Ptr<Expr>, body: Ptr<Stmt>[])
-    While(cond: Ptr<Expr>, body: Ptr<Stmt>[])
-    If(cond: Ptr<Expr>, then: Ptr<Stmt>[], orelse: Ptr<Stmt>[])
-    With(expr: Ptr<Expr>, body: Ptr<Stmt>[])
-    Raise(value: Ptr<Expr>, from: Ptr<Expr>)
-    Try(body: Ptr<Stmt>[], except_handlers: Ptr<ExceptHandler>[], final_body: Ptr<Stmt>[])
-    Assert(value: Ptr<Expr>)
-    ExprStmt(value: Ptr<Expr>)
-    Control(kind: int) // break, continue
+        eval.rhs target
+        pop valuestack to x1
+        eval.rhs value
+        pop valuestack to x2
+        r  <- extern.op_$(x2, x1) (check exception)
+        push r to valuestack
+    end
+
+    For(target: Ptr, iter: Ptr, body: Ptr)
+    While(cond: Ptr, body: Ptr)
+    If(cond: Ptr, then: Ptr, orelse: Ptr)
+    With(expr: Ptr, body: Ptr)
+    Raise(value: Ptr)
+    RaiseFrom(value: Ptr, from_: Ptr)
+    Try(body: Ptr, err_slot: int, except_handlers: Ptr, final_body: Ptr)
+    Assert(value: Ptr)
+    ExprStmt(value: Ptr)
+    Control(kind: int) // break, continue, reraise
+    Block(stmts: Ptr[])
 }
 
+// RHS case: (Frame) -> DObj
+// LHS case: (Frame, DObj) -> void
+
 Expr = {
-    $Op(left: Ptr<Expr>, right: Ptr<Expr>) from {
+
+    $Op(left: Ptr, right: Ptr) from {
         Add Sub Mut TrueDiv FloorDiv Mod Pow LShift RShift BitOr BitAnd BitXor
     }
     $Binder(slot: int) from { Global Local Deref }
-    $Op(left: Ptr<Expr>, right: Ptr<Expr>) from {And Or}
-    $Op(value: Ptr<Expr>) from { Invert Not }
+    $Op(left: Ptr, right: Ptr) from {And Or}
+    $Op(value: Ptr) from { Invert Not }
     Lambda(frees : int[], code: int)
-    IfExpr(cond: Ptr<Expr>, then: Ptr<Stmt>[], orelse: Ptr<Stmt>[])
-    Dict(keys: Ptr<Expr>[], values: Ptr<Expr>[])
-    Set(elts: Ptr<Expr>[])
-    List(elts: Ptr<Expr>[])
-    Generator(target: Ptr<Expr>, iter: Ptr<Expr>, body: Ptr<Expr>)
-    Comprehension(adder: Ptr<Expr>, target: Ptr<Expr>, iter: Ptr<Expr>, body: Ptr<Expr>)
-    Call(f: Ptr<Expr>, args: Ptr<Arg>)
-    Format(format: int, args: Ptr<Expr>)
+    IfExpr(cond: Ptr, then: Ptr, orelse: Ptr)
+    Dict(keys: Ptr[], values: Ptr[])
+    Set(elts: Ptr[])
+    List(elts: Ptr[])
+    Generator(target: Ptr, iter: Ptr, body: Ptr)
+    Comprehension(adder: Ptr, target: Ptr, iter: Ptr, body: Ptr)
+    Call(f: Ptr, args: Ptr)
+    Format(format: int, args: Ptr)
     Const(constInd: int)
-    Attr(value: Ptr<Expr>, attr: int)
-    $Name(slot: int) from { Global Local Deref }
-    Item(value: Ptr<Expr>, item: Ptr<Expr>)
-    Tuple(elts: Ptr<Expr>[])
-}
 
+    Attr(value: Ptr, attr: int)
+    $Name(slot: int) from { Global Local Deref }
+    Item(value: Ptr, item: Ptr)
+    Tuple(elts: Ptr[])
+} 
+
+
+// Arg(Frame) -> DObj
 Arg = {
     // lhs expr
+
     $NameOut(ind: int) from { Global Local Deref }
-    ItemOut(value: Ptr<Expr>, item: Ptr<Expr>)
-    AttrOut(value: Ptr<Expr>, attr: int)
-    Val(value: Ptr<Expr>)
+    ItemOut(value: Ptr, item: Ptr)
+    AttrOut(value: Ptr, attr: int)
+    Val(value: Ptr)
 }
 
+// ExceptHandler(Frame, exc: Exception) -> bool
 ExceptHandler = {
-
     // assign_slot = -1 no store
-    ArbitraryCatch(assign_slot: int, body: Ptr<Stmt>[])
-    TypeCheckCatch(type: Ptr<Expr>, assign_slot: int, body: Ptr<Stmt>[])
-
+    ArbitraryCatch(assign_slot: int, body: Ptr)
+    TypeCheckCatch(type: Ptr, assign_slot: int, body: Ptr)
 }

@@ -12,6 +12,7 @@ namespace DianaScript
             Console.WriteLine("");
         }
 
+        public static Dictionary<InternString, DObj> Globals => throw new NotImplementedException();
         public static Dictionary<string, DObj> GetGlonal()
         {
             var ns = new Dictionary<string, DObj>();

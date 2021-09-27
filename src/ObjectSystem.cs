@@ -202,6 +202,13 @@ namespace DianaScript
 
     public partial class DCode : DObj
     {
+        public DObj[] constObjPool;
+        public InternString[] constStrPool;
+        public int[] constIntPool;
+
+        public FuncMeta[] funcMetas;
+
+
         public object Native => this;
         public string __repr__ => "<codeobj>";
 
@@ -261,32 +268,54 @@ namespace DianaScript
     {
         public object Native => this;
 
-        public string Repr => $"<function {code.name}>";
+        public string Repr => $"<function>";
+        
+        public int funcMetaInd;
+        public Ptr body;
 
-        public DCode code;
-
+        public Dictionary<InternString, DObj> name_space;
         public DObj[] freevals;
-        public DObj[] defaults; // TODO: support fast default arguments
-
-        public Dictionary<string, DObj> name_space;
+        
+        
         public string __repr__ => $"<code at {(this as DObj).__hash__}>";
 
         public static DFunc Make(
-            DCode code, DObj[] freevals = null,
-            DObj[] defaults = null, Dictionary<string, DObj> name_space = null
+            Ptr body, int funcMetaInd, DObj[] freevals = null, Dictionary<InternString, DObj> name_space = null
         )
         {
             return new DFunc
             {
-                code = code,
+                body = body,
+                funcMetaInd = funcMetaInd,
                 freevals = freevals ?? new DObj[0],
-                defaults = defaults ?? new DObj[0],
-                name_space = name_space ?? new Dictionary<string, DObj>()
+                name_space = name_space ?? new Dictionary<InternString, DObj>()
             };
         }
     }
 
+    
+    public partial class DBigFrame
+    {
+        public Dictionary<InternString, DObj> globals;
+        public DObj[] valueStack;
 
+        public int vstackOffset;
+
+        public Stack<Ptr> miniFrame;
+
+        public Stack<int> srcPosIndices;
+
+        public bool catchingException;
+
+        public static DBigFrame Make(Dictionary<InternString, DObj> globals, DObj[] valueStack, Ptr miniFrame, int rootSrcPosInd, int vstackOffset=0) => new DBigFrame
+        {
+            globals = globals,
+            valueStack = valueStack,
+            miniFrame = new Stack<Ptr>{ miniFrame },
+            srcPosIndices = new Stack<int> { rootSrcPosInd },
+            vstackOffset = vstackOffset
+        };
+    }
     public partial class DFrame : DObj
     {
         public static DFrame Make(DFunc func, DObj[] localvals = null) => new DFrame

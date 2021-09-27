@@ -5,6 +5,9 @@ namespace DianaScript
 public partial class DCode
 {
   public DClsObj GetCls => Cls.unique;
+
+
+  public DFlatGraphCode flatGraph;
   public static DObj bind_get_bc(Args _args) // bind `this` prop 
   {
     var nargs = _args.NArgs;

@@ -1,16 +1,16 @@
-
+using System;
 
 namespace DianaScript
 {
-    public struct Ptr<T>
+    public struct Ptr
     {
 
-        public T kind;
+        public int code;
         public int ind;
-
-        public Ptr(T kind, int ind){
-            this.kind = kind;
+        
+        public Ptr(CODE code, int ind){
             this.ind = ind;
+            this.code = (int) code;
         }
     }
 }
