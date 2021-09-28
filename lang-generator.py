@@ -15,6 +15,8 @@ grammar = open("lang-generator.lark")
 
 @v_args(inline=True)
 class Trans(Transformer):
+    def data(self, a, b):
+        return Data(a, b)
     def just(self, a):
         return a
     def unesc(self, s):
@@ -75,6 +77,10 @@ class Code:
     code: str
     is_static : bool = False
 
+@dataclass
+class Data:
+    type: str
+    name: str
 
 parser = Lark(
     grammar,
@@ -113,7 +119,7 @@ class TypeTrans(Trans):
     def typename(self, s):
         return {"List": 'list', 'Tuple': 'tuple', 'string': 'str'}.get(s, s)
     def array_type(self, t):
-        return f"list[{t}]"
+        return f"tuple[{t}, ...]"
     def generic_type(self, t, args):
         return f"{t}[{', '.join(args)}]"
     def tuple_type(self, *args):
@@ -228,11 +234,14 @@ class Codegen:
                 case Dataclass(classname, params):
                     self.dataclasses.append(classname)
                     gen_seqs.append((classname, params))
+                case Data(type):
+                    gen_seqs.append((type, []))
                 case a:
                     raise Exception(a)
         print(list(map(fst, gen_seqs)))
         for kind_name, params in gen_seqs:
-            self.generate_data_class(kind_name, params, generate_constructor=kind_name in self.dataclasses)
+            if params:
+                self.generate_data_class(kind_name, params, generate_constructor=kind_name in self.dataclasses)
         
         self << f"public enum {CODE}"
         self << "{"
@@ -241,7 +250,7 @@ class Codegen:
         self << "}"
         self.newline
         
-        self << "public class DFlatGraphCode"
+        self << "public partial class DFlatGraphCode"
         self << "{"
         for kind,  params in self.tab_iter(gen_seqs):
             self << f"public {kind}[] {kind.lower()}s;"
@@ -272,6 +281,7 @@ class Codegen:
 
             self << f"public Ptr Read(THint<Ptr> _) => new Ptr(Read{CODE}(), ReadInt());"
             for kind, params in gen_seqs:
+                if not params: continue
                 self << f"public {kind} Read(THint<{kind}> _) => new {kind}"
                 self << "{"
                 for field, type in self.tab_iter(params):
@@ -285,7 +295,7 @@ class Codegen:
                 self << f"{kind.lower()}s = Read(THint<{kind}[]>.val),"
             self << "};"
             self.newline
-            for t in ["int", "(int, int)", "string", "float", "bool", *(map(fst, gen_seqs)), "Ptr" ]:
+            for t in ["int", "(int, int)", "float", "bool", *(map(fst, gen_seqs)), "Ptr" ]:
                 generate_array_read(self, t)
                     
         self << "}" << "}"
@@ -317,8 +327,27 @@ class Codegen:
                     self << "arr.append(self.TAG)"
                     for field, type in params:
                         self << f"serialize_(self.{field}, arr)"
+                self.newline
+                self << "def as_ptr(self) -> int:"
+                with self.tab():
+                    self << f"return DFlatGraphCode.{kind.lower()}s.cache(self)"
             self.newline
             self.newline
+        kind = "DFlatGraphCode"
+        params =  [(f"{kind.lower()}s", kind) for kind, _ in self.gen_seqs]
+        self << f"class {kind}:"
+        with self.tab():
+            for field, type in params:
+                py_type = py_parse(type)
+                self << f"{field} : Builder[{py_type}] = Builder()"
+            
+            self.newline
+            self << "@classmethod"
+            self << "def serialize_(cls, arr: bytearray):"
+            with self.tab():
+                for field, type in params:
+                    self << f"serialize_(cls.{field}, arr)"
+    
 
     def generate_interpreter(self, language: Language):
         open('VMTemplate.cs').read()

@@ -36,6 +36,7 @@ topl : template_id "(" seplist{",", param} ")"  from  code  -> node
      | "static" codeemit -> staticmethod
      | "local" codeemit -> localmethod
      | "dataclass" id "(" seplist{",", param} ")" -> dataclass
+     | "data" type "as" id -> data
 
 language : "language" id list{topl} -> language
 start : language  -> just

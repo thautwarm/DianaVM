@@ -155,7 +155,12 @@ namespace DianaScript
             //     bc: bc, consts: consts, locs: locs, strings: strings,
             //     nfree: nfree, narg: narg, nlocal: nlocal, varg: varg,
             //     filename: filename, name: name);
+
+
+
         }
+
+        public DObj Read(THint<DObj> _) => ReadObj();
         public DObj ReadObj()
         {
             fileStream.Read(cache_4byte, 0, 1);

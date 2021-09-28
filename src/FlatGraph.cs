@@ -21,19 +21,22 @@ public struct Catch
 public struct FuncMeta
 {
     public bool is_vararg;
-    public int narg;
     public int[] freeslots;
+    public int narg;
+    public int nlocal;
     public InternString name;
     public InternString modname;
     public string filename;
 
-    public static FuncMeta Make(bool is_vararg, int narg, int[] freeslots, InternString name, InternString modname, string filename) => new FuncMeta
+    public static FuncMeta Make(bool is_vararg, int[] freeslots, int narg, int nlocal, InternString name, InternString modname, string filename) => new FuncMeta
     {
         is_vararg = is_vararg,
 
+        freeslots = freeslots,
+
         narg = narg,
 
-        freeslots = freeslots,
+        nlocal = nlocal,
 
         name = name,
 
@@ -108,7 +111,7 @@ public struct Diana_Raise
 public struct Diana_Assert
 {
     public int value;
-    public int msg;
+    public int s_msg;
 
 }
 public struct Diana_Control
@@ -341,8 +344,14 @@ public enum CODE
     Diana_PackTuple,
 }
 
-public class DFlatGraphCode
+public partial class DFlatGraphCode
 {
+    public string[] strings;
+
+    public DObj[] dobjs;
+
+    public InternString[] internstrings;
+
     public Catch[] catchs;
 
     public FuncMeta[] funcmetas;

@@ -20,12 +20,14 @@ from "src/Parser.cs": for Object Encoding
         public const byte Code = 7;
     }
 """
+from __future__ import annotations
 import struct
+from dataclasses import dataclass
+from typing import Generic, TypeVar
 
 special_bit = 0b10000000
 bool_bit = 0b10000010
 none_bit = 0b10000000
-from dataclasses import dataclass
 
 obj_box_tags: dict[type, int| None] = {
     int: 0,
@@ -52,6 +54,9 @@ class DObj:
             barr.append(v)
         serialize_(self.o, barr)
 
+    def as_ptr(self):
+        pass
+
 def serialize_(o, barr: bytearray):
     match o:
         case int():
@@ -73,10 +78,55 @@ def serialize_(o, barr: bytearray):
             o.serialize_(barr)
 
 
-class InternString(str):
-    pass
+global DFlatGraphCode
 
+class InternString(str):
+
+    def as_ptr(self) -> int:
+        global DFlatGraphCode
+        try:
+            DFlatGraphCode
+        except NameError:
+            from dianascript.code_cons import DFlatGraphCode
+        
+        return DFlatGraphCode.internstrings.cache(self)
+        
+
+def as_ptr(x):
+    if isinstance(x, int):
+        return x
+    if isinstance(x, str):
+        return DFlatGraphCode.strings.cache(x)
+    return x.as_ptr()
+        
+
+_T = TypeVar("_T")
+
+class Builder(Generic[_T]):
     
+    def __init__(self):
+        self._map: dict[_T, int] = {}
+        self._revmap: dict[int, _T] = {}
+    
+    def __getitem__(self, i: int) -> _T:
+        return self._revmap[i]
+
+    def cache(self, x: _T) -> int:
+        o = object()
+        i = self._map.get(x, o)
+        if i is o:
+            i = self._map[x] = len(self._map)
+            self._revmap[i] = x
+            return i
+        else:
+            assert isinstance(i, int)
+            return i
+
+    def serialize_(self, arr: bytearray):
+        for i in range(len(self._revmap)):
+            serialize_(self._revmap[i], arr)
+
+del _T, TypeVar
 
 if __name__ == '__main__':
     b = bytearray()

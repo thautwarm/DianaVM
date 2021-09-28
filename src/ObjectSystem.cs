@@ -84,7 +84,8 @@ namespace DianaScript
         public int __hash__ => Native.GetHashCode();
 
         public bool __contains__(DObj a) => throw new D_TypeError($"{this.GetCls.__repr__} does not support contains operation.");
-
+        
+        public bool __subclasscheck__(DObj a) => ((DClsObj) this) == ((DClsObj) a);
 
     }
 
@@ -203,7 +204,8 @@ namespace DianaScript
     public partial class DCode : DObj
     {
         public DObj[] constObjPool;
-        public InternString[] constStrPool;
+        public InternString[] constIStrPool;
+        public string[] constStrPool;
         public int[] constIntPool;
 
         public FuncMeta[] funcMetas;
@@ -271,11 +273,16 @@ namespace DianaScript
 
         public string Repr => $"<function>";
         
+        public Block code;
+        public DirectRef[] freevals;
+        public bool is_vararg;
+        public int narg;
+        public int nlocal;
         public int funcMetaInd;
         public Ptr body;
 
-        public Dictionary<InternString, DObj> name_space;
-        public DObj[] freevals;
+        public Dictionary<InternString, DObj> nameSpace;
+        
         
         
         public string __repr__ => $"<code at {(this as DObj).__hash__}>";

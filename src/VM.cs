@@ -100,7 +100,7 @@ namespace DianaScript
                     yield break;
 
                 case CODE.Stmt_DelGlobalName:
-                    InternString globalNameIStr = code.constStrPool[flatGraph.stmt_delglobalnames[ptr.ind].slot];
+                    InternString globalNameIStr = code.constIStrPool[flatGraph.stmt_delglobalnames[ptr.ind].slot];
                     if (!frame.nameSpace.Remove(globalNameIStr))
                         throw new KeyNotFoundException($"cannot delete global name {globalNameIStr.ToString()}: does not exist.");
                     yield break;

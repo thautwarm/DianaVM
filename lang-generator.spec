@@ -9,18 +9,28 @@
 // loadmetadata
 // storevar, loadvar, loadstr, loadistr
 // set_return, execute_block
-// check_argcount, pushframe
+// check_argcount
 // check_argcount(dfunc, argcount: int)
 // create_vstack(dfunc, s_args:int[])
 
-
+// exec type   | frame share |  offset share
+// exec_block  | yes         |  no
+// exec_code   | yes         |  yes
+// exec_func   | no          |  no
 
 language Diana
+
+
+data string as strings
+data DObj as objects
+data InternString as istrings
+
 dataclass Catch(exc_target: int, exc_type: int, body: Block)
 dataclass FuncMeta(
     is_vararg: bool,
-    narg: int,
     freeslots: int[],
+    narg: int,
+    nlocal: int,
     name: InternString,
     modname: InternString,
     filename: string
@@ -40,6 +50,7 @@ FunctionDef(target: int, metadataInd: int, code: Block)
     var dfunc = DFunc.Make($code,
     freevals:new_freevals,
     is_vararg: meta.is_vararg,
+    narg: meta.narg,
     nlocal: meta.nlocal,
     metadataInd: $metadataInd);
     storevar(target, dfunc);
@@ -47,7 +58,7 @@ FunctionDef(target: int, metadataInd: int, code: Block)
 Return(reg: int)
 [%
     set_return(loadvar(reg));
-    token = 0;
+    token = (int) TOKEN.RETURN;
 %]
 DelVar(target: int)
 [%
@@ -71,9 +82,9 @@ Raise(s_exc: int)
     var e = MK.unbox<Exception>(loadvar(s_exc));
     throw e;
 %]
-Assert(value: int, msg: int)
+Assert(value: int, s_msg: int)
 [%
-    assert(storevar(value).__bool__, loadstr(msg));
+    assert(storevar(value).__bool__, loadvar($s_msg));
 %]
 Control(token: int) // break, continue, reraise
 [%
@@ -83,7 +94,7 @@ Try(body: Block, except_handlers: Catch[], final_body: Block)
 [%
         try
         {
-            execute_block(frame, body);
+            execute_block(body);
         }
         catch (Exception e)
         {
@@ -94,9 +105,10 @@ Try(body: Block, except_handlers: Catch[], final_body: Block)
                 {
                     if (handler.exc_target)
                         storevar(exc_target, e_boxed);
-                    execute_block(frame, body);
+                    execute_block(body);
                     if (handler.exc_target)
                         storevar(exc_target, null);
+                    virtual_machine.ErrorFrames.Clear();
                     goto end_handled;
                 }
             }
@@ -104,7 +116,7 @@ Try(body: Block, except_handlers: Catch[], final_body: Block)
             end_handled:
         }
         finally{
-            execute_block(frame, final_body)
+            execute_block(final_body)
         }
 %]
 For(target: int, s_iter: int, body: Block)
@@ -112,7 +124,7 @@ For(target: int, s_iter: int, body: Block)
     var iter = loadvar($s_iter);
     foreach(var it in iter.__iter__){
         storevar($target, it);
-        execute_block(frame, $body);
+        execute_block($body);
         if (token == (int) TOKEN.BREAK)
             break;
     }
@@ -124,7 +136,7 @@ With(s_resource: int, s_as: int, body: Block)
     storevar($s_as, val)
     try
     {
-        execute_block(frame, body)
+        execute_block(body)
         resource.__exit__(
             MK.Nil(),
             MK.Nil(),
@@ -202,7 +214,7 @@ Call(target: int, s_f: int, s_args: int[])
     if (f is DFunc dfunc){
         check_argcount(dfunc, $s_args.Length);
         var vstack = create_vstack(dfunc, $s_args);
-        pushframe(new_frame(dfunc, vstack, $target));
+        storevar($target, execute_func(dfunc, vstack));
     }
     var args = new Args();
     for(var i = $s_args - 1; i >= 0; i--)

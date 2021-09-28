@@ -22,8 +22,9 @@ public partial class AIRParser
     public FuncMeta Read(THint<FuncMeta> _) => new FuncMeta
     {
         is_vararg = Read(THint<bool>.val),
-        narg = Read(THint<int>.val),
         freeslots = Read(THint<int[]>.val),
+        narg = Read(THint<int>.val),
+        nlocal = Read(THint<int>.val),
         name = Read(THint<InternString>.val),
         modname = Read(THint<InternString>.val),
         filename = Read(THint<string>.val),
@@ -82,7 +83,7 @@ public partial class AIRParser
     public Diana_Assert Read(THint<Diana_Assert> _) => new Diana_Assert
     {
         value = Read(THint<int>.val),
-        msg = Read(THint<int>.val),
+        s_msg = Read(THint<int>.val),
     };
 
     public Diana_Control Read(THint<Diana_Control> _) => new Diana_Control
@@ -274,6 +275,9 @@ public partial class AIRParser
 
     public DFlatGraphCode Read(THint<DFlatGraphCode> _) => new DFlatGraphCode
     {
+        strings = Read(THint<string[]>.val),
+        dobjs = Read(THint<DObj[]>.val),
+        internstrings = Read(THint<InternString[]>.val),
         catchs = Read(THint<Catch[]>.val),
         funcmetas = Read(THint<FuncMeta[]>.val),
         locs = Read(THint<Loc[]>.val),
@@ -339,16 +343,6 @@ public partial class AIRParser
         }
         return src;
     }
-    public static readonly THint<string> string_hint = THint<string>.val;
-    public string[] Read(THint<string[]> _)
-    {
-        string[] src = new string[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(string_hint);
-        }
-        return src;
-    }
     public static readonly THint<float> float_hint = THint<float>.val;
     public float[] Read(THint<float[]> _)
     {
@@ -366,6 +360,36 @@ public partial class AIRParser
         for (var i = 0; i < src.Length; i++)
         {
             src[i] = Read(bool_hint);
+        }
+        return src;
+    }
+    public static readonly THint<string> string_hint = THint<string>.val;
+    public string[] Read(THint<string[]> _)
+    {
+        string[] src = new string[ReadInt()];
+        for (var i = 0; i < src.Length; i++)
+        {
+            src[i] = Read(string_hint);
+        }
+        return src;
+    }
+    public static readonly THint<DObj> DObj_hint = THint<DObj>.val;
+    public DObj[] Read(THint<DObj[]> _)
+    {
+        DObj[] src = new DObj[ReadInt()];
+        for (var i = 0; i < src.Length; i++)
+        {
+            src[i] = Read(DObj_hint);
+        }
+        return src;
+    }
+    public static readonly THint<InternString> InternString_hint = THint<InternString>.val;
+    public InternString[] Read(THint<InternString[]> _)
+    {
+        InternString[] src = new InternString[ReadInt()];
+        for (var i = 0; i < src.Length; i++)
+        {
+            src[i] = Read(InternString_hint);
         }
         return src;
     }
