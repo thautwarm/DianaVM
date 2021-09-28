@@ -23,7 +23,7 @@ public partial class DFloat
     if (nargs != 2)
       throw new D_TypeError($"calling float.try_parse; needs at least  (2) arguments, got {nargs}.");
     var _arg0 = MK.unbox<String>(_args[0]);
-    var _out_1 = MK.unbox<DRef>(_args[1]);
+    var _out_1 = MK.unbox<Ref>(_args[1]);
     var _arg1 = MK.unbox<Single>(_out_1.get_contents());
     {
       var _return = Single.TryParse(_arg0,out _arg1);
@@ -36,14 +36,14 @@ public partial class DFloat
   public string name => "float";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DFloat);
-  public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
+    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
     {
-      { "parse", (false, MK.CreateFunc(bind_parse)) },
-      { "try_parse", (false, MK.CreateFunc(bind_try_parse)) },
+      { "parse".ToIStr(), (false, MK.CreateFunc(bind_parse)) },
+      { "try_parse".ToIStr(), (false, MK.CreateFunc(bind_try_parse)) },
     };
   }
   }

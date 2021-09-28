@@ -19,10 +19,10 @@ namespace DianaScript
         public const byte Set = 4;
         public const byte List = 5;
         public const byte Tuple = 6;
-
-        public const byte Code = 7;
     }
+    
 
+    
     public partial class AIRParser
     {
         FileStream fileStream;
@@ -110,55 +110,6 @@ namespace DianaScript
         }
         
         
-        public DCode ReadCode()
-        {
-            throw new NotImplementedException();
-            // string filename = ReadStr();
-            // string name = ReadStr();
-            // bool varg = ReadBool();
-            // int narg = ReadInt();
-            // int nlocal = ReadInt();
-            // int nfree = ReadInt();
-            // string[] strings = new string[ReadInt()];
-            // for (var i = 0; i < strings.Length; i++)
-            // {
-            //     strings[i] = ReadStr();
-            // }
-            // DObj[] consts = new DObj[ReadInt()];
-            // for (var i = 0; i < consts.Length; i++)
-            // {
-            //     consts[i] = ReadObj();
-            // }
-            // (int, int)[] locs = new (int, int)[ReadInt()];
-            // for (var i = 0; i < locs.Length; i++)
-            // {
-            //     var frame_offset = ReadInt();
-            //     var line_number = ReadInt();
-            //     locs[i] = (frame_offset, line_number);
-            // }
-            // int[] bc = new int[ReadInt()];
-            // var offset = 0;
-            // while (offset < bc.Length)
-            // {
-            //     var instr = fileStream.ReadByte();
-            //     if (instr < (int)CODE.NO_ARG)
-            //     {
-            //         bc[offset++] = instr;
-            //     }
-            //     else
-            //     {
-            //         bc[offset++] = instr;
-            //         bc[offset++] = ReadInt();
-            //     }
-            // }
-            // return DCode.Make(
-            //     bc: bc, consts: consts, locs: locs, strings: strings,
-            //     nfree: nfree, narg: narg, nlocal: nlocal, varg: varg,
-            //     filename: filename, name: name);
-
-
-
-        }
 
         public DObj Read(THint<DObj> _) => ReadObj();
         public DObj ReadObj()
@@ -177,21 +128,6 @@ namespace DianaScript
             int len;
             switch (tag)
             {
-                case ConstPoolTag.Code:
-                    /*
-                        string filename,
-                        string name
-                        bool varg
-                        int narg
-                        int nlocal
-                        int nfree
-                        string[] strings
-                        DObj[] consts
-                        (int, int)[] locs
-                        int[] bc
-                    */
-                    return ReadCode();
-
                 case ConstPoolTag.Int:
                     return MK.Int(ReadInt());
 

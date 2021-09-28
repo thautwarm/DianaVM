@@ -27,13 +27,13 @@ public partial class GlobalNamespace
   public string name => "GlobalNamespace";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(GlobalNamespace);
-  public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
+    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
     {
-      { "print", (false, MK.CreateFunc(bind_print)) },
+      { "print".ToIStr(), (false, MK.CreateFunc(bind_print)) },
     };
   }
   }

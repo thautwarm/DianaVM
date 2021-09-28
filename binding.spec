@@ -19,28 +19,13 @@ GlobalNamespace GlobalNamespace GlobalNamespace{
     void Print(*DObj) as print
 }
 
-cell DCell DCell{
-}
-
 NoneType DNil DNil{}
 
 builtin_function DBuiltinFunc Func<Args, DObj>{}
-frame DFrame DFrame{
-    DFunc this.func as get_func
-}
-function DFunc DFunc{
-    DCode this.code as get_code
-}
-ref DRef DRef{ }
 
+function DFunc DFunc{ }
 
-code DCode DCode{
-    int[] this.bc as get_bc
-    DObj[] this.consts as get_consts
-    int this.nfree as get_nfree
-    int this.narg as get_narg
-}
-
+cell DRef DRef{ }
 
 // name in script language, name in .net, .net wrap type name
 "using System.Collections.Generic;"

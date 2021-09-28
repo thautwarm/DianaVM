@@ -13,9 +13,9 @@ namespace DianaScript
         }
 
         public static Dictionary<InternString, DObj> Globals => throw new NotImplementedException();
-        public static Dictionary<string, DObj> GetGlonal()
+        public static Dictionary<InternString, DObj> GetGlonal()
         {
-            var ns = new Dictionary<string, DObj>();
+            var ns = new Dictionary<InternString, DObj>();
             foreach (var kv in GlobalNamespace.Cls.unique.Getters)
             {
                 ns[kv.Key] = kv.Value.Item2;
@@ -32,7 +32,7 @@ namespace DianaScript
                  DBool.Cls.unique,
                  DArray.Cls.unique
                 })
-                ns[cls.name] = cls;
+                ns[cls.name.ToIStr()] = cls;
             return ns;
         }
     }

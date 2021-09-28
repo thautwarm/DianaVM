@@ -4,8 +4,6 @@ using System.Collections.Generic;
 
 namespace DianaScript
 {
-
-
     using NameSpace = Dictionary<InternString, DObj>;
     using static TOKEN;
     using static VMHelper;
@@ -29,30 +27,40 @@ namespace DianaScript
         LOOP_CONTINUE
     }
 
-    public partial class DirectRef
+    public struct MiniFrame
     {
-        public DObj cell_contents;
+        public int blockind;
+        public int offset;
+
+        public int metadataInd;
+
     }
+
 
     public partial class DVM
     {
 
         // stack of (blockind, offset)
-        public Stack<(int, int)> errorFrames;
+        public Stack<MiniFrame> errorFrames;
 
         public DFlatGraphCode flatGraph;
 
-        public DVM(DFlatGraphCode flatGraph){
-            this.flatGraph = flatGraph;
-            this.errorFrames = new Stack<(int, int)>();
+        public static DFlatGraphCode FlatGraph; // should be the same as the instance field
 
+        public DVM(DFlatGraphCode flatGraph)
+        {
+            this.flatGraph = flatGraph;
+            DVM.FlatGraph = flatGraph;
+            this.errorFrames = new Stack<MiniFrame>();
         }
-        public DObj exec_func(DFunc dfunc, DObj[] vstack){
+
+        public DObj exec_func(DFunc dfunc, DObj[] vstack)
+        {
             var executor = new BlockExecutor
             {
                 virtual_machine = this,
                 offset = 0,
-                token = (int) TOKEN.GO_AHEAD,
+                token = (int)GO_AHEAD,
                 vstack = vstack,
                 cur_func = dfunc,
                 @return = null,
@@ -80,8 +88,8 @@ namespace DianaScript
         public const int bit_global = 0b01 << 30;
         public const int bit_free = 0b01 << 31;
         public const int bit_nonlocal = bit_global & bit_free;
-        
-        DirectRef loadref(int slot)
+
+        DRef loadref(int slot)
         {
             return cur_func.freevals[slot];
         }
@@ -95,7 +103,13 @@ namespace DianaScript
         {
             if ((slot & bit_nonlocal) == 0)
             {
-                return vstack[slot];
+                var c = vstack[slot];
+                if (c == null)
+                {
+                    var name = flatGraph.funcmetas[cur_func.metadataInd].localnames[slot << 2 >> 2];
+                    throw new NullReferenceException($"undefined variable {name}.");
+                }
+                return c;
             }
             else if ((slot & bit_free) == 0)
             {
@@ -105,7 +119,13 @@ namespace DianaScript
             else
             {
                 // assert
-                return cur_func.freevals[slot << 2 >> 2].cell_contents;
+                var c = cur_func.freevals[slot << 2 >> 2].cell_contents;
+                if (c == null)
+                {
+                    var name = flatGraph.funcmetas[cur_func.metadataInd].freenames[slot << 2 >> 2];
+                    throw new NullReferenceException($"undefined cell variable {name}.");
+                }
+                return c;
             }
         }
 
@@ -157,14 +177,19 @@ namespace DianaScript
             {
                 for (var i = 0; i < codes.Length; i++)
                 {
+                    offset = i;
                     exec_code(codes[i]);
-                    if (token != (int)TOKEN.GO_AHEAD)
+                    if (token != (int)GO_AHEAD)
                         return;
                 }
             }
             catch
             {
-                virtual_machine.errorFrames.Push((blockind, offset));
+                virtual_machine.errorFrames.Push(new MiniFrame { 
+                    metadataInd = cur_func.metadataInd,
+                    blockind = blockind,
+                    offset = offset
+                });
                 throw;
             }
         }
@@ -183,7 +208,7 @@ namespace DianaScript
                 var meta = loadmetadata(flatGraph.diana_functiondefs[curPtr.ind].metadataInd);
                 int nfree = meta.freeslots.Length;
 
-                var new_freevals = new DirectRef[meta.freeslots.Length];
+                var new_freevals = new DRef[meta.freeslots.Length];
                 for(var i = 0; i < nfree; i++)
                     new_freevals[i] = loadref(meta.freeslots[i]);
 

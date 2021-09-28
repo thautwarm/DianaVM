@@ -247,7 +247,7 @@ tbnf_parser = Lark(
 from prettyprinter import install_extras, pprint
 install_extras(["dataclasses"])
 
-ast = tbnf_parser.parse(open("gen.spec").read())
+ast = tbnf_parser.parse(open("binding.spec").read())
 pprint(ast)
 
 
@@ -308,11 +308,11 @@ class Codegen:
 
     def declare(self, name: str, func, is_setter=False, is_getter=False):
         if is_setter:
-            self.setters.append('{ "%s", MK.CreateFunc(%s) },\n' % (name, func) )
+            self.setters.append('{ "%s".ToIStr(), MK.CreateFunc(%s) },\n' % (name, func) )
             return
         
         getter_desc = "true" if is_getter else "false"
-        self.getters.append('{ "%s", (%s, MK.CreateFunc(%s)) },\n' % (name, getter_desc, func) )
+        self.getters.append('{ "%s".ToIStr(), (%s, MK.CreateFunc(%s)) },\n' % (name, getter_desc, func) )
         
         return self
     
@@ -476,7 +476,7 @@ class Codegen:
                 if param.is_out:
                     out_arg = f"_out_{i}"
                     out_args.append((argn, out_arg))
-                    self << f"var {out_arg} = {accept_arg(TName('DRef'), arg_repr)};\n"
+                    self << f"var {out_arg} = {accept_arg(TName('Ref'), arg_repr)};\n"
                     arg_repr = out_arg + ".get_contents()"
                 arg_repr = accept_arg(in_t, arg_repr)
                 if in_t.as_str() != expect_t.as_str():
@@ -590,13 +590,13 @@ class Codegen:
             self << f"public string name => {dumps(bind_name)};\n"
             self << f"public static Cls unique = new Cls();\n"
             self << f"public Type NativeType => typeof({wrap_type});\n"
-            self << f"public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {{get; set;}}\n"
+            self << f"public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {{get; set;}}\n"
             self << f"public Cls()\n"
             self << "{\n"
             
             with self.tab():
                 self << "DWrap.RegisterTypeMap(NativeType, this);\n"
-                self << f"Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>\n"
+                self << f"Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>\n"
                 self << "{\n"
                 with self.tab():
                     for each in self.getters:
@@ -609,7 +609,9 @@ class Codegen:
 
 cg = Codegen()
 
+import shutil
 root = Path("src") / "structures"
+shutil.rmtree(str(root))
 root.mkdir(exist_ok=True)
 for cls in ast:
     cls: ClassBind

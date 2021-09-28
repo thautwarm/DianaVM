@@ -355,7 +355,7 @@ class Codegen:
         for each in template_file:
             if each.strip().startswith("//REPLACE"):
                 break
-            self << each[:-1]
+            self << each[:-1].replace('@__', '')
         
         with self.tab(n=2):
             self << f"switch(curPtr.kind)"
@@ -373,7 +373,7 @@ class Codegen:
                     self << "throw new Exception(\"unknown code\" + (CODE) curPtr.kind);"
             self << "}"
         for each in template_file:
-            self << each[:-1]
+            self << each[:-1].replace('@__', '')
         
         
             
@@ -398,7 +398,7 @@ def generate_array_read(self: Codegen, tname: str):
     self << "}"
 
 
-lang = parser.parse(open("lang-generator.spec").read())
+lang = parser.parse(open("lang.spec").read())
 from prettyprinter import pprint, install_extras
 install_extras(['dataclasses'])
 # pprint(seq)

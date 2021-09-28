@@ -251,28 +251,28 @@ public partial class DStr
   public string name => "str";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DStr);
-  public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
+    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
     {
-      { "join", (false, MK.CreateFunc(bind_join)) },
-      { "concat", (false, MK.CreateFunc(bind_concat)) },
-      { "endswith", (false, MK.CreateFunc(bind_endswith)) },
-      { "startswith", (false, MK.CreateFunc(bind_startswith)) },
-      { "__len__", (false, MK.CreateFunc(bind___len__)) },
-      { "strip", (false, MK.CreateFunc(bind_strip)) },
-      { "rstrip", (false, MK.CreateFunc(bind_rstrip)) },
-      { "lstrip", (false, MK.CreateFunc(bind_lstrip)) },
-      { "lower", (false, MK.CreateFunc(bind_lower)) },
-      { "upper", (false, MK.CreateFunc(bind_upper)) },
-      { "__contains__", (false, MK.CreateFunc(bind___contains__)) },
-      { "format", (false, MK.CreateFunc(bind_format)) },
-      { "substr", (false, MK.CreateFunc(bind_substr)) },
-      { "insert", (false, MK.CreateFunc(bind_insert)) },
-      { "remove", (false, MK.CreateFunc(bind_remove)) },
-      { "index", (false, MK.CreateFunc(bind_index)) },
+      { "join".ToIStr(), (false, MK.CreateFunc(bind_join)) },
+      { "concat".ToIStr(), (false, MK.CreateFunc(bind_concat)) },
+      { "endswith".ToIStr(), (false, MK.CreateFunc(bind_endswith)) },
+      { "startswith".ToIStr(), (false, MK.CreateFunc(bind_startswith)) },
+      { "__len__".ToIStr(), (false, MK.CreateFunc(bind___len__)) },
+      { "strip".ToIStr(), (false, MK.CreateFunc(bind_strip)) },
+      { "rstrip".ToIStr(), (false, MK.CreateFunc(bind_rstrip)) },
+      { "lstrip".ToIStr(), (false, MK.CreateFunc(bind_lstrip)) },
+      { "lower".ToIStr(), (false, MK.CreateFunc(bind_lower)) },
+      { "upper".ToIStr(), (false, MK.CreateFunc(bind_upper)) },
+      { "__contains__".ToIStr(), (false, MK.CreateFunc(bind___contains__)) },
+      { "format".ToIStr(), (false, MK.CreateFunc(bind_format)) },
+      { "substr".ToIStr(), (false, MK.CreateFunc(bind_substr)) },
+      { "insert".ToIStr(), (false, MK.CreateFunc(bind_insert)) },
+      { "remove".ToIStr(), (false, MK.CreateFunc(bind_remove)) },
+      { "index".ToIStr(), (false, MK.CreateFunc(bind_index)) },
     };
   }
   }

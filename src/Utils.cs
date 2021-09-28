@@ -16,6 +16,7 @@ public static class InternStringExtensions
         id = new InternString { identity = strToId.Count } ;
         strToId[s] = id;
         idToStr[id.identity] = s;
+        
         return id;
     }
     

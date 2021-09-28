@@ -59,7 +59,7 @@ public partial class DDict
       throw new D_TypeError($"calling dict.search; needs at least  (3) arguments, got {nargs}.");
     var _arg0 = MK.unbox<Dictionary<DObj, DObj>>(_args[0]);
     var _arg1 = MK.unbox<DObj>(_args[1]);
-    var _out_2 = MK.unbox<DRef>(_args[2]);
+    var _out_2 = MK.unbox<Ref>(_args[2]);
     var _arg2 = MK.unbox<DObj>(_out_2.get_contents());
     {
       var _return = _arg0.TryGetValue(_arg1,out _arg2);
@@ -93,19 +93,19 @@ public partial class DDict
   public string name => "dict";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DDict);
-  public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
+    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
     {
-      { "__contains__", (false, MK.CreateFunc(bind___contains__)) },
-      { "__len__", (false, MK.CreateFunc(bind___len__)) },
-      { "__delitem__", (false, MK.CreateFunc(bind___delitem__)) },
-      { "clear", (false, MK.CreateFunc(bind_clear)) },
-      { "search", (false, MK.CreateFunc(bind_search)) },
-      { "__setitem__", (false, MK.CreateFunc(bind___setitem__)) },
-      { "__getitem__", (false, MK.CreateFunc(bind___getitem__)) },
+      { "__contains__".ToIStr(), (false, MK.CreateFunc(bind___contains__)) },
+      { "__len__".ToIStr(), (false, MK.CreateFunc(bind___len__)) },
+      { "__delitem__".ToIStr(), (false, MK.CreateFunc(bind___delitem__)) },
+      { "clear".ToIStr(), (false, MK.CreateFunc(bind_clear)) },
+      { "search".ToIStr(), (false, MK.CreateFunc(bind_search)) },
+      { "__setitem__".ToIStr(), (false, MK.CreateFunc(bind___setitem__)) },
+      { "__getitem__".ToIStr(), (false, MK.CreateFunc(bind___getitem__)) },
     };
   }
   }

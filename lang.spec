@@ -33,17 +33,20 @@ dataclass FuncMeta(
     nlocal: int,
     name: InternString,
     modname: InternString,
-    filename: string
+    filename: string,
+    lineno: int,
+    freenames: string[],
+    localnames: string[]
 )
 dataclass Loc(location_data: (int, int)[])
-dataclass Block(codes: Ptr[], location_data: int)
+dataclass Block(codes: Ptr[], location_data: (int, int)[], filename: string)
 
 FunctionDef(target: int, metadataInd: int, code: int)
 [%
     var meta = loadmetadata($metadataInd);
     int nfree = meta.freeslots.Length;
 
-    var new_freevals = new DirectRef[meta.freeslots.Length];
+    var new_freevals = new DRef[meta.freeslots.Length];
     for(var i = 0; i < nfree; i++)
         new_freevals[i] = loadref(meta.freeslots[i]);
 

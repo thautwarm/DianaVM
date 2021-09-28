@@ -23,7 +23,7 @@ public partial class DInt
     if (nargs != 2)
       throw new D_TypeError($"calling int.try_parse; needs at least  (2) arguments, got {nargs}.");
     var _arg0 = MK.unbox<String>(_args[0]);
-    var _out_1 = MK.unbox<DRef>(_args[1]);
+    var _out_1 = MK.unbox<Ref>(_args[1]);
     var _arg1 = MK.unbox<Int32>(_out_1.get_contents());
     {
       var _return = Int32.TryParse(_arg0,out _arg1);
@@ -50,16 +50,16 @@ public partial class DInt
   public string name => "int";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DInt);
-  public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
+    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
     {
-      { "parse", (false, MK.CreateFunc(bind_parse)) },
-      { "try_parse", (false, MK.CreateFunc(bind_try_parse)) },
-      { "max", (false, MK.CreateFunc(bind_max)) },
-      { "min", (false, MK.CreateFunc(bind_min)) },
+      { "parse".ToIStr(), (false, MK.CreateFunc(bind_parse)) },
+      { "try_parse".ToIStr(), (false, MK.CreateFunc(bind_try_parse)) },
+      { "max".ToIStr(), (false, MK.CreateFunc(bind_max)) },
+      { "min".ToIStr(), (false, MK.CreateFunc(bind_min)) },
     };
   }
   }

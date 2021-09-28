@@ -21,7 +21,7 @@ namespace DianaScript
                 if (o.Item1) return o.Item2.__call__(new Args { this });
                 return o.Item2;
             }
-            throw new D_AttributeError(this.GetCls, MK.String(attr));
+            throw new D_AttributeError(this.GetCls, MK.String(attr.ToString()));
         }
 
         
@@ -35,7 +35,7 @@ namespace DianaScript
                 o.__call__(new Args { this, value });
             }
 
-            throw new D_AttributeError(this.GetCls, MK.String(attr));
+            throw new D_AttributeError(this.GetCls, MK.String(attr.ToString()));
         }
 
         public DObj __enter__() => throw new D_TypeError($"{this.GetCls.__repr__} does not support __enter__.");
@@ -156,8 +156,8 @@ namespace DianaScript
         public DObj AsObj => this;
         public Type NativeType { get; }
 
-        public Dictionary<string, (bool, DObj)> Getters => null;
-        public Dictionary<string, DObj> Setters => null;
+        public Dictionary<InternString, (bool, DObj)> Getters => null;
+        public Dictionary<InternString, DObj> Setters => null;
 
         // generate by stub
         public string name { get; }
@@ -165,7 +165,7 @@ namespace DianaScript
         // change by hand
         object DObj.Native => this;
         DClsObj DObj.GetCls => meta.cls;
-        DObj DObj.Get(string attr)
+        DObj DObj.Get(InternString attr)
         {
             (bool, DObj) o;
             if (Getters != null && Getters.TryGetValue(attr, out o))
@@ -173,9 +173,9 @@ namespace DianaScript
                     return o.Item2.__call__(new Args { this });
                 else
                     return o.Item2;
-            throw new D_AttributeError(this, MK.String(attr));
+            throw new D_AttributeError(this, MK.String(attr.ToString()));
         }
-        void DObj.Set(string attr, DObj v)
+        void DObj.Set(InternString attr, DObj v)
         {
             Getters[attr] = (false, v);
         }
@@ -208,79 +208,13 @@ namespace DianaScript
 
     }
 
-    public partial class DCode : DObj
-    {
-        public DObj[] constObjPool;
-        public InternString[] constIStrPool;
-        public string[] constStrPool;
-        public int[] constIntPool;
-
-        public FuncMeta[] funcMetas;
-
-
-        public object Native => this;
-        public string __repr__ => "<codeobj>";
-
-        [NotNull]
-        public int[] bc;
-
-
-        [NotNull]
-        public DObj[] consts; // constant objects
-
-        [NotNull]
-        public string[] strings; // constant strings
-        
-
-        public int nfree;
-        public int narg;
-        public int nlocal;
-        public bool varg;
-
-        [NotNull]
-        public string filename;
-        [NotNull]
-        public string name;
-
-
-        /*
-        locs = [(offset1, lineno1), ..., (offsetn, lineo2)]
-        */
-        [NotNull]
-        public (int, int)[] locs;
-
-
-        public static DCode Make(
-            int[] bc, DObj[] consts = null,
-            (int, int)[] locs = null, string[] strings = null,
-            int nfree = 0, int narg = 0, int nlocal = 0,
-            bool varg = false, string filename = "",
-            string name = ""
-        )
-        {
-            return new DCode
-            {
-                bc = bc,
-                consts = consts ?? new DObj[0],
-                locs = locs ?? new (int, int)[0],
-                strings = strings ?? new string[0],
-                nfree = nfree,
-                narg = narg,
-                nlocal = nlocal,
-                varg = varg,
-                filename = filename,
-                name = name
-            };
-        }
-    }
-
     public partial class DFunc : DObj
     {
         public object Native => this;
 
         public string Repr => $"<function>";
         
-        public DirectRef[] freevals;
+        public DRef[] freevals;
         public bool is_vararg;
         public int narg;
         public int nlocal;
@@ -294,69 +228,20 @@ namespace DianaScript
         public string __repr__ => $"<code at {(this as DObj).__hash__}>";
 
         public static DFunc Make(
-            int body, int narg, int nlocal, int metadataInd, NameSpace nameSpace = null, bool is_vararg = false, DirectRef[] freevals = null
+            int body, int narg, int nlocal, int metadataInd, NameSpace nameSpace = null, bool is_vararg = false, DRef[] freevals = null
         )
         {
             return new DFunc
             {
                 body = body,
                 metadataInd = metadataInd,
-                freevals = freevals ?? new DirectRef[0],
+                freevals = freevals ?? new DRef[0],
                 nameSpace = nameSpace ?? new Dictionary<InternString, DObj>()
             };
         }
     }
 
     
-    public partial class DBigFrame
-    {
-        public Dictionary<InternString, DObj> globals;
-        public DObj[] valueStack;
-
-        public int vstackOffset;
-
-        public Stack<Ptr> miniFrame;
-
-        public Stack<int> srcPosIndices;
-
-        public bool catchingException;
-
-        public static DBigFrame Make(Dictionary<InternString, DObj> globals, DObj[] valueStack, Ptr miniFrame, int rootSrcPosInd, int vstackOffset=0) => new DBigFrame
-        {
-            globals = globals,
-            valueStack = valueStack,
-            miniFrame = new Stack<Ptr>{ miniFrame },
-            srcPosIndices = new Stack<int> { rootSrcPosInd },
-            vstackOffset = vstackOffset
-        };
-    }
-    public partial class DFrame : DObj
-    {
-        public static DFrame Make(DFunc func, DObj[] localvals = null) => new DFrame
-        {
-            func = func,
-            localvals = localvals ?? new DObj[0],
-            vstack = new List<DObj>(),
-            estack = new List<(int, int)>(),
-            offset = 0
-        };
-        public int offset;
-        public List<DObj> vstack;
-        public List<(int, int)> estack;
-        public DObj[] localvals;
-        public DFunc func;
-
-        public DCode code => func.code;
-
-        public DObj[] freevals => func.freevals;
-        public string[] strings => func.code.strings;
-        public Dictionary<string, DObj> name_space => func.name_space;
-
-        public object Native => this;
-
-        public string __repr__ => $"<frame {func.code.name}>";
-    }
-
     public partial class DInt : DObj
     {
         public static DInt Make(int i) => new DInt { value = i };
@@ -394,74 +279,30 @@ namespace DianaScript
 
     }
 
-    public partial class DRef : DObj
+    public interface Ref
     {
-
-        public class FrameRef
-        {
-            public DFrame frame;
-            public int ind;
-
-            public static Func<object, DObj> RefGetter = (self) =>
-            {
-                var me = self as FrameRef;
-                return me.frame.localvals[me.ind] ?? throw new D_ValueError($"local variable {me.frame.code.strings[me.ind]} not defined.");
-            };
-
-            public static Action<object, DObj> RefSetter = (self, o) =>
-            {
-                var me = self as FrameRef;
-                me.frame.localvals[me.ind] = o;
-            };
-        }
-
-        public class StrDictRef
-        {
-            public Dictionary<string, DObj> dict;
-            public string key;
-
-            public static Func<object, DObj> RefGetter = (self) =>
-            {
-                var me = self as StrDictRef;
-                return me.dict[me.key] ?? throw new D_ValueError($"global variable {me.key} not found.");
-            };
-
-            public static Action<object, DObj> RefSetter = (self, o) =>
-            {
-                var me = self as FrameRef;
-                me.frame.localvals[me.ind] = o;
-            };
-        }
-        public static DRef Make(object self, Func<object, DObj> getter, Action<object, DObj> setter)
-        {
-            return new DRef
-            {
-                self = self,
-                _setter = setter,
-                _getter = getter
-            };
-        }
-        public object Native => this;
-        public string __repr__ => $"<DRef at {(this as DObj).__hash__}>";
-        public object self;
-        public Func<object, DObj> _getter;
-        public Action<object, DObj> _setter;
-        public DObj get_contents() => _getter(self);
-        public void set_contents(DObj v) => _setter(self, v);
-
-
-        
-        public static DRef MakeFrameRef(DFrame frame, int i)
-        {
-            return Make(new FrameRef{ frame = frame, ind = i }, FrameRef.RefGetter, FrameRef.RefSetter);
-        }
-
-        public static DRef MakeStrDictRef(Dictionary<string, DObj> dict, string key)
-        {
-            return Make(new StrDictRef{ dict = dict, key = key }, StrDictRef.RefGetter, StrDictRef.RefSetter);
-        }
-
+        public void set_contents(DObj value);
+        public DObj get_contents();
     }
+
+
+    public partial class DRef: Ref, DObj
+    {
+        public DObj cell_contents;
+
+        public DObj get_contents() => cell_contents;
+
+        public void set_contents(DObj value) => cell_contents = value;
+
+        public object Native => this;
+
+        public string __repr__ => $"<DRef at {(this as DObj).__hash__}>";
+
+        public DRef(){
+            cell_contents = null;
+        }
+    }
+
 
     public partial class DBool : DObj
     {
@@ -719,14 +560,6 @@ namespace DianaScript
         public object Native => func;
 
         public DObj __call__(Args args) => func(args);
-    }
-
-    public partial class DCell: DObj
-    {
-        public object Native => this;
-        public DObj cell_contents;
-        public static DCell Make(DObj inner) => new DCell { cell_contents = inner };
-
     }
 
 }

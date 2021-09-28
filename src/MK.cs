@@ -20,6 +20,8 @@ public static class MK{
     public static B unbox<B>(THint<B> _, DObj o) => (B) o.Native;
     public static DObj cast(THint<DObj> _, DObj o) => o;
     public static B cast<A, B>(THint<B> _, A o) where A : B => o;
+    // public static DTuple cast<A>(THint<DTuple> _, A[] o) where A : DObj => MK.Tuple(o);
+    
     public static A cast<A, B>(THint<A> _, B o) where A : B => (A) o;
     public static DObj cast<A>(THint<DObj> _, A o) => create(o);
     public static Char[] cast(THint<Char[]> _, String s) => s.ToCharArray();

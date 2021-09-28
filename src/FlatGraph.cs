@@ -27,8 +27,11 @@ public struct FuncMeta
     public InternString name;
     public InternString modname;
     public string filename;
+    public int lineno;
+    public string[] freenames;
+    public string[] localnames;
 
-    public static FuncMeta Make(bool is_vararg, int[] freeslots, int narg, int nlocal, InternString name, InternString modname, string filename) => new FuncMeta
+    public static FuncMeta Make(bool is_vararg, int[] freeslots, int narg, int nlocal, InternString name, InternString modname, string filename, int lineno, string[] freenames, string[] localnames) => new FuncMeta
     {
         is_vararg = is_vararg,
 
@@ -43,6 +46,12 @@ public struct FuncMeta
         modname = modname,
 
         filename = filename,
+
+        lineno = lineno,
+
+        freenames = freenames,
+
+        localnames = localnames,
 
     };
 }
@@ -59,13 +68,16 @@ public struct Loc
 public struct Block
 {
     public Ptr[] codes;
-    public int location_data;
+    public (int,int)[] location_data;
+    public string filename;
 
-    public static Block Make(Ptr[] codes, int location_data) => new Block
+    public static Block Make(Ptr[] codes, (int,int)[] location_data, string filename) => new Block
     {
         codes = codes,
 
         location_data = location_data,
+
+        filename = filename,
 
     };
 }

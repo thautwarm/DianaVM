@@ -18,13 +18,13 @@ public partial class DArray
   public string name => "array";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DArray);
-  public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
+    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
     {
-      { "__len__", (false, MK.CreateFunc(bind___len__)) },
+      { "__len__".ToIStr(), (false, MK.CreateFunc(bind___len__)) },
     };
   }
   }

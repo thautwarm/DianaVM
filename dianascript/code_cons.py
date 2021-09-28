@@ -62,6 +62,9 @@ class FuncMeta:
     name: InternString
     modname: InternString
     filename: str
+    lineno: int
+    freenames: tuple[str, ...]
+    localnames: tuple[str, ...]
     TAG : int = 4
 
     def serialize_(self, arr: bytearray):
@@ -73,6 +76,9 @@ class FuncMeta:
         serialize_(self.name, arr)
         serialize_(self.modname, arr)
         serialize_(self.filename, arr)
+        serialize_(self.lineno, arr)
+        serialize_(self.freenames, arr)
+        serialize_(self.localnames, arr)
 
     def as_ptr(self) -> int:
         return DFlatGraphCode.funcmetas.cache(self)
@@ -94,13 +100,15 @@ class Loc:
 @dataclass(frozen=True)
 class Block:
     codes: tuple[Ptr, ...]
-    location_data: int
+    location_data: tuple[tuple[int, int], ...]
+    filename: str
     TAG : int = 6
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
         serialize_(self.codes, arr)
         serialize_(self.location_data, arr)
+        serialize_(self.filename, arr)
 
     def as_ptr(self) -> int:
         return DFlatGraphCode.blocks.cache(self)

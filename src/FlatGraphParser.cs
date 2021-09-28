@@ -28,6 +28,9 @@ public partial class AIRParser
         name = Read(THint<InternString>.val),
         modname = Read(THint<InternString>.val),
         filename = Read(THint<string>.val),
+        lineno = Read(THint<int>.val),
+        freenames = Read(THint<string[]>.val),
+        localnames = Read(THint<string[]>.val),
     };
 
     public Loc Read(THint<Loc> _) => new Loc
@@ -38,7 +41,8 @@ public partial class AIRParser
     public Block Read(THint<Block> _) => new Block
     {
         codes = Read(THint<Ptr[]>.val),
-        location_data = Read(THint<int>.val),
+        location_data = Read(THint<(int,int)[]>.val),
+        filename = Read(THint<string>.val),
     };
 
     public Diana_FunctionDef Read(THint<Diana_FunctionDef> _) => new Diana_FunctionDef

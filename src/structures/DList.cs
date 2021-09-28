@@ -186,26 +186,26 @@ public partial class DList
   public string name => "list";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DList);
-  public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
+    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
     {
-      { "__contains__", (false, MK.CreateFunc(bind___contains__)) },
-      { "append", (false, MK.CreateFunc(bind_append)) },
-      { "extend", (false, MK.CreateFunc(bind_extend)) },
-      { "insert", (false, MK.CreateFunc(bind_insert)) },
-      { "remove", (false, MK.CreateFunc(bind_remove)) },
-      { "find", (false, MK.CreateFunc(bind_find)) },
-      { "index", (false, MK.CreateFunc(bind_index)) },
-      { "__delitem__", (false, MK.CreateFunc(bind___delitem__)) },
-      { "sort", (false, MK.CreateFunc(bind_sort)) },
-      { "array", (false, MK.CreateFunc(bind_array)) },
-      { "__len__", (false, MK.CreateFunc(bind___len__)) },
-      { "clear", (false, MK.CreateFunc(bind_clear)) },
-      { "__setitem__", (false, MK.CreateFunc(bind___setitem__)) },
-      { "__getitem__", (false, MK.CreateFunc(bind___getitem__)) },
+      { "__contains__".ToIStr(), (false, MK.CreateFunc(bind___contains__)) },
+      { "append".ToIStr(), (false, MK.CreateFunc(bind_append)) },
+      { "extend".ToIStr(), (false, MK.CreateFunc(bind_extend)) },
+      { "insert".ToIStr(), (false, MK.CreateFunc(bind_insert)) },
+      { "remove".ToIStr(), (false, MK.CreateFunc(bind_remove)) },
+      { "find".ToIStr(), (false, MK.CreateFunc(bind_find)) },
+      { "index".ToIStr(), (false, MK.CreateFunc(bind_index)) },
+      { "__delitem__".ToIStr(), (false, MK.CreateFunc(bind___delitem__)) },
+      { "sort".ToIStr(), (false, MK.CreateFunc(bind_sort)) },
+      { "array".ToIStr(), (false, MK.CreateFunc(bind_array)) },
+      { "__len__".ToIStr(), (false, MK.CreateFunc(bind___len__)) },
+      { "clear".ToIStr(), (false, MK.CreateFunc(bind_clear)) },
+      { "__setitem__".ToIStr(), (false, MK.CreateFunc(bind___setitem__)) },
+      { "__getitem__".ToIStr(), (false, MK.CreateFunc(bind___getitem__)) },
     };
   }
   }
