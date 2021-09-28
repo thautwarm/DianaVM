@@ -31,17 +31,15 @@ from  : -> none
       | "from" "{" id+ "}" -> many
 node : 
 
-codeemit : "emit"  code -> code
+
 topl : template_id "(" seplist{",", param} ")"  from  code  -> node
-     | "static" codeemit -> staticmethod
-     | "local" codeemit -> localmethod
      | "dataclass" id "(" seplist{",", param} ")" -> dataclass
-     | "data" type "as" id -> data
+     | "data" type -> data
 
 language : "language" id list{topl} -> language
 start : language  -> just
 
-code : ESCAPED_CODE -> asstr
+code : ESCAPED_CODE -> code
 CODE_INNER: /.*?/
 CODE_ESC_INNER: CODE_INNER /(?<!\\)(\\\\)*?/
 ESCAPED_CODE : /\[%[^%]*?%\]/

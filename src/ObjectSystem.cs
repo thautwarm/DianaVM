@@ -5,14 +5,14 @@ using System.Diagnostics.CodeAnalysis;
 namespace DianaScript
 {
 
-
+    using NameSpace =  Dictionary<InternString, DObj>;
     public interface DObj
     {
 
         public DClsObj GetCls { get; }
         public object Native { get; }
 
-        public DObj Get(string attr)
+        public DObj Get(InternString attr)
         {
             (bool, DObj) o;
             var getters = this.GetCls.Getters;
@@ -22,10 +22,11 @@ namespace DianaScript
                 return o.Item2;
             }
             throw new D_AttributeError(this.GetCls, MK.String(attr));
-
         }
 
-        public void Set(string attr, DObj value)
+        
+
+        public void Set(InternString attr, DObj value)
         {
             DObj o;
             var setters = this.GetCls.Setters;
@@ -36,6 +37,10 @@ namespace DianaScript
 
             throw new D_AttributeError(this.GetCls, MK.String(attr));
         }
+
+        public DObj __enter__() => throw new D_TypeError($"{this.GetCls.__repr__} does not support __enter__.");
+
+        public void __exit__(DObj exctype, DObj exc, DObj frame) => throw new D_TypeError($"{this.GetCls.__repr__} does not support __enter__.");
 
         public DObj __call__(Args args) => throw new D_TypeError($"{this.GetCls.__repr__} instances are not callable");
 
@@ -52,17 +57,19 @@ namespace DianaScript
         public DObj __floordiv__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support // operator.");
         public DObj __mul__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support * operator.");
 
+        public DObj __pow__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support ** operator.");
+
         public DObj __mod__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support % operator.");
 
         public DObj __lshift__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support << operator.");
 
         public DObj __rshift__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support >> operator.");
 
-        public DObj __and__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support & operator.");
+        public DObj __bitand__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support & operator.");
 
-        public DObj __or__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support | operator.");
+        public DObj __bitor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support | operator.");
 
-        public DObj __xor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support ^ operator.");
+        public DObj __bitxor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support ^ operator.");
 
 
         public DObj __invert__ => throw new D_TypeError($"{this.GetCls.__repr__} does not support ~ operator.");
@@ -273,13 +280,12 @@ namespace DianaScript
 
         public string Repr => $"<function>";
         
-        public Block code;
         public DirectRef[] freevals;
         public bool is_vararg;
         public int narg;
         public int nlocal;
-        public int funcMetaInd;
-        public Ptr body;
+        public int metadataInd;
+        public int body;
 
         public Dictionary<InternString, DObj> nameSpace;
         
@@ -288,15 +294,15 @@ namespace DianaScript
         public string __repr__ => $"<code at {(this as DObj).__hash__}>";
 
         public static DFunc Make(
-            Ptr body, int funcMetaInd, DObj[] freevals = null, Dictionary<InternString, DObj> name_space = null
+            int body, int narg, int nlocal, int metadataInd, NameSpace nameSpace = null, bool is_vararg = false, DirectRef[] freevals = null
         )
         {
             return new DFunc
             {
                 body = body,
-                funcMetaInd = funcMetaInd,
-                freevals = freevals ?? new DObj[0],
-                name_space = name_space ?? new Dictionary<InternString, DObj>()
+                metadataInd = metadataInd,
+                freevals = freevals ?? new DirectRef[0],
+                nameSpace = nameSpace ?? new Dictionary<InternString, DObj>()
             };
         }
     }

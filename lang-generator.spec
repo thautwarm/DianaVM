@@ -8,10 +8,10 @@
 
 // loadmetadata
 // storevar, loadvar, loadstr, loadistr
-// set_return, execute_block
+// set_return, exec_block
 // check_argcount
 // check_argcount(dfunc, argcount: int)
-// create_vstack(dfunc, s_args:int[])
+// create_vstack(dfunc, p_args:int[])
 
 // exec type   | frame share |  offset share
 // exec_block  | yes         |  no
@@ -21,11 +21,11 @@
 language Diana
 
 
-data string as strings
-data DObj as objects
-data InternString as istrings
+data string
+data DObj
+data InternString
 
-dataclass Catch(exc_target: int, exc_type: int, body: Block)
+dataclass Catch(exc_target: int, exc_type: int, body: int)
 dataclass FuncMeta(
     is_vararg: bool,
     freeslots: int[],
@@ -38,14 +38,14 @@ dataclass FuncMeta(
 dataclass Loc(location_data: (int, int)[])
 dataclass Block(codes: Ptr[], location_data: int)
 
-FunctionDef(target: int, metadataInd: int, code: Block)
+FunctionDef(target: int, metadataInd: int, code: int)
 [%
     var meta = loadmetadata($metadataInd);
     int nfree = meta.freeslots.Length;
 
-    var new_freevals = new DObj[meta.freeslots.Length);
-    for(var i = 0; i < nfree; i)
-        new_freevals[i] = loadvar(meta.freeslots[i]);
+    var new_freevals = new DirectRef[meta.freeslots.Length];
+    for(var i = 0; i < nfree; i++)
+        new_freevals[i] = loadref(meta.freeslots[i]);
 
     var dfunc = DFunc.Make($code,
         freevals:new_freevals,
@@ -54,97 +54,97 @@ FunctionDef(target: int, metadataInd: int, code: Block)
         nlocal: meta.nlocal,
         metadataInd: $metadataInd);
         
-    storevar(target, dfunc);
+    storevar($target, dfunc);
 %]
 Return(reg: int)
 [%
-    set_return(loadvar(reg));
+    set_return(loadvar($reg));
     token = (int) TOKEN.RETURN;
 %]
 DelVar(target: int)
 [%
     storevar($target, null);
 %]
-SetVar(target: int, s_val: int)
+SetVar(target: int, p_val: int)
 [%
-    storevar($target, loadvar($s_val));
+    storevar($target, loadvar($p_val));
 %]
-JumpIf(s_val: int, offset: int)
+JumpIf(p_val: int, offset: int)
 [%
-    if (loadvar(s_val).__bool__)
+    if (loadvar($p_val).__bool__)
         offset = $offset;
 %]
 Jump(offset: int)
 [%
     offset = $offset;
 %]
-Raise(s_exc: int)
+Raise(p_exc: int)
 [%
-    var e = MK.unbox<Exception>(loadvar(s_exc));
+    var e = MK.unbox<Exception>(loadvar($p_exc));
     throw e;
 %]
-Assert(value: int, s_msg: int)
+Assert(value: int, p_msg: int)
 [%
-    assert(storevar(value).__bool__, loadvar($s_msg));
+    assert(loadvar($value).__bool__, loadvar($p_msg));
 %]
 Control(token: int) // break, continue, reraise
 [%
     token = $token;
 %]
-Try(body: Block, except_handlers: Catch[], final_body: Block)
+Try(body: int, except_handlers: Catch[], final_body: int)
 [%
         try
         {
-            execute_block(body);
+            exec_block($body);
         }
         catch (Exception e)
         {
             foreach(var handler in $except_handlers){
                 var exc_type = loadvar(handler.exc_type);
                 var e_boxed = MK.create(e);
-                if (exc_type.__subclasscheck__(e_boxed.GetCls == exc_type))
+                if (exc_type.__subclasscheck__(e_boxed.GetCls))
                 {
-                    if (handler.exc_target)
-                        storevar(exc_target, e_boxed);
-                    execute_block(body);
-                    if (handler.exc_target)
-                        storevar(exc_target, null);
-                    virtual_machine.ErrorFrames.Clear();
+                    storevar(handler.exc_target, e_boxed);
+                    exec_block(handler.body);
+                    storevar(handler.exc_target, null);
+                    virtual_machine.errorFrames.Clear();
                     goto end_handled;
                 }
             }
             throw;
-            end_handled:
+            end_handled: ;
         }
         finally{
-            execute_block(final_body)
+            exec_block($final_body);
         }
 %]
-For(target: int, s_iter: int, body: Block)
+For(target: int, p_iter: int, body: int)
 [%
-    var iter = loadvar($s_iter);
+    var iter = loadvar($p_iter);
     foreach(var it in iter.__iter__){
         storevar($target, it);
-        execute_block($body);
+        exec_block($body);
         switch(token)
         {
-            case (int) TOKEN.BREAK:
+            case (int) TOKEN.LOOP_BREAK:
                 break;
             case (int) TOKEN.RETURN:
                 return;
-            token = (int) TOKEN.GO_AHEAD;
+            default:
+                token = (int) TOKEN.GO_AHEAD;
+                break;
         }
         
     }
 %]
-With(s_resource: int, s_as: int, body: Block)
+With(p_resource: int, p_as: int, body: int)
 [%
-    var resource = loadvar($s_resource);
-    var val = resource.__enter__()
-    storevar($s_as, val)
+    var resource = loadvar($p_resource);
+    var val = resource.__enter__();
+    storevar($p_as, val);
     try
     {
-        execute_block(body)
+        exec_block($body);
         resource.__exit__(
             MK.Nil(),
             MK.Nil(),
@@ -154,24 +154,24 @@ With(s_resource: int, s_as: int, body: Block)
     catch (Exception e)
     {
         var e_boxed = MK.create(e);
-        var e_trace = MK.create(error_frames);
+        var e_trace = MK.create(virtual_machine.errorFrames);
         resource.__exit__(
             e_boxed.GetCls,
-            e,
-            error_frames
+            e_boxed,
+            e_trace
         );
     }
 %]
-DelItem(s_value: int,s_item: int)
+DelItem(p_value: int,p_item: int)
 [%
-    var value = loadvar($s_value);
-    var item = loadvar($s_item);
+    var value = loadvar($p_value);
+    var item = loadvar($p_item);
     value.__delitem__(item);
 %]
-GetItem(target_and_value: int, s_item: int)
+GetItem(target_and_value: int, p_item: int)
 [%
     var value = loadvar($target_and_value);
-    var item = loadvar($s_item);
+    var item = loadvar($p_item);
     value = value.__getitem__(item);
     storevar($target_and_value, item);
 %]
@@ -186,82 +186,76 @@ BinaryOp_$T(target_and_left: int, right: int) from {
 UnaryOp_$T(target_and_value: int) from { invert not }
 [%
     var val = loadvar($target_and_value);
-    storevar(target_and_value, val.__${T}__);
+    storevar($target_and_value, MK.create(val.__${T}__));
 %]
-Dict(target: int, s_kvs: Tuple<int, int>[])
+Dict(target: int, p_kvs: Tuple<int, int>[])
 [%
-    var dict = new Dictionary<DObj>($s_kvs.Length);
-    for(var i = 0; i < $s_kvs.Length; i++){
-        var kv = $s_kvs[i];
+    var dict = new Dictionary<DObj, DObj>($p_kvs.Length);
+    for(var i = 0; i < $p_kvs.Length; i++){
+        var kv = $p_kvs[i];
         dict[loadvar(kv.Item1)] = loadvar(kv.Item2);
     }
-    storevar($target, MK.Set(dict));
+    storevar($target, MK.Dict(dict));
 %]
-Set(target: int, s_elts: int[])
+Set(target: int, p_elts: int[])
 [%
-    var hset = new HashSet<DObj>($s_elts.Length);
-    for(var i = 0; i < $s_elts.Length; i++)
+    var hset = new HashSet<DObj>($p_elts.Length);
+    for(var i = 0; i < $p_elts.Length; i++)
         hset.Add(loadvar(i));
     storevar($target, MK.Set(hset));
 %]
-List(target: int, s_elts: int[])
+List(target: int, p_elts: int[])
 [%
-    var list = new List<DObj>($s_elts.Length);
-    for(var i = 0; i < $s_elts.Length; i++)
+    var list = new List<DObj>($p_elts.Length);
+    for(var i = 0; i < $p_elts.Length; i++)
         list.Add(loadvar(i));
     storevar($target, MK.List(list));
 %]
-Generator(target_and_func: int)
+Call(target: int, p_f: int, p_args: int[])
 [%
-    var f = (DFunc) loadvar(target_and_func)
-    storevar($target_and_func, create_generator(f));
-%]
-Call(target: int, s_f: int, s_args: int[])
-[%
-    var f = loadvar($target);
+    var f = loadvar($p_f);
     if (f is DFunc dfunc){
-        check_argcount(dfunc, $s_args.Length);
-        var vstack = create_vstack(dfunc, $s_args);
-        storevar($target, execute_func(dfunc, vstack));
+        check_argcount(dfunc, $p_args.Length);
+        var vstack = create_vstack(dfunc, $p_args);
+        storevar($target, virtual_machine.exec_func(dfunc, vstack));
     }
     var args = new Args();
-    for(var i = $s_args - 1; i >= 0; i--)
-        args.Prepend(loadvar($s_args[i]));
+    for(var i = $p_args.Length - 1; i >= 0; i--)
+        args.Prepend(loadvar($p_args[i]));
     storevar($target, f.__call__(args));
 %]
 Format(target: int, format: int, args: int[])
 [%
     var argvals = new string[$args.Length];
     for(var i = 0; i < $args.Length; i++)
-        argvals[i] = loadvar($args[i]);
-    var str = String.Format(loadstr(format), argvals);
+        argvals[i] = loadvar($args[i]).__str__; // TODO: format repr
+    var str = String.Format(loadstr($format), argvals);
     storevar($target, MK.String(str));
 %]
 Const(target: int, p_const: int)
 [%
     storevar($target, loadconst($p_const));
 %]
-GetAttr(target_and_value: int, p_attr: int)
+GetAttr(target: int, p_value: int,  p_attr: int)
 [%
-    var value = loadvar($target_and_value);
-    storevar(target_and_value, value.Get(loadistr($p_attr)));
+    var value = loadvar($p_value);
+    storevar($target, value.Get(loadistr($p_attr)));
 %]
 MoveVar(target: int, slot: int)
 [%
-    storevar($target, loadvar($slot))
+    storevar($target, loadvar($slot));
 %]
-Tuple(target: int, s_elts: int[])
+Tuple(target: int, p_elts: int[])
 [%
-    var tuple = DTuple.Create($s_elts.Length);
-    var tuple_elts = tuple.elts;
-    for(var i = 0; i < $s_elts.Length; i++)
-        tuple_elts[i] = loadvar($s_elts[i]);
-    storevar($target, tuple);
+    var tuple_elts = new DObj[$p_elts.Length];
+    for(var i = 0; i < $p_elts.Length; i++)
+        tuple_elts[i] = loadvar($p_elts[i]);
+    storevar($target, MK.Tuple(tuple_elts));
 %]
-PackTuple(targets: int[], s_value: int)
+PackTuple(targets: int[], p_value: int)
 [%
-    var tuple = (DTuple) loadvar(s_value);
+    var tuple = (DTuple) loadvar($p_value);
     var tuple_elts = tuple.elts;
     for(var i = 0; i < tuple_elts.Length; i++)
-        storevar(targets[i], tuple_elts[i]);
+        storevar($targets[i], tuple_elts[i]);
 %]

@@ -29,7 +29,7 @@ namespace DianaScript
         LOOP_CONTINUE
     }
 
-    public class DirectRef
+    public partial class DirectRef
     {
         public DObj cell_contents;
     }
@@ -38,9 +38,31 @@ namespace DianaScript
     {
 
         // stack of (blockind, offset)
-        public Stack<(int, int)> ErrorFrames;
+        public Stack<(int, int)> errorFrames;
 
         public DFlatGraphCode flatGraph;
+
+        public DVM(DFlatGraphCode flatGraph){
+            this.flatGraph = flatGraph;
+            this.errorFrames = new Stack<(int, int)>();
+
+        }
+        public DObj exec_func(DFunc dfunc, DObj[] vstack){
+            var executor = new BlockExecutor
+            {
+                virtual_machine = this,
+                offset = 0,
+                token = (int) TOKEN.GO_AHEAD,
+                vstack = vstack,
+                cur_func = dfunc,
+                @return = null,
+                flatGraph = flatGraph
+            };
+            executor.exec_block(dfunc.body);
+            if (executor.@return == null)
+                return MK.Nil();
+            return executor.@return;
+        }
     }
 
 
@@ -51,13 +73,23 @@ namespace DianaScript
         public DVM virtual_machine;
         public int offset;
         public int token;
-        DFunc cur_func;
-        DObj[] vstack;
+        public DFunc cur_func;
+        public DObj[] vstack;
         public DObj @return;
         public DFlatGraphCode flatGraph;
         public const int bit_global = 0b01 << 30;
         public const int bit_free = 0b01 << 31;
         public const int bit_nonlocal = bit_global & bit_free;
+        
+        DirectRef loadref(int slot)
+        {
+            return cur_func.freevals[slot];
+        }
+
+        DObj loadconst(int slot)
+        {
+            return flatGraph.dobjs[slot];
+        }
 
         DObj loadvar(int slot)
         {
@@ -95,6 +127,7 @@ namespace DianaScript
             }
         }
 
+        FuncMeta loadmetadata(int slot) => flatGraph.funcmetas[slot];
         string loadstr(int slot) => flatGraph.strings[slot];
         InternString loadistr(int slot) => flatGraph.internstrings[slot];
         void set_return(DObj val) => @return = val;
@@ -131,7 +164,7 @@ namespace DianaScript
             }
             catch
             {
-                virtual_machine.ErrorFrames.Push((blockind, offset));
+                virtual_machine.errorFrames.Push((blockind, offset));
                 throw;
             }
         }

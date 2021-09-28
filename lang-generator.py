@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from contextlib import contextmanager
 from json.decoder import scanstring
 from string import Template
+from textwrap import indent
+
 import io
 
 CODE = "CODE"
@@ -15,8 +17,8 @@ grammar = open("lang-generator.lark")
 
 @v_args(inline=True)
 class Trans(Transformer):
-    def data(self, a, b):
-        return Data(a, b)
+    def data(self, a):
+        return Data(a)
     def just(self, a):
         return a
     def unesc(self, s):
@@ -80,7 +82,6 @@ class Code:
 @dataclass
 class Data:
     type: str
-    name: str
 
 parser = Lark(
     grammar,
@@ -350,7 +351,7 @@ class Codegen:
     
 
     def generate_interpreter(self, language: Language):
-        template_file = open('VMTemplate.cs')
+        template_file = open('VMTemplate.cs.in')
         for each in template_file:
             if each.strip().startswith("//REPLACE"):
                 break
@@ -361,9 +362,9 @@ class Codegen:
             self << "{"
             for kind_name, code in self.tab_iter(self.codes.items()):
                 
-                self << f"case (int) {kind_name}:"
+                self << f"case (int) {CODE}.{kind_name}:"
                 self << "{"
-                self << code
+                self << indent(code, "            ")
                 self << "    break;"
                 self << "}"
             else:
@@ -371,6 +372,8 @@ class Codegen:
                 with self.tab():
                     self << "throw new Exception(\"unknown code\" + (CODE) curPtr.kind);"
             self << "}"
+        for each in template_file:
+            self << each[:-1]
         
         
             
@@ -411,5 +414,5 @@ cg.gen_parser(lang)
 cg.IO = open(f"dianascript/code_cons.py", 'w', encoding='utf8')
 cg.gen_python_code_builder(lang)
 
-cg.IO = open(f"dianascript/DVM.cs", 'w', encoding='utf8')
+cg.IO = open(f"src/DVM.cs", 'w', encoding='utf8')
 cg.generate_interpreter(lang)

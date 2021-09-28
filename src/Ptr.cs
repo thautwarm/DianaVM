@@ -5,12 +5,12 @@ namespace DianaScript
     public struct Ptr
     {
 
-        public CODE code;
+        public int kind;
         public int ind;
         
         public Ptr(CODE code, int ind){
             this.ind = ind;
-            this.code = code;
+            this.kind = (int) code;
         }
     }
 }

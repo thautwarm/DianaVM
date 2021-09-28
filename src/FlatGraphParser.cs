@@ -16,7 +16,7 @@ public partial class AIRParser
     {
         exc_target = Read(THint<int>.val),
         exc_type = Read(THint<int>.val),
-        body = Read(THint<Block>.val),
+        body = Read(THint<int>.val),
     };
 
     public FuncMeta Read(THint<FuncMeta> _) => new FuncMeta
@@ -45,7 +45,7 @@ public partial class AIRParser
     {
         target = Read(THint<int>.val),
         metadataInd = Read(THint<int>.val),
-        code = Read(THint<Block>.val),
+        code = Read(THint<int>.val),
     };
 
     public Diana_Return Read(THint<Diana_Return> _) => new Diana_Return
@@ -61,12 +61,12 @@ public partial class AIRParser
     public Diana_SetVar Read(THint<Diana_SetVar> _) => new Diana_SetVar
     {
         target = Read(THint<int>.val),
-        s_val = Read(THint<int>.val),
+        p_val = Read(THint<int>.val),
     };
 
     public Diana_JumpIf Read(THint<Diana_JumpIf> _) => new Diana_JumpIf
     {
-        s_val = Read(THint<int>.val),
+        p_val = Read(THint<int>.val),
         offset = Read(THint<int>.val),
     };
 
@@ -77,13 +77,13 @@ public partial class AIRParser
 
     public Diana_Raise Read(THint<Diana_Raise> _) => new Diana_Raise
     {
-        s_exc = Read(THint<int>.val),
+        p_exc = Read(THint<int>.val),
     };
 
     public Diana_Assert Read(THint<Diana_Assert> _) => new Diana_Assert
     {
         value = Read(THint<int>.val),
-        s_msg = Read(THint<int>.val),
+        p_msg = Read(THint<int>.val),
     };
 
     public Diana_Control Read(THint<Diana_Control> _) => new Diana_Control
@@ -93,35 +93,35 @@ public partial class AIRParser
 
     public Diana_Try Read(THint<Diana_Try> _) => new Diana_Try
     {
-        body = Read(THint<Block>.val),
+        body = Read(THint<int>.val),
         except_handlers = Read(THint<Catch[]>.val),
-        final_body = Read(THint<Block>.val),
+        final_body = Read(THint<int>.val),
     };
 
     public Diana_For Read(THint<Diana_For> _) => new Diana_For
     {
         target = Read(THint<int>.val),
-        s_iter = Read(THint<int>.val),
-        body = Read(THint<Block>.val),
+        p_iter = Read(THint<int>.val),
+        body = Read(THint<int>.val),
     };
 
     public Diana_With Read(THint<Diana_With> _) => new Diana_With
     {
-        s_resource = Read(THint<int>.val),
-        s_as = Read(THint<int>.val),
-        body = Read(THint<Block>.val),
+        p_resource = Read(THint<int>.val),
+        p_as = Read(THint<int>.val),
+        body = Read(THint<int>.val),
     };
 
     public Diana_DelItem Read(THint<Diana_DelItem> _) => new Diana_DelItem
     {
-        s_value = Read(THint<int>.val),
-        s_item = Read(THint<int>.val),
+        p_value = Read(THint<int>.val),
+        p_item = Read(THint<int>.val),
     };
 
     public Diana_GetItem Read(THint<Diana_GetItem> _) => new Diana_GetItem
     {
         target_and_value = Read(THint<int>.val),
-        s_item = Read(THint<int>.val),
+        p_item = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_add Read(THint<Diana_BinaryOp_add> _) => new Diana_BinaryOp_add
@@ -209,31 +209,26 @@ public partial class AIRParser
     public Diana_Dict Read(THint<Diana_Dict> _) => new Diana_Dict
     {
         target = Read(THint<int>.val),
-        s_kvs = Read(THint<(int, int)[]>.val),
+        p_kvs = Read(THint<(int, int)[]>.val),
     };
 
     public Diana_Set Read(THint<Diana_Set> _) => new Diana_Set
     {
         target = Read(THint<int>.val),
-        s_elts = Read(THint<int[]>.val),
+        p_elts = Read(THint<int[]>.val),
     };
 
     public Diana_List Read(THint<Diana_List> _) => new Diana_List
     {
         target = Read(THint<int>.val),
-        s_elts = Read(THint<int[]>.val),
-    };
-
-    public Diana_Generator Read(THint<Diana_Generator> _) => new Diana_Generator
-    {
-        target_and_func = Read(THint<int>.val),
+        p_elts = Read(THint<int[]>.val),
     };
 
     public Diana_Call Read(THint<Diana_Call> _) => new Diana_Call
     {
         target = Read(THint<int>.val),
-        s_f = Read(THint<int>.val),
-        s_args = Read(THint<int[]>.val),
+        p_f = Read(THint<int>.val),
+        p_args = Read(THint<int[]>.val),
     };
 
     public Diana_Format Read(THint<Diana_Format> _) => new Diana_Format
@@ -251,7 +246,8 @@ public partial class AIRParser
 
     public Diana_GetAttr Read(THint<Diana_GetAttr> _) => new Diana_GetAttr
     {
-        target_and_value = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        p_value = Read(THint<int>.val),
         p_attr = Read(THint<int>.val),
     };
 
@@ -264,13 +260,13 @@ public partial class AIRParser
     public Diana_Tuple Read(THint<Diana_Tuple> _) => new Diana_Tuple
     {
         target = Read(THint<int>.val),
-        s_elts = Read(THint<int[]>.val),
+        p_elts = Read(THint<int[]>.val),
     };
 
     public Diana_PackTuple Read(THint<Diana_PackTuple> _) => new Diana_PackTuple
     {
         targets = Read(THint<int[]>.val),
-        s_value = Read(THint<int>.val),
+        p_value = Read(THint<int>.val),
     };
 
     public DFlatGraphCode Read(THint<DFlatGraphCode> _) => new DFlatGraphCode
@@ -313,7 +309,6 @@ public partial class AIRParser
         diana_dicts = Read(THint<Diana_Dict[]>.val),
         diana_sets = Read(THint<Diana_Set[]>.val),
         diana_lists = Read(THint<Diana_List[]>.val),
-        diana_generators = Read(THint<Diana_Generator[]>.val),
         diana_calls = Read(THint<Diana_Call[]>.val),
         diana_formats = Read(THint<Diana_Format[]>.val),
         diana_consts = Read(THint<Diana_Const[]>.val),
@@ -740,16 +735,6 @@ public partial class AIRParser
         for (var i = 0; i < src.Length; i++)
         {
             src[i] = Read(Diana_List_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Generator> Diana_Generator_hint = THint<Diana_Generator>.val;
-    public Diana_Generator[] Read(THint<Diana_Generator[]> _)
-    {
-        Diana_Generator[] src = new Diana_Generator[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_Generator_hint);
         }
         return src;
     }

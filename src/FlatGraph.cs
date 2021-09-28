@@ -6,9 +6,9 @@ public struct Catch
 {
     public int exc_target;
     public int exc_type;
-    public Block body;
+    public int body;
 
-    public static Catch Make(int exc_target, int exc_type, Block body) => new Catch
+    public static Catch Make(int exc_target, int exc_type, int body) => new Catch
     {
         exc_target = exc_target,
 
@@ -73,7 +73,7 @@ public struct Diana_FunctionDef
 {
     public int target;
     public int metadataInd;
-    public Block code;
+    public int code;
 
 }
 public struct Diana_Return
@@ -89,12 +89,12 @@ public struct Diana_DelVar
 public struct Diana_SetVar
 {
     public int target;
-    public int s_val;
+    public int p_val;
 
 }
 public struct Diana_JumpIf
 {
-    public int s_val;
+    public int p_val;
     public int offset;
 
 }
@@ -105,13 +105,13 @@ public struct Diana_Jump
 }
 public struct Diana_Raise
 {
-    public int s_exc;
+    public int p_exc;
 
 }
 public struct Diana_Assert
 {
     public int value;
-    public int s_msg;
+    public int p_msg;
 
 }
 public struct Diana_Control
@@ -121,35 +121,35 @@ public struct Diana_Control
 }
 public struct Diana_Try
 {
-    public Block body;
+    public int body;
     public Catch[] except_handlers;
-    public Block final_body;
+    public int final_body;
 
 }
 public struct Diana_For
 {
     public int target;
-    public int s_iter;
-    public Block body;
+    public int p_iter;
+    public int body;
 
 }
 public struct Diana_With
 {
-    public int s_resource;
-    public int s_as;
-    public Block body;
+    public int p_resource;
+    public int p_as;
+    public int body;
 
 }
 public struct Diana_DelItem
 {
-    public int s_value;
-    public int s_item;
+    public int p_value;
+    public int p_item;
 
 }
 public struct Diana_GetItem
 {
     public int target_and_value;
-    public int s_item;
+    public int p_item;
 
 }
 public struct Diana_BinaryOp_add
@@ -237,31 +237,26 @@ public struct Diana_UnaryOp_not
 public struct Diana_Dict
 {
     public int target;
-    public (int, int)[] s_kvs;
+    public (int, int)[] p_kvs;
 
 }
 public struct Diana_Set
 {
     public int target;
-    public int[] s_elts;
+    public int[] p_elts;
 
 }
 public struct Diana_List
 {
     public int target;
-    public int[] s_elts;
-
-}
-public struct Diana_Generator
-{
-    public int target_and_func;
+    public int[] p_elts;
 
 }
 public struct Diana_Call
 {
     public int target;
-    public int s_f;
-    public int[] s_args;
+    public int p_f;
+    public int[] p_args;
 
 }
 public struct Diana_Format
@@ -279,7 +274,8 @@ public struct Diana_Const
 }
 public struct Diana_GetAttr
 {
-    public int target_and_value;
+    public int target;
+    public int p_value;
     public int p_attr;
 
 }
@@ -292,13 +288,13 @@ public struct Diana_MoveVar
 public struct Diana_Tuple
 {
     public int target;
-    public int[] s_elts;
+    public int[] p_elts;
 
 }
 public struct Diana_PackTuple
 {
     public int[] targets;
-    public int s_value;
+    public int p_value;
 
 }
 public enum CODE
@@ -334,7 +330,6 @@ public enum CODE
     Diana_Dict,
     Diana_Set,
     Diana_List,
-    Diana_Generator,
     Diana_Call,
     Diana_Format,
     Diana_Const,
@@ -421,8 +416,6 @@ public partial class DFlatGraphCode
     public Diana_Set[] diana_sets;
 
     public Diana_List[] diana_lists;
-
-    public Diana_Generator[] diana_generators;
 
     public Diana_Call[] diana_calls;
 
