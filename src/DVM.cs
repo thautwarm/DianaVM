@@ -374,134 +374,134 @@ namespace DianaScript
             case (int) CODE.Diana_GetItem:
             {
             
-                var value = loadvar(flatGraph.diana_getitems[curPtr.ind].target_and_value);
+                var value = loadvar(flatGraph.diana_getitems[curPtr.ind].p_value);
                 var item = loadvar(flatGraph.diana_getitems[curPtr.ind].p_item);
                 value = value.__getitem__(item);
-                storevar(flatGraph.diana_getitems[curPtr.ind].target_and_value, item);
+                storevar(flatGraph.diana_getitems[curPtr.ind].target, item);
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_add:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_adds[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_adds[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_adds[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_adds[curPtr.ind].target_and_left, left.__add__(right));
+                storevar(flatGraph.diana_binaryop_adds[curPtr.ind].target, left.__add__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_sub:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_subs[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_subs[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_subs[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_subs[curPtr.ind].target_and_left, left.__sub__(right));
+                storevar(flatGraph.diana_binaryop_subs[curPtr.ind].target, left.__sub__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_mul:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_muls[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_muls[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_muls[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_muls[curPtr.ind].target_and_left, left.__mul__(right));
+                storevar(flatGraph.diana_binaryop_muls[curPtr.ind].target, left.__mul__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_truediv:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_truedivs[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_truedivs[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_truedivs[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_truedivs[curPtr.ind].target_and_left, left.__truediv__(right));
+                storevar(flatGraph.diana_binaryop_truedivs[curPtr.ind].target, left.__truediv__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_floordiv:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_floordivs[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_floordivs[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_floordivs[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_floordivs[curPtr.ind].target_and_left, left.__floordiv__(right));
+                storevar(flatGraph.diana_binaryop_floordivs[curPtr.ind].target, left.__floordiv__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_mod:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_mods[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_mods[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_mods[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_mods[curPtr.ind].target_and_left, left.__mod__(right));
+                storevar(flatGraph.diana_binaryop_mods[curPtr.ind].target, left.__mod__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_pow:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_pows[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_pows[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_pows[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_pows[curPtr.ind].target_and_left, left.__pow__(right));
+                storevar(flatGraph.diana_binaryop_pows[curPtr.ind].target, left.__pow__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_lshift:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_lshifts[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_lshifts[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_lshifts[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_lshifts[curPtr.ind].target_and_left, left.__lshift__(right));
+                storevar(flatGraph.diana_binaryop_lshifts[curPtr.ind].target, left.__lshift__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_rshift:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_rshifts[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_rshifts[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_rshifts[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_rshifts[curPtr.ind].target_and_left, left.__rshift__(right));
+                storevar(flatGraph.diana_binaryop_rshifts[curPtr.ind].target, left.__rshift__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_bitor:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_bitors[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_bitors[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_bitors[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_bitors[curPtr.ind].target_and_left, left.__bitor__(right));
+                storevar(flatGraph.diana_binaryop_bitors[curPtr.ind].target, left.__bitor__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_bitand:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_bitands[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_bitands[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_bitands[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_bitands[curPtr.ind].target_and_left, left.__bitand__(right));
+                storevar(flatGraph.diana_binaryop_bitands[curPtr.ind].target, left.__bitand__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_bitxor:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_bitxors[curPtr.ind].target_and_left);
+                var left = loadvar(flatGraph.diana_binaryop_bitxors[curPtr.ind].left);
                 var right = loadvar(flatGraph.diana_binaryop_bitxors[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_bitxors[curPtr.ind].target_and_left, left.__bitxor__(right));
+                storevar(flatGraph.diana_binaryop_bitxors[curPtr.ind].target, left.__bitxor__(right));
 
                 break;
             }
             case (int) CODE.Diana_UnaryOp_invert:
             {
             
-                var val = loadvar(flatGraph.diana_unaryop_inverts[curPtr.ind].target_and_value);
-                storevar(flatGraph.diana_unaryop_inverts[curPtr.ind].target_and_value, MK.create(val.__invert__));
+                var val = loadvar(flatGraph.diana_unaryop_inverts[curPtr.ind].p_value);
+                storevar(flatGraph.diana_unaryop_inverts[curPtr.ind].target, MK.create(val.__invert__));
 
                 break;
             }
             case (int) CODE.Diana_UnaryOp_not:
             {
             
-                var val = loadvar(flatGraph.diana_unaryop_nots[curPtr.ind].target_and_value);
-                storevar(flatGraph.diana_unaryop_nots[curPtr.ind].target_and_value, MK.create(val.__not__));
+                var val = loadvar(flatGraph.diana_unaryop_nots[curPtr.ind].p_value);
+                storevar(flatGraph.diana_unaryop_nots[curPtr.ind].target, MK.create(val.__not__));
 
                 break;
             }

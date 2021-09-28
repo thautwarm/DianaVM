@@ -160,90 +160,105 @@ public struct Diana_DelItem
 }
 public struct Diana_GetItem
 {
-    public int target_and_value;
+    public int target;
+    public int p_value;
     public int p_item;
 
 }
 public struct Diana_BinaryOp_add
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_sub
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_mul
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_truediv
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_floordiv
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_mod
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_pow
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_lshift
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_rshift
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_bitor
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_bitand
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_BinaryOp_bitxor
 {
-    public int target_and_left;
+    public int target;
+    public int left;
     public int right;
 
 }
 public struct Diana_UnaryOp_invert
 {
-    public int target_and_value;
+    public int target;
+    public int p_value;
 
 }
 public struct Diana_UnaryOp_not
 {
-    public int target_and_value;
+    public int target;
+    public int p_value;
 
 }
 public struct Diana_Dict

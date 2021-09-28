@@ -124,90 +124,105 @@ public partial class AIRParser
 
     public Diana_GetItem Read(THint<Diana_GetItem> _) => new Diana_GetItem
     {
-        target_and_value = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        p_value = Read(THint<int>.val),
         p_item = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_add Read(THint<Diana_BinaryOp_add> _) => new Diana_BinaryOp_add
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_sub Read(THint<Diana_BinaryOp_sub> _) => new Diana_BinaryOp_sub
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_mul Read(THint<Diana_BinaryOp_mul> _) => new Diana_BinaryOp_mul
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_truediv Read(THint<Diana_BinaryOp_truediv> _) => new Diana_BinaryOp_truediv
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_floordiv Read(THint<Diana_BinaryOp_floordiv> _) => new Diana_BinaryOp_floordiv
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_mod Read(THint<Diana_BinaryOp_mod> _) => new Diana_BinaryOp_mod
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_pow Read(THint<Diana_BinaryOp_pow> _) => new Diana_BinaryOp_pow
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_lshift Read(THint<Diana_BinaryOp_lshift> _) => new Diana_BinaryOp_lshift
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_rshift Read(THint<Diana_BinaryOp_rshift> _) => new Diana_BinaryOp_rshift
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_bitor Read(THint<Diana_BinaryOp_bitor> _) => new Diana_BinaryOp_bitor
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_bitand Read(THint<Diana_BinaryOp_bitand> _) => new Diana_BinaryOp_bitand
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_BinaryOp_bitxor Read(THint<Diana_BinaryOp_bitxor> _) => new Diana_BinaryOp_bitxor
     {
-        target_and_left = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        left = Read(THint<int>.val),
         right = Read(THint<int>.val),
     };
 
     public Diana_UnaryOp_invert Read(THint<Diana_UnaryOp_invert> _) => new Diana_UnaryOp_invert
     {
-        target_and_value = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        p_value = Read(THint<int>.val),
     };
 
     public Diana_UnaryOp_not Read(THint<Diana_UnaryOp_not> _) => new Diana_UnaryOp_not
     {
-        target_and_value = Read(THint<int>.val),
+        target = Read(THint<int>.val),
+        p_value = Read(THint<int>.val),
     };
 
     public Diana_Dict Read(THint<Diana_Dict> _) => new Diana_Dict

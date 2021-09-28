@@ -309,13 +309,15 @@ class Diana_DelItem:
 
 @dataclass(frozen=True)
 class Diana_GetItem:
-    target_and_value: int
+    target: int
+    p_value: int
     p_item: int
     TAG : int = 20
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_value, arr)
+        serialize_(self.target, arr)
+        serialize_(self.p_value, arr)
         serialize_(self.p_item, arr)
 
     def as_ptr(self) -> int:
@@ -324,13 +326,15 @@ class Diana_GetItem:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_add:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 21
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -339,13 +343,15 @@ class Diana_BinaryOp_add:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_sub:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 22
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -354,13 +360,15 @@ class Diana_BinaryOp_sub:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_mul:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 23
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -369,13 +377,15 @@ class Diana_BinaryOp_mul:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_truediv:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 24
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -384,13 +394,15 @@ class Diana_BinaryOp_truediv:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_floordiv:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 25
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -399,13 +411,15 @@ class Diana_BinaryOp_floordiv:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_mod:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 26
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -414,13 +428,15 @@ class Diana_BinaryOp_mod:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_pow:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 27
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -429,13 +445,15 @@ class Diana_BinaryOp_pow:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_lshift:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 28
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -444,13 +462,15 @@ class Diana_BinaryOp_lshift:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_rshift:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 29
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -459,13 +479,15 @@ class Diana_BinaryOp_rshift:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_bitor:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 30
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -474,13 +496,15 @@ class Diana_BinaryOp_bitor:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_bitand:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 31
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -489,13 +513,15 @@ class Diana_BinaryOp_bitand:
 
 @dataclass(frozen=True)
 class Diana_BinaryOp_bitxor:
-    target_and_left: int
+    target: int
+    left: int
     right: int
     TAG : int = 32
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_left, arr)
+        serialize_(self.target, arr)
+        serialize_(self.left, arr)
         serialize_(self.right, arr)
 
     def as_ptr(self) -> int:
@@ -504,12 +530,14 @@ class Diana_BinaryOp_bitxor:
 
 @dataclass(frozen=True)
 class Diana_UnaryOp_invert:
-    target_and_value: int
+    target: int
+    p_value: int
     TAG : int = 33
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_value, arr)
+        serialize_(self.target, arr)
+        serialize_(self.p_value, arr)
 
     def as_ptr(self) -> int:
         return DFlatGraphCode.diana_unaryop_inverts.cache(self)
@@ -517,12 +545,14 @@ class Diana_UnaryOp_invert:
 
 @dataclass(frozen=True)
 class Diana_UnaryOp_not:
-    target_and_value: int
+    target: int
+    p_value: int
     TAG : int = 34
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target_and_value, arr)
+        serialize_(self.target, arr)
+        serialize_(self.p_value, arr)
 
     def as_ptr(self) -> int:
         return DFlatGraphCode.diana_unaryop_nots.cache(self)

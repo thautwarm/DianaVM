@@ -171,25 +171,25 @@ DelItem(p_value: int,p_item: int)
     var item = loadvar($p_item);
     value.__delitem__(item);
 %]
-GetItem(target_and_value: int, p_item: int)
+GetItem(target: int, p_value: int, p_item: int)
 [%
-    var value = loadvar($target_and_value);
+    var value = loadvar($p_value);
     var item = loadvar($p_item);
     value = value.__getitem__(item);
-    storevar($target_and_value, item);
+    storevar($target, item);
 %]
-BinaryOp_$T(target_and_left: int, right: int) from {
+BinaryOp_$T(target: int, left: int, right: int) from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
 }
 [%
-    var left = loadvar($target_and_left);
+    var left = loadvar($left);
     var right = loadvar($right);
-    storevar($target_and_left, left.__${T}__(right));
+    storevar($target, left.__${T}__(right));
 %]
-UnaryOp_$T(target_and_value: int) from { invert not }
+UnaryOp_$T(target: int, p_value: int) from { invert not }
 [%
-    var val = loadvar($target_and_value);
-    storevar($target_and_value, MK.create(val.__${T}__));
+    var val = loadvar($p_value);
+    storevar($target, MK.create(val.__${T}__));
 %]
 Dict(target: int, p_kvs: Tuple<int, int>[])
 [%
