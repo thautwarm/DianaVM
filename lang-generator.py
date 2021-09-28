@@ -152,12 +152,12 @@ class Codegen:
         self.codes: dict[str, str] = {}
         self.dataclasses = []
     @contextmanager
-    def tab(self, do=True):
+    def tab(self, do=True, n=1):
 
         indent = self.indent
         try:
             if do:
-                self.indent += "    "
+                self.indent += "    " * n
             yield
         finally:
             self.indent = indent
@@ -350,26 +350,31 @@ class Codegen:
     
 
     def generate_interpreter(self, language: Language):
-        open('VMTemplate.cs').read()
-        self << "using System;"
-        self << "using System.IO;"
-        self << "using System.Collections.Generic;"
-        self << "namespace DianaScript"
-        self << "{"
-        self << "public partial class VM"
-        self << "{"
-        locals = []
-        for each in language.nodes:
-            match each:
-                case Code(code, is_static):
-                    if is_static:
-                        self << code
-                    
+        template_file = open('VMTemplate.cs')
+        for each in template_file:
+            if each.strip().startswith("//REPLACE"):
+                break
+            self << each[:-1]
+        
+        with self.tab(n=2):
+            self << f"switch(curPtr.kind)"
+            self << "{"
+            for kind_name, code in self.tab_iter(self.codes.items()):
                 
-        self << "}"
-        self << "}"
+                self << f"case (int) {kind_name}:"
+                self << "{"
+                self << code
+                self << "    break;"
+                self << "}"
+            else:
+                self << "default:"
+                with self.tab():
+                    self << "throw new Exception(\"unknown code\" + (CODE) curPtr.kind);"
+            self << "}"
+        
+        
+            
 
-        pass
         
     
 def generate_array_read(self: Codegen, tname: str):
@@ -405,3 +410,6 @@ cg.gen_parser(lang)
 
 cg.IO = open(f"dianascript/code_cons.py", 'w', encoding='utf8')
 cg.gen_python_code_builder(lang)
+
+cg.IO = open(f"dianascript/DVM.cs", 'w', encoding='utf8')
+cg.generate_interpreter(lang)

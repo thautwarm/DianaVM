@@ -48,11 +48,12 @@ FunctionDef(target: int, metadataInd: int, code: Block)
         new_freevals[i] = loadvar(meta.freeslots[i]);
 
     var dfunc = DFunc.Make($code,
-    freevals:new_freevals,
-    is_vararg: meta.is_vararg,
-    narg: meta.narg,
-    nlocal: meta.nlocal,
-    metadataInd: $metadataInd);
+        freevals:new_freevals,
+        is_vararg: meta.is_vararg,
+        narg: meta.narg,
+        nlocal: meta.nlocal,
+        metadataInd: $metadataInd);
+        
     storevar(target, dfunc);
 %]
 Return(reg: int)
@@ -125,8 +126,15 @@ For(target: int, s_iter: int, body: Block)
     foreach(var it in iter.__iter__){
         storevar($target, it);
         execute_block($body);
-        if (token == (int) TOKEN.BREAK)
-            break;
+        switch(token)
+        {
+            case (int) TOKEN.BREAK:
+                break;
+            case (int) TOKEN.RETURN:
+                return;
+            token = (int) TOKEN.GO_AHEAD;
+        }
+        
     }
 %]
 With(s_resource: int, s_as: int, body: Block)
