@@ -98,7 +98,7 @@ public struct Diana_DelVar
     public int target;
 
 }
-public struct Diana_SetVar
+public struct Diana_LoadVar
 {
     public int target;
     public int p_val;
@@ -329,7 +329,7 @@ public enum CODE
     Diana_FunctionDef,
     Diana_Return,
     Diana_DelVar,
-    Diana_SetVar,
+    Diana_LoadVar,
     Diana_JumpIf,
     Diana_Jump,
     Diana_Raise,
@@ -388,7 +388,7 @@ public partial class DFlatGraphCode
 
     public Diana_DelVar[] diana_delvars;
 
-    public Diana_SetVar[] diana_setvars;
+    public Diana_LoadVar[] diana_loadvars;
 
     public Diana_JumpIf[] diana_jumpifs;
 

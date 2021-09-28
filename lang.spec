@@ -68,7 +68,7 @@ DelVar(target: int)
 [%
     storevar($target, null);
 %]
-SetVar(target: int, p_val: int)
+LoadVar(target: int, p_val: int)
 [%
     storevar($target, loadvar($p_val));
 %]

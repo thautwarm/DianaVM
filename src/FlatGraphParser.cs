@@ -62,7 +62,7 @@ public partial class AIRParser
         target = Read(THint<int>.val),
     };
 
-    public Diana_SetVar Read(THint<Diana_SetVar> _) => new Diana_SetVar
+    public Diana_LoadVar Read(THint<Diana_LoadVar> _) => new Diana_LoadVar
     {
         target = Read(THint<int>.val),
         p_val = Read(THint<int>.val),
@@ -300,7 +300,7 @@ public partial class AIRParser
         diana_functiondefs = Read(THint<Diana_FunctionDef[]>.val),
         diana_returns = Read(THint<Diana_Return[]>.val),
         diana_delvars = Read(THint<Diana_DelVar[]>.val),
-        diana_setvars = Read(THint<Diana_SetVar[]>.val),
+        diana_loadvars = Read(THint<Diana_LoadVar[]>.val),
         diana_jumpifs = Read(THint<Diana_JumpIf[]>.val),
         diana_jumps = Read(THint<Diana_Jump[]>.val),
         diana_raises = Read(THint<Diana_Raise[]>.val),
@@ -477,13 +477,13 @@ public partial class AIRParser
         }
         return src;
     }
-    public static readonly THint<Diana_SetVar> Diana_SetVar_hint = THint<Diana_SetVar>.val;
-    public Diana_SetVar[] Read(THint<Diana_SetVar[]> _)
+    public static readonly THint<Diana_LoadVar> Diana_LoadVar_hint = THint<Diana_LoadVar>.val;
+    public Diana_LoadVar[] Read(THint<Diana_LoadVar[]> _)
     {
-        Diana_SetVar[] src = new Diana_SetVar[ReadInt()];
+        Diana_LoadVar[] src = new Diana_LoadVar[ReadInt()];
         for (var i = 0; i < src.Length; i++)
         {
-            src[i] = Read(Diana_SetVar_hint);
+            src[i] = Read(Diana_LoadVar_hint);
         }
         return src;
     }

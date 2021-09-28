@@ -1,3 +1,9 @@
+"""
+The original of this resolver work was done
+in the project YAPyPy.
+It has been slightly modified to support 3.10 features and,
+C# 'out' keyword.
+"""
 from __future__ import annotations
 import ast
 import typing
@@ -267,7 +273,6 @@ def _visit_yield(self: "ASTTagger", node: ast.Yield):
     self.symtable.cts.add(ContextType.Generator)
     return node
 
-
 def _visit_yield_from(self: "ASTTagger", node: ast.YieldFrom):
     self.symtable.cts.add(ContextType.Generator)
     return node
@@ -330,6 +335,14 @@ def _visit_lam(self: "ASTTagger", node: ast.Lambda):
     new_tagger = ASTTagger(new)
     node.body = new_tagger.visit(node.body)
     setattr(node, "_tag", new)
+    return node
+
+
+def _visit_getitem(self: ASTTagger, node: ast.Subscript):
+    match node:
+        case ast.Subscript(ctx=ast.Load(), value=ast.Name(id='out'), slice=slice):
+            assert isinstance(slice, ast.Name), "ouy keyword must be used for a simple variable."
+        
     return node
 
 

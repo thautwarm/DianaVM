@@ -9,100 +9,6 @@ import struct
 import contextlib
 
 
-
-
-class BIN_OP:
-    ADD: int
-    SUB: int
-    MUL: int
-    FLOORDIV: int
-    TRUEDIV: int
-    MOD: int
-    LSHIFT: int
-    RSHIFT: int
-    AND: int
-    OR: int
-    XOR: int
-    EQ: int
-    NE: int
-    IN: int
-    POW: int
-
-
-class Label:
-    pass
-class CodeBuilder:
-    def make_label(self) -> Label:
-        raise NotImplementedError
-    def add_label(self, label: Label): ...
-
-    def DUP(self, ): ... # TODO
-    def POP(self, ): ...
-    def RETURN(self, ): ...
-    def ERR_CLEAR(self, ): ...
-    def LOAD_ITEM(self, ): ...
-    def STORE_ITEM(self, ): ...
-    def DEL_ITEM(self, ): ...
-    def INVERT(self,) : ...
-    def LOAD_NEXT(self,) : ... # TODO
-    def CALL_NEXT(self, label: Label) : ... # TODO
-    
-    def CHECK_EXC(self, label: Label) : ... # TODO
-    # if falsed, pop_block
-
-    
-
-    def POP_BLOCK(self, ): ...
-    def JUMP(self, label: Label): ...
-    def JUMP_IF(self, label: Label): ...
-
-    def RAISE(self, op: int): ...
-    # op = 0 : reraise
-    # op = 1 : raise e
-    # op = 2 : raise e from e
-    # op = 3 : raise e if e is an exception
-    
-    def LOAD_ATTR(self, s: str): ...
-    def STORE_ATTR(self, s: str): ...
-    def LOAD_GLOBAL(self, s: str): ...
-    def STORE_GLOBAL(self, s: str): ...
-    def REF_GLOBAL(self, s: str): ...
-    def LOAD_LOCAL(self, s: str): ...
-    def STORE_DEREF(self, s: str): ...
-    def LOAD_DEREF(self, s: str): ...
-    def STORE_LOCAL(self, s: str): ...
-    def REF_LOCAL(self, s: str): ...
-    def LOAD_CONST(self, v: object): ...
-    def PEEK(self, n: int): ...
-    def CALL(self, n: int): ...
-    def PUSH_BLOCK(self, target: Label): ...
-    def MAKE_FUNCTION(self, flag: int): ...
-    
-    
-    def BIN(self, bin_op: int): ...
-    def MK_TUPLE(self, n: int): ...
-    def MK_LIST(self, n: int): ...
-    def MK_DICT(self, n: int): ...
-
-
-@dataclass
-class FLAGS:
-    MAKE_FUNCTION_FREE = 0b01
-    MAKE_FUNCTION_DEFAULTS = 0b10
-
-@dataclass
-class DCode:
-    filename: str
-    name: str
-    varg: bool
-    narg: int
-    nlocal: int
-    nfree: int
-    strings: list[str]
-    consts: list[object]
-    locs: list[tuple[int, int]]    
-    bc: bytearray
-
 def _perform_set_loc(f):
     def ap(self, node):
         try:
@@ -116,18 +22,6 @@ def auto_set_loc(cls):
         if k.startswith("visit_") and str.isupper(k[len("visit_")]):
             setattr(cls, k, _perform_set_loc(getattr(cls, k)))
 
-
-
-class VarKind(Enum):
-    Local = 0
-    Cell = 1 # local and is cell
-    Global = 2
-
-class VarCtx(Enum):
-    LOAD = 0
-    STORE = 1
-    DEL = 2
-    REF = 3
 
 @dataclass
 class Var:

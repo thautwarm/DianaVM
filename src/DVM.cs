@@ -238,10 +238,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetVar:
+            case (int) CODE.Diana_LoadVar:
             {
             
-                storevar(flatGraph.diana_setvars[curPtr.ind].target, loadvar(flatGraph.diana_setvars[curPtr.ind].p_val));
+                storevar(flatGraph.diana_loadvars[curPtr.ind].target, loadvar(flatGraph.diana_loadvars[curPtr.ind].p_val));
 
                 break;
             }

@@ -158,7 +158,7 @@ class Diana_DelVar:
 
 
 @dataclass(frozen=True)
-class Diana_SetVar:
+class Diana_LoadVar:
     target: int
     p_val: int
     TAG : int = 10
@@ -169,7 +169,7 @@ class Diana_SetVar:
         serialize_(self.p_val, arr)
 
     def as_ptr(self) -> int:
-        return DFlatGraphCode.diana_setvars.cache(self)
+        return DFlatGraphCode.diana_loadvars.cache(self)
 
 
 @dataclass(frozen=True)
@@ -725,7 +725,7 @@ class DFlatGraphCode:
     diana_functiondefs : Builder[Diana_FunctionDef] = Builder()
     diana_returns : Builder[Diana_Return] = Builder()
     diana_delvars : Builder[Diana_DelVar] = Builder()
-    diana_setvars : Builder[Diana_SetVar] = Builder()
+    diana_loadvars : Builder[Diana_LoadVar] = Builder()
     diana_jumpifs : Builder[Diana_JumpIf] = Builder()
     diana_jumps : Builder[Diana_Jump] = Builder()
     diana_raises : Builder[Diana_Raise] = Builder()
@@ -773,7 +773,7 @@ class DFlatGraphCode:
         serialize_(cls.diana_functiondefs, arr)
         serialize_(cls.diana_returns, arr)
         serialize_(cls.diana_delvars, arr)
-        serialize_(cls.diana_setvars, arr)
+        serialize_(cls.diana_loadvars, arr)
         serialize_(cls.diana_jumpifs, arr)
         serialize_(cls.diana_jumps, arr)
         serialize_(cls.diana_raises, arr)
