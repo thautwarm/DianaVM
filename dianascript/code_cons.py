@@ -158,10 +158,25 @@ class Diana_DelVar:
 
 
 @dataclass(frozen=True)
-class Diana_LoadVar:
+class Diana_LoadGlobalRef:
     target: int
     p_val: int
     TAG : int = 10
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target, arr)
+        serialize_(self.p_val, arr)
+
+    def as_ptr(self) -> int:
+        return DFlatGraphCode.diana_loadglobalrefs.cache(self)
+
+
+@dataclass(frozen=True)
+class Diana_LoadVar:
+    target: int
+    p_val: int
+    TAG : int = 11
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -176,7 +191,7 @@ class Diana_LoadVar:
 class Diana_JumpIf:
     p_val: int
     offset: int
-    TAG : int = 11
+    TAG : int = 12
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -190,7 +205,7 @@ class Diana_JumpIf:
 @dataclass(frozen=True)
 class Diana_Jump:
     offset: int
-    TAG : int = 12
+    TAG : int = 13
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -203,7 +218,7 @@ class Diana_Jump:
 @dataclass(frozen=True)
 class Diana_Raise:
     p_exc: int
-    TAG : int = 13
+    TAG : int = 14
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -217,7 +232,7 @@ class Diana_Raise:
 class Diana_Assert:
     value: int
     p_msg: int
-    TAG : int = 14
+    TAG : int = 15
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -231,7 +246,7 @@ class Diana_Assert:
 @dataclass(frozen=True)
 class Diana_Control:
     token: int
-    TAG : int = 15
+    TAG : int = 16
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -246,7 +261,7 @@ class Diana_Try:
     body: int
     except_handlers: tuple[Catch, ...]
     final_body: int
-    TAG : int = 16
+    TAG : int = 17
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -263,7 +278,7 @@ class Diana_For:
     target: int
     p_iter: int
     body: int
-    TAG : int = 17
+    TAG : int = 18
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -280,7 +295,7 @@ class Diana_With:
     p_resource: int
     p_as: int
     body: int
-    TAG : int = 18
+    TAG : int = 19
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -296,7 +311,7 @@ class Diana_With:
 class Diana_DelItem:
     p_value: int
     p_item: int
-    TAG : int = 19
+    TAG : int = 20
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -312,7 +327,7 @@ class Diana_GetItem:
     target: int
     p_value: int
     p_item: int
-    TAG : int = 20
+    TAG : int = 21
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -329,7 +344,7 @@ class Diana_BinaryOp_add:
     target: int
     left: int
     right: int
-    TAG : int = 21
+    TAG : int = 22
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -346,7 +361,7 @@ class Diana_BinaryOp_sub:
     target: int
     left: int
     right: int
-    TAG : int = 22
+    TAG : int = 23
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -363,7 +378,7 @@ class Diana_BinaryOp_mul:
     target: int
     left: int
     right: int
-    TAG : int = 23
+    TAG : int = 24
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -380,7 +395,7 @@ class Diana_BinaryOp_truediv:
     target: int
     left: int
     right: int
-    TAG : int = 24
+    TAG : int = 25
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -397,7 +412,7 @@ class Diana_BinaryOp_floordiv:
     target: int
     left: int
     right: int
-    TAG : int = 25
+    TAG : int = 26
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -414,7 +429,7 @@ class Diana_BinaryOp_mod:
     target: int
     left: int
     right: int
-    TAG : int = 26
+    TAG : int = 27
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -431,7 +446,7 @@ class Diana_BinaryOp_pow:
     target: int
     left: int
     right: int
-    TAG : int = 27
+    TAG : int = 28
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -448,7 +463,7 @@ class Diana_BinaryOp_lshift:
     target: int
     left: int
     right: int
-    TAG : int = 28
+    TAG : int = 29
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -465,7 +480,7 @@ class Diana_BinaryOp_rshift:
     target: int
     left: int
     right: int
-    TAG : int = 29
+    TAG : int = 30
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -482,7 +497,7 @@ class Diana_BinaryOp_bitor:
     target: int
     left: int
     right: int
-    TAG : int = 30
+    TAG : int = 31
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -499,7 +514,7 @@ class Diana_BinaryOp_bitand:
     target: int
     left: int
     right: int
-    TAG : int = 31
+    TAG : int = 32
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -516,7 +531,7 @@ class Diana_BinaryOp_bitxor:
     target: int
     left: int
     right: int
-    TAG : int = 32
+    TAG : int = 33
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -532,7 +547,7 @@ class Diana_BinaryOp_bitxor:
 class Diana_UnaryOp_invert:
     target: int
     p_value: int
-    TAG : int = 33
+    TAG : int = 34
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -547,7 +562,7 @@ class Diana_UnaryOp_invert:
 class Diana_UnaryOp_not:
     target: int
     p_value: int
-    TAG : int = 34
+    TAG : int = 35
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -562,7 +577,7 @@ class Diana_UnaryOp_not:
 class Diana_Dict:
     target: int
     p_kvs: tuple[tuple[int, int], ...]
-    TAG : int = 35
+    TAG : int = 36
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -577,7 +592,7 @@ class Diana_Dict:
 class Diana_Set:
     target: int
     p_elts: tuple[int, ...]
-    TAG : int = 36
+    TAG : int = 37
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -592,7 +607,7 @@ class Diana_Set:
 class Diana_List:
     target: int
     p_elts: tuple[int, ...]
-    TAG : int = 37
+    TAG : int = 38
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -608,7 +623,7 @@ class Diana_Call:
     target: int
     p_f: int
     p_args: tuple[int, ...]
-    TAG : int = 38
+    TAG : int = 39
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -625,7 +640,7 @@ class Diana_Format:
     target: int
     format: int
     args: tuple[int, ...]
-    TAG : int = 39
+    TAG : int = 40
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -641,7 +656,7 @@ class Diana_Format:
 class Diana_Const:
     target: int
     p_const: int
-    TAG : int = 40
+    TAG : int = 41
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -657,7 +672,7 @@ class Diana_GetAttr:
     target: int
     p_value: int
     p_attr: int
-    TAG : int = 41
+    TAG : int = 42
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -673,7 +688,7 @@ class Diana_GetAttr:
 class Diana_MoveVar:
     target: int
     slot: int
-    TAG : int = 42
+    TAG : int = 43
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -688,7 +703,7 @@ class Diana_MoveVar:
 class Diana_Tuple:
     target: int
     p_elts: tuple[int, ...]
-    TAG : int = 43
+    TAG : int = 44
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -703,7 +718,7 @@ class Diana_Tuple:
 class Diana_PackTuple:
     targets: tuple[int, ...]
     p_value: int
-    TAG : int = 44
+    TAG : int = 45
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -725,6 +740,7 @@ class DFlatGraphCode:
     diana_functiondefs : Builder[Diana_FunctionDef] = Builder()
     diana_returns : Builder[Diana_Return] = Builder()
     diana_delvars : Builder[Diana_DelVar] = Builder()
+    diana_loadglobalrefs : Builder[Diana_LoadGlobalRef] = Builder()
     diana_loadvars : Builder[Diana_LoadVar] = Builder()
     diana_jumpifs : Builder[Diana_JumpIf] = Builder()
     diana_jumps : Builder[Diana_Jump] = Builder()
@@ -773,6 +789,7 @@ class DFlatGraphCode:
         serialize_(cls.diana_functiondefs, arr)
         serialize_(cls.diana_returns, arr)
         serialize_(cls.diana_delvars, arr)
+        serialize_(cls.diana_loadglobalrefs, arr)
         serialize_(cls.diana_loadvars, arr)
         serialize_(cls.diana_jumpifs, arr)
         serialize_(cls.diana_jumps, arr)

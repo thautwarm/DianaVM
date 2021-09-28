@@ -279,14 +279,14 @@ namespace DianaScript
 
     }
 
-    public interface Ref
+    public interface Ref : DObj
     {
         public void set_contents(DObj value);
         public DObj get_contents();
     }
 
 
-    public partial class DRef: Ref, DObj
+    public partial class DRef: Ref
     {
         public DObj cell_contents;
 
@@ -300,6 +300,25 @@ namespace DianaScript
 
         public DRef(){
             cell_contents = null;
+        }
+    }
+
+    public partial class DRefGlobal: Ref
+    {
+        public NameSpace ns;
+        public InternString s;
+
+        public DObj get_contents() => ns[s];
+
+        public void set_contents(DObj value) => ns[s] = value;
+
+        public object Native => this;
+
+        public string __repr__ => $"<DRef at {(this as DObj).__hash__}>";
+
+        public DRefGlobal(NameSpace ns, InternString s){
+            this.ns = ns;
+            this.s = s;
         }
     }
 

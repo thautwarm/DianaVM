@@ -238,6 +238,13 @@ namespace DianaScript
 
                 break;
             }
+            case (int) CODE.Diana_LoadGlobalRef:
+            {
+            
+                storevar(flatGraph.diana_loadglobalrefs[curPtr.ind].target, new DRefGlobal(cur_func.nameSpace, loadistr(flatGraph.diana_loadglobalrefs[curPtr.ind].p_val)));
+
+                break;
+            }
             case (int) CODE.Diana_LoadVar:
             {
             

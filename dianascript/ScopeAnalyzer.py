@@ -342,14 +342,20 @@ def _visit_getitem(self: ASTTagger, node: ast.Subscript):
     match node:
         case ast.Subscript(ctx=ast.Load(), value=ast.Name(id='out'), slice=slice):
             assert isinstance(slice, ast.Name), "ouy keyword must be used for a simple variable."
-        
+            self.symtable.entered.add(slice.id)
+            new = self.symtable.enter_new()
+            new.requires.add(slice.id)
+    node.value = self.visit(node.value)
+    node.slice = self.visit(node.slice)
     return node
 
 
 class ASTTagger(ast.NodeTransformer):
     def __init__(self, symtable: SymTable):
         self.symtable = symtable
-
+    
+    visit_Subscript = _visit_getitem
+    
     visit_Name = _visit_name
     visit_Import = _visit_import
     visit_ImportFrom = _visit_import
@@ -388,9 +394,6 @@ def to_tagged_ast(node: ast.Module):
     global_table.analyze()
     return node
 
-
-
-
 if __name__ == "__main__":
     import ast
 
@@ -398,6 +401,10 @@ if __name__ == "__main__":
 class h():
     def docmodule(self, object, name=None, mod=None, *ignored):
         lambda t: self.modulelink(t[1])
+    
+    def k():
+        a.get(1, out[b])
+
 """
     print(mod)
     mod = ast.parse(mod)

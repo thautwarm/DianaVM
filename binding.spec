@@ -27,6 +27,8 @@ function DFunc DFunc{ }
 
 cell DRef DRef{ }
 
+dictcell DRefGlobal DRefGlobal{ }
+
 // name in script language, name in .net, .net wrap type name
 "using System.Collections.Generic;"
 dict DDict Dictionary<DObj, DObj> {

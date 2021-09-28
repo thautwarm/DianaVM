@@ -68,6 +68,10 @@ DelVar(target: int)
 [%
     storevar($target, null);
 %]
+LoadGlobalRef(target: int, p_val: int)
+[%
+    storevar($target, new DRefGlobal(cur_func.nameSpace, loadistr($p_val)));
+%]
 LoadVar(target: int, p_val: int)
 [%
     storevar($target, loadvar($p_val));

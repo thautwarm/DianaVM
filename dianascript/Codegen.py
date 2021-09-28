@@ -22,14 +22,6 @@ def auto_set_loc(cls):
         if k.startswith("visit_") and str.isupper(k[len("visit_")]):
             setattr(cls, k, _perform_set_loc(getattr(cls, k)))
 
-
-@dataclass
-class Var:
-    name: str
-    ctx : VarCtx
-    loc : int
-    kind: VarKind = VarKind.Local
-
     
 @auto_set_loc
 class AIRGenerator(CodeBuilder, NodeVisitor):
