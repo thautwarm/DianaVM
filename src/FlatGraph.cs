@@ -25,13 +25,12 @@ public struct FuncMeta
     public int narg;
     public int nlocal;
     public InternString name;
-    public InternString modname;
     public string filename;
     public int lineno;
     public string[] freenames;
     public string[] localnames;
 
-    public static FuncMeta Make(bool is_vararg, int[] freeslots, int narg, int nlocal, InternString name, InternString modname, string filename, int lineno, string[] freenames, string[] localnames) => new FuncMeta
+    public static FuncMeta Make(bool is_vararg, int[] freeslots, int narg, int nlocal, InternString name, string filename, int lineno, string[] freenames, string[] localnames) => new FuncMeta
     {
         is_vararg = is_vararg,
 
@@ -42,8 +41,6 @@ public struct FuncMeta
         nlocal = nlocal,
 
         name = name,
-
-        modname = modname,
 
         filename = filename,
 
@@ -98,6 +95,11 @@ public struct Diana_DelVar
     public int target;
 
 }
+public struct Diana_LoadAsCell
+{
+    public int target;
+
+}
 public struct Diana_LoadGlobalRef
 {
     public int target;
@@ -108,17 +110,6 @@ public struct Diana_LoadVar
 {
     public int target;
     public int p_val;
-
-}
-public struct Diana_JumpIf
-{
-    public int p_val;
-    public int offset;
-
-}
-public struct Diana_Jump
-{
-    public int offset;
 
 }
 public struct Diana_Raise
@@ -142,6 +133,12 @@ public struct Diana_Try
     public int body;
     public Catch[] except_handlers;
     public int final_body;
+
+}
+public struct Diana_While
+{
+    public int p_cond;
+    public int body;
 
 }
 public struct Diana_For
@@ -335,14 +332,14 @@ public enum CODE
     Diana_FunctionDef,
     Diana_Return,
     Diana_DelVar,
+    Diana_LoadAsCell,
     Diana_LoadGlobalRef,
     Diana_LoadVar,
-    Diana_JumpIf,
-    Diana_Jump,
     Diana_Raise,
     Diana_Assert,
     Diana_Control,
     Diana_Try,
+    Diana_While,
     Diana_For,
     Diana_With,
     Diana_DelItem,
@@ -395,13 +392,11 @@ public partial class DFlatGraphCode
 
     public Diana_DelVar[] diana_delvars;
 
+    public Diana_LoadAsCell[] diana_loadascells;
+
     public Diana_LoadGlobalRef[] diana_loadglobalrefs;
 
     public Diana_LoadVar[] diana_loadvars;
-
-    public Diana_JumpIf[] diana_jumpifs;
-
-    public Diana_Jump[] diana_jumps;
 
     public Diana_Raise[] diana_raises;
 
@@ -410,6 +405,8 @@ public partial class DFlatGraphCode
     public Diana_Control[] diana_controls;
 
     public Diana_Try[] diana_trys;
+
+    public Diana_While[] diana_whiles;
 
     public Diana_For[] diana_fors;
 

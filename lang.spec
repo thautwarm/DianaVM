@@ -32,7 +32,6 @@ dataclass FuncMeta(
     narg: int,
     nlocal: int,
     name: InternString,
-    modname: InternString,
     filename: string,
     lineno: int,
     freenames: string[],
@@ -68,6 +67,12 @@ DelVar(target: int)
 [%
     storevar($target, null);
 %]
+LoadAsCell(target: int)
+[%
+    var refobj = new DRef();
+    refobj.cell_contents = loadvar($target);
+    storevar($target, refobj);
+%]
 LoadGlobalRef(target: int, p_val: int)
 [%
     storevar($target, new DRefGlobal(cur_func.nameSpace, loadistr($p_val)));
@@ -75,15 +80,6 @@ LoadGlobalRef(target: int, p_val: int)
 LoadVar(target: int, p_val: int)
 [%
     storevar($target, loadvar($p_val));
-%]
-JumpIf(p_val: int, offset: int)
-[%
-    if (loadvar($p_val).__bool__)
-        offset = $offset;
-%]
-Jump(offset: int)
-[%
-    offset = $offset;
 %]
 Raise(p_exc: int)
 [%
@@ -124,6 +120,23 @@ Try(body: int, except_handlers: Catch[], final_body: int)
         finally{
             exec_block($final_body);
         }
+%]
+While(p_cond: int, body: int)
+[%
+    while(loadvar($p_cond).__bool__)
+    {
+        exec_block($body);
+        switch(token)
+        {
+            case (int) TOKEN.LOOP_BREAK:
+                break;
+            case (int) TOKEN.RETURN:
+                return;
+            default:
+                token = (int) TOKEN.GO_AHEAD;
+                break;
+        }
+    }
 %]
 For(target: int, p_iter: int, body: int)
 [%

@@ -4,39 +4,6 @@ from dianascript.serialize import *
 
 
 @dataclass(frozen=True)
-class string:
-    TAG : int = 0
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-
-    def as_ptr(self) -> int:
-        return DFlatGraphCode.strings.cache(self)
-
-
-@dataclass(frozen=True)
-class DObj:
-    TAG : int = 1
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-
-    def as_ptr(self) -> int:
-        return DFlatGraphCode.dobjs.cache(self)
-
-
-@dataclass(frozen=True)
-class InternString:
-    TAG : int = 2
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-
-    def as_ptr(self) -> int:
-        return DFlatGraphCode.internstrings.cache(self)
-
-
-@dataclass(frozen=True)
 class Catch:
     exc_target: int
     exc_type: int
@@ -60,7 +27,6 @@ class FuncMeta:
     narg: int
     nlocal: int
     name: InternString
-    modname: InternString
     filename: str
     lineno: int
     freenames: tuple[str, ...]
@@ -74,7 +40,6 @@ class FuncMeta:
         serialize_(self.narg, arr)
         serialize_(self.nlocal, arr)
         serialize_(self.name, arr)
-        serialize_(self.modname, arr)
         serialize_(self.filename, arr)
         serialize_(self.lineno, arr)
         serialize_(self.freenames, arr)
@@ -158,10 +123,23 @@ class Diana_DelVar:
 
 
 @dataclass(frozen=True)
+class Diana_LoadAsCell:
+    target: int
+    TAG : int = 10
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.target, arr)
+
+    def as_ptr(self) -> int:
+        return DFlatGraphCode.diana_loadascells.cache(self)
+
+
+@dataclass(frozen=True)
 class Diana_LoadGlobalRef:
     target: int
     p_val: int
-    TAG : int = 10
+    TAG : int = 11
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -176,7 +154,7 @@ class Diana_LoadGlobalRef:
 class Diana_LoadVar:
     target: int
     p_val: int
-    TAG : int = 11
+    TAG : int = 12
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -188,37 +166,9 @@ class Diana_LoadVar:
 
 
 @dataclass(frozen=True)
-class Diana_JumpIf:
-    p_val: int
-    offset: int
-    TAG : int = 12
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.p_val, arr)
-        serialize_(self.offset, arr)
-
-    def as_ptr(self) -> int:
-        return DFlatGraphCode.diana_jumpifs.cache(self)
-
-
-@dataclass(frozen=True)
-class Diana_Jump:
-    offset: int
-    TAG : int = 13
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.offset, arr)
-
-    def as_ptr(self) -> int:
-        return DFlatGraphCode.diana_jumps.cache(self)
-
-
-@dataclass(frozen=True)
 class Diana_Raise:
     p_exc: int
-    TAG : int = 14
+    TAG : int = 13
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -232,7 +182,7 @@ class Diana_Raise:
 class Diana_Assert:
     value: int
     p_msg: int
-    TAG : int = 15
+    TAG : int = 14
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -246,7 +196,7 @@ class Diana_Assert:
 @dataclass(frozen=True)
 class Diana_Control:
     token: int
-    TAG : int = 16
+    TAG : int = 15
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -261,7 +211,7 @@ class Diana_Try:
     body: int
     except_handlers: tuple[Catch, ...]
     final_body: int
-    TAG : int = 17
+    TAG : int = 16
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -271,6 +221,21 @@ class Diana_Try:
 
     def as_ptr(self) -> int:
         return DFlatGraphCode.diana_trys.cache(self)
+
+
+@dataclass(frozen=True)
+class Diana_While:
+    p_cond: int
+    body: int
+    TAG : int = 17
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.p_cond, arr)
+        serialize_(self.body, arr)
+
+    def as_ptr(self) -> int:
+        return DFlatGraphCode.diana_whiles.cache(self)
 
 
 @dataclass(frozen=True)
@@ -740,14 +705,14 @@ class DFlatGraphCode:
     diana_functiondefs : Builder[Diana_FunctionDef] = Builder()
     diana_returns : Builder[Diana_Return] = Builder()
     diana_delvars : Builder[Diana_DelVar] = Builder()
+    diana_loadascells : Builder[Diana_LoadAsCell] = Builder()
     diana_loadglobalrefs : Builder[Diana_LoadGlobalRef] = Builder()
     diana_loadvars : Builder[Diana_LoadVar] = Builder()
-    diana_jumpifs : Builder[Diana_JumpIf] = Builder()
-    diana_jumps : Builder[Diana_Jump] = Builder()
     diana_raises : Builder[Diana_Raise] = Builder()
     diana_asserts : Builder[Diana_Assert] = Builder()
     diana_controls : Builder[Diana_Control] = Builder()
     diana_trys : Builder[Diana_Try] = Builder()
+    diana_whiles : Builder[Diana_While] = Builder()
     diana_fors : Builder[Diana_For] = Builder()
     diana_withs : Builder[Diana_With] = Builder()
     diana_delitems : Builder[Diana_DelItem] = Builder()
@@ -789,14 +754,14 @@ class DFlatGraphCode:
         serialize_(cls.diana_functiondefs, arr)
         serialize_(cls.diana_returns, arr)
         serialize_(cls.diana_delvars, arr)
+        serialize_(cls.diana_loadascells, arr)
         serialize_(cls.diana_loadglobalrefs, arr)
         serialize_(cls.diana_loadvars, arr)
-        serialize_(cls.diana_jumpifs, arr)
-        serialize_(cls.diana_jumps, arr)
         serialize_(cls.diana_raises, arr)
         serialize_(cls.diana_asserts, arr)
         serialize_(cls.diana_controls, arr)
         serialize_(cls.diana_trys, arr)
+        serialize_(cls.diana_whiles, arr)
         serialize_(cls.diana_fors, arr)
         serialize_(cls.diana_withs, arr)
         serialize_(cls.diana_delitems, arr)
@@ -825,3 +790,5 @@ class DFlatGraphCode:
         serialize_(cls.diana_movevars, arr)
         serialize_(cls.diana_tuples, arr)
         serialize_(cls.diana_packtuples, arr)
+
+DianaIR = Catch | FuncMeta | Loc | Block | Diana_FunctionDef | Diana_Return | Diana_DelVar | Diana_LoadAsCell | Diana_LoadGlobalRef | Diana_LoadVar | Diana_Raise | Diana_Assert | Diana_Control | Diana_Try | Diana_While | Diana_For | Diana_With | Diana_DelItem | Diana_GetItem | Diana_BinaryOp_add | Diana_BinaryOp_sub | Diana_BinaryOp_mul | Diana_BinaryOp_truediv | Diana_BinaryOp_floordiv | Diana_BinaryOp_mod | Diana_BinaryOp_pow | Diana_BinaryOp_lshift | Diana_BinaryOp_rshift | Diana_BinaryOp_bitor | Diana_BinaryOp_bitand | Diana_BinaryOp_bitxor | Diana_UnaryOp_invert | Diana_UnaryOp_not | Diana_Dict | Diana_Set | Diana_List | Diana_Call | Diana_Format | Diana_Const | Diana_GetAttr | Diana_MoveVar | Diana_Tuple | Diana_PackTuple

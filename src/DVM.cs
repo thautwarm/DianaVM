@@ -85,13 +85,16 @@ namespace DianaScript
         public DObj[] vstack;
         public DObj @return;
         public DFlatGraphCode flatGraph;
-        public const int bit_global = 0b01 << 30;
-        public const int bit_free = 0b01 << 31;
-        public const int bit_nonlocal = bit_global & bit_free;
+
+        public const int bit_nonlocal = 0b01;
+        public const int bit_classify = 0b01 << 1;
 
         DRef loadref(int slot)
         {
-            return cur_func.freevals[slot];
+            if ((slot & bit_nonlocal) == 0) // slot & bit_classify must be true
+                return vstack[slot >> 2] as DRef;
+            else
+                return cur_func.freevals[slot >> 2];
         }
 
         DObj loadconst(int slot)
@@ -101,49 +104,68 @@ namespace DianaScript
 
         DObj loadvar(int slot)
         {
-            if ((slot & bit_nonlocal) == 0)
+            DObj c;
+            if ((slot & bit_nonlocal) == 0) 
             {
-                var c = vstack[slot];
+                if ((slot & bit_classify) == 0)
+                    c = vstack[slot >> 2]; // local
+                else
+                {
+                    DRef r = vstack[slot >> 2] as DRef; 
+                    c = r.cell_contents; // local cell
+                    
+                }
                 if (c == null)
                 {
-                    var name = flatGraph.funcmetas[cur_func.metadataInd].localnames[slot << 2 >> 2];
+                    var name = flatGraph.funcmetas[cur_func.metadataInd].localnames[slot >> 2];
                     throw new NullReferenceException($"undefined variable {name}.");
                 }
-                return c;
-            }
-            else if ((slot & bit_free) == 0)
-            {
-                return cur_func.nameSpace[
-                    flatGraph.internstrings[slot << 2 >> 2]];
             }
             else
             {
-                // assert
-                var c = cur_func.freevals[slot << 2 >> 2].cell_contents;
-                if (c == null)
+                if ((slot & bit_classify) == 0) // freevals
                 {
-                    var name = flatGraph.funcmetas[cur_func.metadataInd].freenames[slot << 2 >> 2];
-                    throw new NullReferenceException($"undefined cell variable {name}.");
+                    c = cur_func.freevals[slot >> 2].cell_contents; 
+                    if (c == null)
+                    {
+                        var name = flatGraph.funcmetas[cur_func.metadataInd].freenames[slot >> 2];
+                        throw new NullReferenceException($"undefined cell variable {name}.");
+                    }
                 }
-                return c;
+                else // global
+                {
+                   c = cur_func.nameSpace[flatGraph.internstrings[slot >> 2]];
+                    
+                }
             }
+            return c;
         }
+        
 
-        void storevar(int slot, DObj val)
+        void storevar(int slot, DObj o)
         {
-            if ((slot & bit_nonlocal) == 0)
+            if ((slot & bit_nonlocal) == 0) 
             {
-                vstack[slot] = val;
-            }
-            else if ((slot & bit_free) == 0)
-            {
-                cur_func.nameSpace[
-                    flatGraph.internstrings[slot << 2 >> 2]] = val;
+                if ((slot & bit_classify) == 0)
+                    vstack[slot >> 2] = o; // local
+                else
+                {
+                    DRef r = vstack[slot >> 2] as DRef; 
+                    r.cell_contents = o; // local cell
+                    
+                }
             }
             else
             {
-                // assert
-                cur_func.freevals[slot << 2 >> 2].cell_contents = val;
+                if ((slot & bit_classify) == 0) // freevals
+                {
+                    cur_func.freevals[slot >> 2].cell_contents = o; // local
+                }
+                else // global
+                {
+                   cur_func.nameSpace[flatGraph.internstrings[slot >> 2]] = o;
+                    
+                }
             }
         }
 
@@ -238,6 +260,15 @@ namespace DianaScript
 
                 break;
             }
+            case (int) CODE.Diana_LoadAsCell:
+            {
+            
+                var refobj = new DRef();
+                refobj.cell_contents = loadvar(flatGraph.diana_loadascells[curPtr.ind].target);
+                storevar(flatGraph.diana_loadascells[curPtr.ind].target, refobj);
+
+                break;
+            }
             case (int) CODE.Diana_LoadGlobalRef:
             {
             
@@ -249,21 +280,6 @@ namespace DianaScript
             {
             
                 storevar(flatGraph.diana_loadvars[curPtr.ind].target, loadvar(flatGraph.diana_loadvars[curPtr.ind].p_val));
-
-                break;
-            }
-            case (int) CODE.Diana_JumpIf:
-            {
-            
-                if (loadvar(flatGraph.diana_jumpifs[curPtr.ind].p_val).__bool__)
-                    offset = flatGraph.diana_jumpifs[curPtr.ind].offset;
-
-                break;
-            }
-            case (int) CODE.Diana_Jump:
-            {
-            
-                offset = flatGraph.diana_jumps[curPtr.ind].offset;
 
                 break;
             }
@@ -316,6 +332,26 @@ namespace DianaScript
                     finally{
                         exec_block(flatGraph.diana_trys[curPtr.ind].final_body);
                     }
+
+                break;
+            }
+            case (int) CODE.Diana_While:
+            {
+            
+                while(loadvar(flatGraph.diana_whiles[curPtr.ind].p_cond).__bool__)
+                {
+                    exec_block(flatGraph.diana_whiles[curPtr.ind].body);
+                    switch(token)
+                    {
+                        case (int) TOKEN.LOOP_BREAK:
+                            break;
+                        case (int) TOKEN.RETURN:
+                            return;
+                        default:
+                            token = (int) TOKEN.GO_AHEAD;
+                            break;
+                    }
+                }
 
                 break;
             }

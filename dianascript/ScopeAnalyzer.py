@@ -11,6 +11,7 @@ from typing import NamedTuple, List, Optional, Union
 from pprint import pformat
 from enum import Enum, auto as _auto
 from dataclasses import dataclass, replace
+from collections import OrderedDict    
 
 
 class ContextType(Enum):
@@ -124,8 +125,7 @@ class SymTable:
 
         cellvars.update(requires_from_sub_contexts.intersection(bounds))
         borrowed_freevars = requires_from_sub_contexts - cellvars
-        bounds.difference_update(cellvars)
-
+        # bounds.difference_update(cellvars)
         analyzed.freevars.update(borrowed_freevars)
         return cellvars
 
@@ -376,7 +376,7 @@ class ASTTagger(ast.NodeTransformer):
     visit_Try = _visit_try
 
 
-def get_tag(
+def get_symtable(
     x: ast.ClassDef
     | ast.DictComp
     | ast.SetComp
@@ -398,12 +398,10 @@ if __name__ == "__main__":
     import ast
 
     mod = """
-class h():
-    def docmodule(self, object, name=None, mod=None, *ignored):
-        lambda t: self.modulelink(t[1])
+
     
-    def k():
-        a.get(1, out[b])
+lambda : f(a, out[b])
+
 
 """
     print(mod)
@@ -414,3 +412,4 @@ class h():
 
     g.analyze()
     print(g.show_resolution())
+

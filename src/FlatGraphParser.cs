@@ -26,7 +26,6 @@ public partial class AIRParser
         narg = Read(THint<int>.val),
         nlocal = Read(THint<int>.val),
         name = Read(THint<InternString>.val),
-        modname = Read(THint<InternString>.val),
         filename = Read(THint<string>.val),
         lineno = Read(THint<int>.val),
         freenames = Read(THint<string[]>.val),
@@ -62,6 +61,11 @@ public partial class AIRParser
         target = Read(THint<int>.val),
     };
 
+    public Diana_LoadAsCell Read(THint<Diana_LoadAsCell> _) => new Diana_LoadAsCell
+    {
+        target = Read(THint<int>.val),
+    };
+
     public Diana_LoadGlobalRef Read(THint<Diana_LoadGlobalRef> _) => new Diana_LoadGlobalRef
     {
         target = Read(THint<int>.val),
@@ -72,17 +76,6 @@ public partial class AIRParser
     {
         target = Read(THint<int>.val),
         p_val = Read(THint<int>.val),
-    };
-
-    public Diana_JumpIf Read(THint<Diana_JumpIf> _) => new Diana_JumpIf
-    {
-        p_val = Read(THint<int>.val),
-        offset = Read(THint<int>.val),
-    };
-
-    public Diana_Jump Read(THint<Diana_Jump> _) => new Diana_Jump
-    {
-        offset = Read(THint<int>.val),
     };
 
     public Diana_Raise Read(THint<Diana_Raise> _) => new Diana_Raise
@@ -106,6 +99,12 @@ public partial class AIRParser
         body = Read(THint<int>.val),
         except_handlers = Read(THint<Catch[]>.val),
         final_body = Read(THint<int>.val),
+    };
+
+    public Diana_While Read(THint<Diana_While> _) => new Diana_While
+    {
+        p_cond = Read(THint<int>.val),
+        body = Read(THint<int>.val),
     };
 
     public Diana_For Read(THint<Diana_For> _) => new Diana_For
@@ -306,14 +305,14 @@ public partial class AIRParser
         diana_functiondefs = Read(THint<Diana_FunctionDef[]>.val),
         diana_returns = Read(THint<Diana_Return[]>.val),
         diana_delvars = Read(THint<Diana_DelVar[]>.val),
+        diana_loadascells = Read(THint<Diana_LoadAsCell[]>.val),
         diana_loadglobalrefs = Read(THint<Diana_LoadGlobalRef[]>.val),
         diana_loadvars = Read(THint<Diana_LoadVar[]>.val),
-        diana_jumpifs = Read(THint<Diana_JumpIf[]>.val),
-        diana_jumps = Read(THint<Diana_Jump[]>.val),
         diana_raises = Read(THint<Diana_Raise[]>.val),
         diana_asserts = Read(THint<Diana_Assert[]>.val),
         diana_controls = Read(THint<Diana_Control[]>.val),
         diana_trys = Read(THint<Diana_Try[]>.val),
+        diana_whiles = Read(THint<Diana_While[]>.val),
         diana_fors = Read(THint<Diana_For[]>.val),
         diana_withs = Read(THint<Diana_With[]>.val),
         diana_delitems = Read(THint<Diana_DelItem[]>.val),
@@ -484,6 +483,16 @@ public partial class AIRParser
         }
         return src;
     }
+    public static readonly THint<Diana_LoadAsCell> Diana_LoadAsCell_hint = THint<Diana_LoadAsCell>.val;
+    public Diana_LoadAsCell[] Read(THint<Diana_LoadAsCell[]> _)
+    {
+        Diana_LoadAsCell[] src = new Diana_LoadAsCell[ReadInt()];
+        for (var i = 0; i < src.Length; i++)
+        {
+            src[i] = Read(Diana_LoadAsCell_hint);
+        }
+        return src;
+    }
     public static readonly THint<Diana_LoadGlobalRef> Diana_LoadGlobalRef_hint = THint<Diana_LoadGlobalRef>.val;
     public Diana_LoadGlobalRef[] Read(THint<Diana_LoadGlobalRef[]> _)
     {
@@ -501,26 +510,6 @@ public partial class AIRParser
         for (var i = 0; i < src.Length; i++)
         {
             src[i] = Read(Diana_LoadVar_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_JumpIf> Diana_JumpIf_hint = THint<Diana_JumpIf>.val;
-    public Diana_JumpIf[] Read(THint<Diana_JumpIf[]> _)
-    {
-        Diana_JumpIf[] src = new Diana_JumpIf[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_JumpIf_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Jump> Diana_Jump_hint = THint<Diana_Jump>.val;
-    public Diana_Jump[] Read(THint<Diana_Jump[]> _)
-    {
-        Diana_Jump[] src = new Diana_Jump[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_Jump_hint);
         }
         return src;
     }
@@ -561,6 +550,16 @@ public partial class AIRParser
         for (var i = 0; i < src.Length; i++)
         {
             src[i] = Read(Diana_Try_hint);
+        }
+        return src;
+    }
+    public static readonly THint<Diana_While> Diana_While_hint = THint<Diana_While>.val;
+    public Diana_While[] Read(THint<Diana_While[]> _)
+    {
+        Diana_While[] src = new Diana_While[ReadInt()];
+        for (var i = 0; i < src.Length; i++)
+        {
+            src[i] = Read(Diana_While_hint);
         }
         return src;
     }

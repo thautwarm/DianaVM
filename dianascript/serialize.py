@@ -54,8 +54,8 @@ class DObj:
             barr.append(v)
         serialize_(self.o, barr)
 
-    def as_ptr(self):
-        pass
+    def as_ptr(self) -> int:
+        return DFlatGraphCode.dobjs.cache(self)
 
 def serialize_(o, barr: bytearray):
     match o:

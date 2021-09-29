@@ -152,6 +152,7 @@ class Codegen:
         self.enums = {}
         self.codes: dict[str, str] = {}
         self.dataclasses = []
+        self.data = []
     @contextmanager
     def tab(self, do=True, n=1):
 
@@ -236,6 +237,7 @@ class Codegen:
                     self.dataclasses.append(classname)
                     gen_seqs.append((classname, params))
                 case Data(type):
+                    self.data.append(type)
                     gen_seqs.append((type, []))
                 case a:
                     raise Exception(a)
@@ -302,7 +304,7 @@ class Codegen:
         self << "}" << "}"
     
     
-    def gen_python_code_builder(self, _):
+    def gen_python_code_builder(self, language: Language):
         self << "from __future__ import annotations"
         self << "from dataclasses import dataclass"
         self << "from dianascript.serialize import *"
@@ -310,10 +312,12 @@ class Codegen:
         self.newline
         
         @functools.lru_cache()
-        def py_parse(s):
+        def py_parse(s) -> str:
             return type_parser.parse(s)
 
         for i, (kind, params) in enumerate(self.gen_seqs):
+            if not params:
+                continue
             self << "@dataclass(frozen=True)"
             self << f"class {kind}:"
             with self.tab():
@@ -348,6 +352,8 @@ class Codegen:
             with self.tab():
                 for field, type in params:
                     self << f"serialize_(cls.{field}, arr)"
+        self.newline
+        self << f"{language.name}IR" + " = " + ' | '.join(py_parse(type) for type, params in self.gen_seqs if params)
     
 
     def generate_interpreter(self, language: Language):
