@@ -1,33 +1,56 @@
+## 创语言
+
+该语言是Diana虚拟机的一个简单前端。作用于只有local和global两种(虚拟机还支持cell和free)
 
 
-func : "func" name "(" arglist ")"  block "end" { block }
-block : stmt+ 
+CheatSheet:
 
-stmt :   "var" seplist{id, ","}      -> decl
-       | id "=" expr  -> assign
-       | expr         -> expr_stmt
-       | "while" expr "do" block "end"        -> while
-       | "for" lhs "in" expr "do" block "end" -> for_loop
-       | "del" seplist{",", id}               -> delete
-       | "if" expr "then" block "end"         -> if_then
-       | "if" expr "then" block "else" block "end" -> if_then_else
-       | "break"                                   -> break_
-       | "continue"                                -> continue_
+```
+/* 
+multi-line comment
+*/
 
-expr :  bool_expr
+var x # global level declaration makes no sense
+function f()
+    var x, y, z # local variable
+    # ... single-line comment
+    
+    function g() # a locally visible function
+        x + 1 # x is global variable!
+    end
 
-or_expr : or_expr "or" and_expr -> or_expr
-        | and_expr              -> just
+    #
+    loop
+        # multi-target assignment
+        expr.[expr] := expr.attr := name := expr
 
-and_expr : and_expr "and" not   -> and_expr
-         | not                  -> just
+        #
+        if expr then
+            block
+        end
+
+        if expr then
+            block
+        else
+            block
+        end
+    
+        break
+        continue
+        return 1
+        return # return None
+    end
+end
 
 
-cmpop : "<" | ">" |">=" | "<=" | "==" | "!=" | "in" | "not" "in"
+if cond1 and cond2 or cond3 and cond4 
+then
+    block
+end
 
-not : 'not' cmp -> not_
-    | cmp       -> just
 
-cmp : cmp cmpop bin
-    | bin
-
+each expr of iter_expr
+do
+    block
+end
+```

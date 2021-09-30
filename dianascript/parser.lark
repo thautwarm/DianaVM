@@ -63,13 +63,14 @@ stmt :   "var" seplist{",", name} -> stmt_0
        | "loop" block "end" -> stmt_3                                                                     
        | "each" lhs_opt "of" expr "do" block "end" -> stmt_4                                                                            
                                                                
-       | "if" expr "then" block "end" -> stmt_5                                                                         
-       | "if" expr "then" block "else" block "end" -> stmt_6                                                                           
+       | "if" expr then block "end" -> stmt_5                                                                       
+       | "if" expr then block "else" block "end" -> stmt_6                                                                         
        | "break" -> stmt_7                                                               
        | "continue" -> stmt_8                                                                  
        | "return" expr_opt -> stmt_9                                                                       
        | "func" name "(" nullable{seplist{",", name}} ")" block "end" -> stmt_10                                                                                                 
 
+then : NEWLINE? "then"
 
 filter{keep, discard} :filter{keep, discard} keep -> filter_0                                                 
     | filter{keep, discard} discard -> filter_1                                          
@@ -102,6 +103,7 @@ trailer : "," -> trailer_0
 lhs  : NAME -> lhs_0                                              
      | atom "." "[" expr "]" -> lhs_1                                                 
      | atom "." name -> lhs_2                                                   
+
 
 pair : expr ":" expr -> pair_0                                         
 atom : atom "." "[" expr "]" -> atom_0                                                 
