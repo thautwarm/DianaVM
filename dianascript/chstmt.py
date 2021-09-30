@@ -59,7 +59,7 @@ class SExpr:
 
 @dataclass
 class SFor:
-    target:Chlhs
+    target:Chlhs|None
     iter:Chexpr
     body:list[Chstmt]
     loc: tuple[int, int] | None = None
@@ -85,14 +85,13 @@ class SLoop:
 class SIf:
     cond:Chexpr
     then:list[Chstmt]
+    orelse:list[Chstmt]|None
     loc: tuple[int, int] | None = None
 
 
     def __or__(self, loc):
         self.loc = loc
         return self
-
-
 
 
 @dataclass
@@ -115,4 +114,15 @@ class SContinue:
         return self
 
 
-Chstmt = SFunc | SDecl | SAssign | SExpr | SFor | SLoop | SIf | SBreak | SContinue
+@dataclass
+class SReturn:
+    val:Chexpr|None
+    loc: tuple[int, int] | None = None
+
+
+    def __or__(self, loc):
+        self.loc = loc
+        return self
+
+
+Chstmt = SFunc | SDecl | SAssign | SExpr | SFor | SLoop | SIf | SBreak | SContinue | SReturn

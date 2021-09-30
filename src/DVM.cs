@@ -341,9 +341,10 @@ namespace DianaScript
             }
             case (int) CODE.Diana_DelVar:
             {
-                var target = flatGraph.diana_delvars[curPtr.ind].target;
+                var targets = flatGraph.diana_delvars[curPtr.ind].targets;
             
-                storevar(target, null);
+                for(var i = 0; i < targets.Length; i++)
+                    storevar(targets[i], null);
 
                 break;
             }
@@ -389,6 +390,32 @@ namespace DianaScript
 
                 break;
             }
+            case (int) CODE.Diana_JumpIfNot:
+            {
+                var off = flatGraph.diana_jumpifnots[curPtr.ind].off;
+            
+                if(!(pop().__bool__))
+                    offset = off; 
+
+                break;
+            }
+            case (int) CODE.Diana_JumpIf:
+            {
+                var off = flatGraph.diana_jumpifs[curPtr.ind].off;
+            
+                if(pop().__bool__)
+                    offset = off; 
+
+                break;
+            }
+            case (int) CODE.Diana_Jump:
+            {
+                var off = flatGraph.diana_jumps[curPtr.ind].off;
+            
+                offset = off; 
+
+                break;
+            }
             case (int) CODE.Diana_Control:
             {
                 var arg = flatGraph.diana_controls[curPtr.ind].arg;
@@ -402,35 +429,34 @@ namespace DianaScript
                 var body = flatGraph.diana_trys[curPtr.ind].body;
                 var except_handlers = flatGraph.diana_trys[curPtr.ind].except_handlers;
                 var final_body = flatGraph.diana_trys[curPtr.ind].final_body;
-            
-   
-                    try
-                    {
-                        exec_block(body);
-                    }
-                    catch (Exception e)
-                    {
-                        clearstack();
-                        foreach(var handler in except_handlers){
-                            exec_block(handler.exc_type);
-                            var exc_type = pop();
-                            var e_boxed = MK.create(e);
-                            if (exc_type.__subclasscheck__(e_boxed.GetCls))
-                            {
-                                push(e_boxed);
-                                exec_block(handler.body);   
-                                virtual_machine.errorFrames.Clear();
-                                goto end_handled;
-                            }
+               
+                try
+                {
+                    exec_block(body);
+                }
+                catch (Exception e)
+                {
+                    clearstack();
+                    foreach(var handler in except_handlers){
+                        exec_block(handler.exc_type);
+                        var exc_type = pop();
+                        var e_boxed = MK.create(e);
+                        if (exc_type.__subclasscheck__(e_boxed.GetCls))
+                        {
+                            push(e_boxed);
+                            exec_block(handler.body);   
+                            virtual_machine.errorFrames.Clear();
+                            goto end_handled;
                         }
-                        throw;
-                        end_handled: ;
                     }
-                    finally
-                    {
-                        clearstack();
-                        exec_block(final_body);
-                    }
+                    throw;
+                    end_handled: ;
+                }
+                finally
+                {
+                    clearstack();
+                    exec_block(final_body);
+                }
 
                 break;
             }
@@ -518,7 +544,7 @@ namespace DianaScript
             {
                 var attr = flatGraph.diana_setattrs[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     value
@@ -526,11 +552,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_add:
+            case (int) CODE.Diana_SetAttr_Iadd:
             {
-                var attr = flatGraph.diana_setattrop_adds[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_iadds[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__add__(value)
@@ -538,11 +564,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_sub:
+            case (int) CODE.Diana_SetAttr_Isub:
             {
-                var attr = flatGraph.diana_setattrop_subs[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_isubs[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__sub__(value)
@@ -550,11 +576,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_mul:
+            case (int) CODE.Diana_SetAttr_Imul:
             {
-                var attr = flatGraph.diana_setattrop_muls[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_imuls[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__mul__(value)
@@ -562,11 +588,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_truediv:
+            case (int) CODE.Diana_SetAttr_Itruediv:
             {
-                var attr = flatGraph.diana_setattrop_truedivs[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_itruedivs[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__truediv__(value)
@@ -574,11 +600,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_floordiv:
+            case (int) CODE.Diana_SetAttr_Ifloordiv:
             {
-                var attr = flatGraph.diana_setattrop_floordivs[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_ifloordivs[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__floordiv__(value)
@@ -586,11 +612,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_mod:
+            case (int) CODE.Diana_SetAttr_Imod:
             {
-                var attr = flatGraph.diana_setattrop_mods[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_imods[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__mod__(value)
@@ -598,11 +624,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_pow:
+            case (int) CODE.Diana_SetAttr_Ipow:
             {
-                var attr = flatGraph.diana_setattrop_pows[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_ipows[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__pow__(value)
@@ -610,11 +636,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_lshift:
+            case (int) CODE.Diana_SetAttr_Ilshift:
             {
-                var attr = flatGraph.diana_setattrop_lshifts[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_ilshifts[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__lshift__(value)
@@ -622,11 +648,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_rshift:
+            case (int) CODE.Diana_SetAttr_Irshift:
             {
-                var attr = flatGraph.diana_setattrop_rshifts[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_irshifts[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__rshift__(value)
@@ -634,11 +660,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_bitor:
+            case (int) CODE.Diana_SetAttr_Ibitor:
             {
-                var attr = flatGraph.diana_setattrop_bitors[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_ibitors[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__bitor__(value)
@@ -646,11 +672,11 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_bitand:
+            case (int) CODE.Diana_SetAttr_Ibitand:
             {
-                var attr = flatGraph.diana_setattrop_bitands[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_ibitands[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__bitand__(value)
@@ -658,14 +684,110 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetAttrOp_bitxor:
+            case (int) CODE.Diana_SetAttr_Ibitxor:
             {
-                var attr = flatGraph.diana_setattrop_bitxors[curPtr.ind].attr;
+                var attr = flatGraph.diana_setattr_ibitxors[curPtr.ind].attr;
             
-                var (subject, value) = pop2();
+                var (value, subject) = pop2();
                 subject.Set(
                     attr,
                     subject.Get(attr).__bitxor__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttr_Igt:
+            {
+                var attr = flatGraph.diana_setattr_igts[curPtr.ind].attr;
+            
+                var (value, subject) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__gt__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttr_Ilt:
+            {
+                var attr = flatGraph.diana_setattr_ilts[curPtr.ind].attr;
+            
+                var (value, subject) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__lt__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttr_Ige:
+            {
+                var attr = flatGraph.diana_setattr_iges[curPtr.ind].attr;
+            
+                var (value, subject) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__ge__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttr_Ile:
+            {
+                var attr = flatGraph.diana_setattr_iles[curPtr.ind].attr;
+            
+                var (value, subject) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__le__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttr_Ieq:
+            {
+                var attr = flatGraph.diana_setattr_ieqs[curPtr.ind].attr;
+            
+                var (value, subject) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__eq__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttr_Ineq:
+            {
+                var attr = flatGraph.diana_setattr_ineqs[curPtr.ind].attr;
+            
+                var (value, subject) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__neq__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttr_Iin:
+            {
+                var attr = flatGraph.diana_setattr_iins[curPtr.ind].attr;
+            
+                var (value, subject) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__in__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttr_Inotin:
+            {
+                var attr = flatGraph.diana_setattr_inotins[curPtr.ind].attr;
+            
+                var (value, subject) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__notin__(value)
                 );
 
                 break;
@@ -689,7 +811,7 @@ namespace DianaScript
             case (int) CODE.Diana_SetItem:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     value
@@ -697,10 +819,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_add:
+            case (int) CODE.Diana_SetItem_Iadd:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__add__(value)
@@ -709,10 +831,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_sub:
+            case (int) CODE.Diana_SetItem_Isub:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__sub__(value)
@@ -721,10 +843,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_mul:
+            case (int) CODE.Diana_SetItem_Imul:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__mul__(value)
@@ -733,10 +855,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_truediv:
+            case (int) CODE.Diana_SetItem_Itruediv:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__truediv__(value)
@@ -745,10 +867,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_floordiv:
+            case (int) CODE.Diana_SetItem_Ifloordiv:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__floordiv__(value)
@@ -757,10 +879,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_mod:
+            case (int) CODE.Diana_SetItem_Imod:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__mod__(value)
@@ -769,10 +891,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_pow:
+            case (int) CODE.Diana_SetItem_Ipow:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__pow__(value)
@@ -781,10 +903,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_lshift:
+            case (int) CODE.Diana_SetItem_Ilshift:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__lshift__(value)
@@ -793,10 +915,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_rshift:
+            case (int) CODE.Diana_SetItem_Irshift:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__rshift__(value)
@@ -805,10 +927,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_bitor:
+            case (int) CODE.Diana_SetItem_Ibitor:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__bitor__(value)
@@ -817,10 +939,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_bitand:
+            case (int) CODE.Diana_SetItem_Ibitand:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__bitand__(value)
@@ -829,10 +951,10 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_SetItemOp_bitxor:
+            case (int) CODE.Diana_SetItem_Ibitxor:
             {
             
-                var (subject, item, value) = pop3();
+                var (value, subject, item) = pop3();
                 subject.__setitem__(
                     item,
                     subject.__getitem__(item).__bitxor__(value)
@@ -841,99 +963,259 @@ namespace DianaScript
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_add:
+            case (int) CODE.Diana_SetItem_Igt:
             {
             
-                var (left, right) = pop2();
-                push(left.__add__(right));
+                var (value, subject, item) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__gt__(value)
+                );
+                push(item);
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_sub:
+            case (int) CODE.Diana_SetItem_Ilt:
             {
             
-                var (left, right) = pop2();
-                push(left.__sub__(right));
+                var (value, subject, item) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__lt__(value)
+                );
+                push(item);
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_mul:
+            case (int) CODE.Diana_SetItem_Ige:
             {
             
-                var (left, right) = pop2();
-                push(left.__mul__(right));
+                var (value, subject, item) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__ge__(value)
+                );
+                push(item);
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_truediv:
+            case (int) CODE.Diana_SetItem_Ile:
             {
             
-                var (left, right) = pop2();
-                push(left.__truediv__(right));
+                var (value, subject, item) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__le__(value)
+                );
+                push(item);
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_floordiv:
+            case (int) CODE.Diana_SetItem_Ieq:
             {
             
-                var (left, right) = pop2();
-                push(left.__floordiv__(right));
+                var (value, subject, item) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__eq__(value)
+                );
+                push(item);
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_mod:
+            case (int) CODE.Diana_SetItem_Ineq:
             {
             
-                var (left, right) = pop2();
-                push(left.__mod__(right));
+                var (value, subject, item) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__neq__(value)
+                );
+                push(item);
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_pow:
+            case (int) CODE.Diana_SetItem_Iin:
             {
             
-                var (left, right) = pop2();
-                push(left.__pow__(right));
+                var (value, subject, item) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__in__(value)
+                );
+                push(item);
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_lshift:
+            case (int) CODE.Diana_SetItem_Inotin:
             {
             
-                var (left, right) = pop2();
-                push(left.__lshift__(right));
+                var (value, subject, item) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__notin__(value)
+                );
+                push(item);
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_rshift:
+            case (int) CODE.Diana_add:
             {
             
                 var (left, right) = pop2();
-                push(left.__rshift__(right));
+                push(MK.create(left.__add__(right)));
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_bitor:
+            case (int) CODE.Diana_sub:
             {
             
                 var (left, right) = pop2();
-                push(left.__bitor__(right));
+                push(MK.create(left.__sub__(right)));
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_bitand:
+            case (int) CODE.Diana_mul:
             {
             
                 var (left, right) = pop2();
-                push(left.__bitand__(right));
+                push(MK.create(left.__mul__(right)));
 
                 break;
             }
-            case (int) CODE.Diana_BinaryOp_bitxor:
+            case (int) CODE.Diana_truediv:
             {
             
                 var (left, right) = pop2();
-                push(left.__bitxor__(right));
+                push(MK.create(left.__truediv__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_floordiv:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__floordiv__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_mod:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__mod__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_pow:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__pow__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_lshift:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__lshift__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_rshift:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__rshift__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_bitor:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__bitor__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_bitand:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__bitand__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_bitxor:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__bitxor__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_gt:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__gt__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_lt:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__lt__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_ge:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__ge__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_le:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__le__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_eq:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__eq__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_neq:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(left.__neq__(right)));
+
+                break;
+            }
+            case (int) CODE.Diana_in:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(right.__contains__(left)));
+
+                break;
+            }
+            case (int) CODE.Diana_notin:
+            {
+            
+                var (left, right) = pop2();
+                push(MK.create(!(right.__contains__(left))));
 
                 break;
             }
@@ -950,6 +1232,14 @@ namespace DianaScript
             
                 var val = pop();
                 push(MK.create(val.__not__));
+
+                break;
+            }
+            case (int) CODE.Diana_UnaryOp_neg:
+            {
+            
+                var val = pop();
+                push(MK.create(val.__neg__));
 
                 break;
             }
@@ -1047,6 +1337,23 @@ namespace DianaScript
                 // TODO check exact
                 for(var i = 0; i < n; i++)
                     push(tuple_elts[i]);
+
+                break;
+            }
+            case (int) CODE.Diana_Replicate:
+            {
+                var n = flatGraph.diana_replicates[curPtr.ind].n;
+            
+                var val = pop();
+                for(var i = 0; i < n; i++)
+                    push(val);
+
+                break;
+            }
+            case (int) CODE.Diana_Pop:
+            {
+            
+                pop();
 
                 break;
             }

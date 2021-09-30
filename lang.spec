@@ -92,10 +92,19 @@ ControlIf(arg: int) // break, continue, reraise
     if(pop().__bool__)
         token = arg;
 %]
+JumpIfNot(off: int)
+[%
+    if(!(pop().__bool__))
+        offset = off; 
+%]
 JumpIf(off: int)
 [%
     if(pop().__bool__)
         offset = off; 
+%]
+Jump(off: int)
+[%
+    offset = off; 
 %]
 Control(arg: int) // break, continue, reraise
 [%
@@ -198,7 +207,7 @@ GetAttr(attr: InternString)
 
 SetAttr(attr: InternString)
 [%
-    var (subject, value) = pop2();
+    var (value, subject) = pop2();
     subject.Set(
         attr,
         value
@@ -206,9 +215,10 @@ SetAttr(attr: InternString)
 %]
 SetAttr_I$T(attr: InternString)  from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
+    gt lt ge le eq neq in notin
 }
 [%
-    var (subject, value) = pop2();
+    var (value, subject) = pop2();
     subject.Set(
         attr,
         subject.Get(attr).__${T}__(value)
@@ -226,7 +236,7 @@ GetItem()
 %]
 SetItem()
 [%
-    var (subject, item, value) = pop3();
+    var (value, subject, item) = pop3();
     subject.__setitem__(
         item,
         value
@@ -234,9 +244,10 @@ SetItem()
 %]
 SetItem_I$T()  from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
+    gt lt ge le eq neq in notin
 }
 [%
-    var (subject, item, value) = pop3();
+    var (value, subject, item) = pop3();
     subject.__setitem__(
         item,
         subject.__getitem__(item).__${T}__(value)
@@ -245,12 +256,23 @@ SetItem_I$T()  from {
 %]
 $T() from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
+    gt lt ge le eq neq
 }
 [%
     var (left, right) = pop2();
-    push(left.__${T}__(right));
+    push(MK.create(left.__${T}__(right)));
 %]
-UnaryOp_$T() from { invert not }
+in() 
+[%
+    var (left, right) = pop2();
+    push(MK.create(right.__contains__(left)));
+%]
+notin() 
+[%
+    var (left, right) = pop2();
+    push(MK.create(!(right.__contains__(left))));
+%]
+UnaryOp_$T() from { invert not neg }
 [%
     var val = pop();
     push(MK.create(val.__${T}__));
@@ -318,4 +340,14 @@ Pack(n: int)
     // TODO check exact
     for(var i = 0; i < n; i++)
         push(tuple_elts[i]);
+%]
+Replicate(n: int)
+[%
+    var val = pop();
+    for(var i = 0; i < n; i++)
+        push(val);
+%]
+Pop()
+[%
+    pop();
 %]

@@ -33,12 +33,12 @@ class Diana_LoadGlobalRef:
 
 @dataclass(frozen=True)
 class Diana_DelVar:
-    target: int
+    targets: tuple[int, ...]
     TAG = 2
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
-        serialize_(self.target, arr)
+        serialize_(self.targets, arr)
 
     def as_ptr(self) -> Ptr:
         return Ptr(self.TAG, DFlatGraphCode.diana_delvars.cache(self))
@@ -97,9 +97,48 @@ class Diana_ControlIf:
 
 
 @dataclass(frozen=True)
+class Diana_JumpIfNot:
+    off: int
+    TAG = 7
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.off, arr)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, DFlatGraphCode.diana_jumpifnots.cache(self))
+
+
+@dataclass(frozen=True)
+class Diana_JumpIf:
+    off: int
+    TAG = 8
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.off, arr)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, DFlatGraphCode.diana_jumpifs.cache(self))
+
+
+@dataclass(frozen=True)
+class Diana_Jump:
+    off: int
+    TAG = 9
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+        serialize_(self.off, arr)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, DFlatGraphCode.diana_jumps.cache(self))
+
+
+@dataclass(frozen=True)
 class Diana_Control:
     arg: int
-    TAG = 7
+    TAG = 10
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -114,7 +153,7 @@ class Diana_Try:
     body: int
     except_handlers: tuple[Catch, ...]
     final_body: int
-    TAG = 8
+    TAG = 11
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -129,7 +168,7 @@ class Diana_Try:
 @dataclass(frozen=True)
 class Diana_Loop:
     body: int
-    TAG = 9
+    TAG = 12
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -142,7 +181,7 @@ class Diana_Loop:
 @dataclass(frozen=True)
 class Diana_For:
     body: int
-    TAG = 10
+    TAG = 13
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -155,7 +194,7 @@ class Diana_For:
 @dataclass(frozen=True)
 class Diana_With:
     body: int
-    TAG = 11
+    TAG = 14
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -168,7 +207,7 @@ class Diana_With:
 @dataclass(frozen=True)
 class Diana_GetAttr:
     attr: InternString
-    TAG = 12
+    TAG = 15
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -181,7 +220,7 @@ class Diana_GetAttr:
 @dataclass(frozen=True)
 class Diana_SetAttr:
     attr: InternString
-    TAG = 13
+    TAG = 16
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -192,46 +231,7 @@ class Diana_SetAttr:
 
 
 @dataclass(frozen=True)
-class Diana_SetAttrOp_add:
-    attr: InternString
-    TAG = 14
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.attr, arr)
-
-    def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_adds.cache(self))
-
-
-@dataclass(frozen=True)
-class Diana_SetAttrOp_sub:
-    attr: InternString
-    TAG = 15
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.attr, arr)
-
-    def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_subs.cache(self))
-
-
-@dataclass(frozen=True)
-class Diana_SetAttrOp_mul:
-    attr: InternString
-    TAG = 16
-
-    def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
-        serialize_(self.attr, arr)
-
-    def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_muls.cache(self))
-
-
-@dataclass(frozen=True)
-class Diana_SetAttrOp_truediv:
+class Diana_SetAttr_Iadd:
     attr: InternString
     TAG = 17
 
@@ -240,11 +240,11 @@ class Diana_SetAttrOp_truediv:
         serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_truedivs.cache(self))
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_iadds.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetAttrOp_floordiv:
+class Diana_SetAttr_Isub:
     attr: InternString
     TAG = 18
 
@@ -253,11 +253,11 @@ class Diana_SetAttrOp_floordiv:
         serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_floordivs.cache(self))
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_isubs.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetAttrOp_mod:
+class Diana_SetAttr_Imul:
     attr: InternString
     TAG = 19
 
@@ -266,11 +266,11 @@ class Diana_SetAttrOp_mod:
         serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_mods.cache(self))
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_imuls.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetAttrOp_pow:
+class Diana_SetAttr_Itruediv:
     attr: InternString
     TAG = 20
 
@@ -279,11 +279,11 @@ class Diana_SetAttrOp_pow:
         serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_pows.cache(self))
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_itruedivs.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetAttrOp_lshift:
+class Diana_SetAttr_Ifloordiv:
     attr: InternString
     TAG = 21
 
@@ -292,11 +292,11 @@ class Diana_SetAttrOp_lshift:
         serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_lshifts.cache(self))
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_ifloordivs.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetAttrOp_rshift:
+class Diana_SetAttr_Imod:
     attr: InternString
     TAG = 22
 
@@ -305,11 +305,11 @@ class Diana_SetAttrOp_rshift:
         serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_rshifts.cache(self))
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_imods.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetAttrOp_bitor:
+class Diana_SetAttr_Ipow:
     attr: InternString
     TAG = 23
 
@@ -318,11 +318,11 @@ class Diana_SetAttrOp_bitor:
         serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_bitors.cache(self))
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_ipows.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetAttrOp_bitand:
+class Diana_SetAttr_Ilshift:
     attr: InternString
     TAG = 24
 
@@ -331,11 +331,11 @@ class Diana_SetAttrOp_bitand:
         serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_bitands.cache(self))
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_ilshifts.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetAttrOp_bitxor:
+class Diana_SetAttr_Irshift:
     attr: InternString
     TAG = 25
 
@@ -344,132 +344,154 @@ class Diana_SetAttrOp_bitxor:
         serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.diana_setattrop_bitxors.cache(self))
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_irshifts.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_DelItem:
+class Diana_SetAttr_Ibitor:
+    attr: InternString
     TAG = 26
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_ibitors.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_GetItem:
+class Diana_SetAttr_Ibitand:
+    attr: InternString
     TAG = 27
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_ibitands.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItem:
+class Diana_SetAttr_Ibitxor:
+    attr: InternString
     TAG = 28
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_ibitxors.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_add:
+class Diana_SetAttr_Igt:
+    attr: InternString
     TAG = 29
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_igts.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_sub:
+class Diana_SetAttr_Ilt:
+    attr: InternString
     TAG = 30
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_ilts.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_mul:
+class Diana_SetAttr_Ige:
+    attr: InternString
     TAG = 31
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_iges.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_truediv:
+class Diana_SetAttr_Ile:
+    attr: InternString
     TAG = 32
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_iles.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_floordiv:
+class Diana_SetAttr_Ieq:
+    attr: InternString
     TAG = 33
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_ieqs.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_mod:
+class Diana_SetAttr_Ineq:
+    attr: InternString
     TAG = 34
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_ineqs.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_pow:
+class Diana_SetAttr_Iin:
+    attr: InternString
     TAG = 35
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_iins.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_lshift:
+class Diana_SetAttr_Inotin:
+    attr: InternString
     TAG = 36
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.attr, arr)
 
     def as_ptr(self) -> Ptr:
-        return Ptr(self.TAG, 0)
+        return Ptr(self.TAG, DFlatGraphCode.diana_setattr_inotins.cache(self))
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_rshift:
+class Diana_DelItem:
     TAG = 37
 
     def serialize_(self, arr: bytearray):
@@ -480,7 +502,7 @@ class Diana_SetItemOp_rshift:
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_bitor:
+class Diana_GetItem:
     TAG = 38
 
     def serialize_(self, arr: bytearray):
@@ -491,7 +513,7 @@ class Diana_SetItemOp_bitor:
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_bitand:
+class Diana_SetItem:
     TAG = 39
 
     def serialize_(self, arr: bytearray):
@@ -502,7 +524,7 @@ class Diana_SetItemOp_bitand:
 
 
 @dataclass(frozen=True)
-class Diana_SetItemOp_bitxor:
+class Diana_SetItem_Iadd:
     TAG = 40
 
     def serialize_(self, arr: bytearray):
@@ -513,7 +535,7 @@ class Diana_SetItemOp_bitxor:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_add:
+class Diana_SetItem_Isub:
     TAG = 41
 
     def serialize_(self, arr: bytearray):
@@ -524,7 +546,7 @@ class Diana_BinaryOp_add:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_sub:
+class Diana_SetItem_Imul:
     TAG = 42
 
     def serialize_(self, arr: bytearray):
@@ -535,7 +557,7 @@ class Diana_BinaryOp_sub:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_mul:
+class Diana_SetItem_Itruediv:
     TAG = 43
 
     def serialize_(self, arr: bytearray):
@@ -546,7 +568,7 @@ class Diana_BinaryOp_mul:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_truediv:
+class Diana_SetItem_Ifloordiv:
     TAG = 44
 
     def serialize_(self, arr: bytearray):
@@ -557,7 +579,7 @@ class Diana_BinaryOp_truediv:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_floordiv:
+class Diana_SetItem_Imod:
     TAG = 45
 
     def serialize_(self, arr: bytearray):
@@ -568,7 +590,7 @@ class Diana_BinaryOp_floordiv:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_mod:
+class Diana_SetItem_Ipow:
     TAG = 46
 
     def serialize_(self, arr: bytearray):
@@ -579,7 +601,7 @@ class Diana_BinaryOp_mod:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_pow:
+class Diana_SetItem_Ilshift:
     TAG = 47
 
     def serialize_(self, arr: bytearray):
@@ -590,7 +612,7 @@ class Diana_BinaryOp_pow:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_lshift:
+class Diana_SetItem_Irshift:
     TAG = 48
 
     def serialize_(self, arr: bytearray):
@@ -601,7 +623,7 @@ class Diana_BinaryOp_lshift:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_rshift:
+class Diana_SetItem_Ibitor:
     TAG = 49
 
     def serialize_(self, arr: bytearray):
@@ -612,7 +634,7 @@ class Diana_BinaryOp_rshift:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_bitor:
+class Diana_SetItem_Ibitand:
     TAG = 50
 
     def serialize_(self, arr: bytearray):
@@ -623,7 +645,7 @@ class Diana_BinaryOp_bitor:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_bitand:
+class Diana_SetItem_Ibitxor:
     TAG = 51
 
     def serialize_(self, arr: bytearray):
@@ -634,7 +656,7 @@ class Diana_BinaryOp_bitand:
 
 
 @dataclass(frozen=True)
-class Diana_BinaryOp_bitxor:
+class Diana_SetItem_Igt:
     TAG = 52
 
     def serialize_(self, arr: bytearray):
@@ -645,7 +667,7 @@ class Diana_BinaryOp_bitxor:
 
 
 @dataclass(frozen=True)
-class Diana_UnaryOp_invert:
+class Diana_SetItem_Ilt:
     TAG = 53
 
     def serialize_(self, arr: bytearray):
@@ -656,8 +678,316 @@ class Diana_UnaryOp_invert:
 
 
 @dataclass(frozen=True)
-class Diana_UnaryOp_not:
+class Diana_SetItem_Ige:
     TAG = 54
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_SetItem_Ile:
+    TAG = 55
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_SetItem_Ieq:
+    TAG = 56
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_SetItem_Ineq:
+    TAG = 57
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_SetItem_Iin:
+    TAG = 58
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_SetItem_Inotin:
+    TAG = 59
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_add:
+    TAG = 60
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_sub:
+    TAG = 61
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_mul:
+    TAG = 62
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_truediv:
+    TAG = 63
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_floordiv:
+    TAG = 64
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_mod:
+    TAG = 65
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_pow:
+    TAG = 66
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_lshift:
+    TAG = 67
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_rshift:
+    TAG = 68
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_bitor:
+    TAG = 69
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_bitand:
+    TAG = 70
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_bitxor:
+    TAG = 71
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_gt:
+    TAG = 72
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_lt:
+    TAG = 73
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_ge:
+    TAG = 74
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_le:
+    TAG = 75
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_eq:
+    TAG = 76
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_neq:
+    TAG = 77
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_in:
+    TAG = 78
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_notin:
+    TAG = 79
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_UnaryOp_invert:
+    TAG = 80
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_UnaryOp_not:
+    TAG = 81
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Diana_UnaryOp_neg:
+    TAG = 82
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -669,7 +999,7 @@ class Diana_UnaryOp_not:
 @dataclass(frozen=True)
 class Diana_MKDict:
     n: int
-    TAG = 55
+    TAG = 83
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -682,7 +1012,7 @@ class Diana_MKDict:
 @dataclass(frozen=True)
 class Diana_MKSet:
     n: int
-    TAG = 56
+    TAG = 84
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -695,7 +1025,7 @@ class Diana_MKSet:
 @dataclass(frozen=True)
 class Diana_MKList:
     n: int
-    TAG = 57
+    TAG = 85
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -708,7 +1038,7 @@ class Diana_MKList:
 @dataclass(frozen=True)
 class Diana_Call:
     n: int
-    TAG = 58
+    TAG = 86
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -722,7 +1052,7 @@ class Diana_Call:
 class Diana_Format:
     format: int
     argn: int
-    TAG = 59
+    TAG = 87
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -736,7 +1066,7 @@ class Diana_Format:
 @dataclass(frozen=True)
 class Diana_Const:
     p_const: int
-    TAG = 60
+    TAG = 88
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -749,7 +1079,7 @@ class Diana_Const:
 @dataclass(frozen=True)
 class Diana_MKTuple:
     n: int
-    TAG = 61
+    TAG = 89
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -762,7 +1092,7 @@ class Diana_MKTuple:
 @dataclass(frozen=True)
 class Diana_Pack:
     n: int
-    TAG = 62
+    TAG = 90
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
@@ -773,18 +1103,40 @@ class Diana_Pack:
 
 
 @dataclass(frozen=True)
-class Catch:
-    exc_type: int
-    body: int
-    TAG = 0
+class Diana_Replicate:
+    n: int
+    TAG = 91
 
     def serialize_(self, arr: bytearray):
         arr.append(self.TAG)
+        serialize_(self.n, arr)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, DFlatGraphCode.diana_replicates.cache(self))
+
+
+@dataclass(frozen=True)
+class Diana_Pop:
+    TAG = 92
+
+    def serialize_(self, arr: bytearray):
+        arr.append(self.TAG)
+
+    def as_ptr(self) -> Ptr:
+        return Ptr(self.TAG, 0)
+
+
+@dataclass(frozen=True)
+class Catch:
+    exc_type: int
+    body: int
+
+    def serialize_(self, arr: bytearray):
         serialize_(self.exc_type, arr)
         serialize_(self.body, arr)
 
-    def as_int(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.catchs.cache(self))
+    def as_int(self) -> int:
+        return DFlatGraphCode.catchs.cache(self)
 
 
 @dataclass(frozen=True)
@@ -799,10 +1151,8 @@ class FuncMeta:
     lineno: int
     freenames: tuple[str, ...]
     localnames: tuple[str, ...]
-    TAG = 1
 
     def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
         serialize_(self.is_vararg, arr)
         serialize_(self.freeslots, arr)
         serialize_(self.nonargcells, arr)
@@ -814,8 +1164,8 @@ class FuncMeta:
         serialize_(self.freenames, arr)
         serialize_(self.localnames, arr)
 
-    def as_int(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.funcmetas.cache(self))
+    def as_int(self) -> int:
+        return DFlatGraphCode.funcmetas.cache(self)
 
 
 @dataclass(frozen=True)
@@ -823,16 +1173,14 @@ class Block:
     codes: tuple[Ptr, ...]
     location_data: tuple[tuple[int, int], ...]
     filename: str
-    TAG = 2
 
     def serialize_(self, arr: bytearray):
-        arr.append(self.TAG)
         serialize_(self.codes, arr)
         serialize_(self.location_data, arr)
         serialize_(self.filename, arr)
 
-    def as_int(self) -> Ptr:
-        return Ptr(self.TAG, DFlatGraphCode.blocks.cache(self))
+    def as_int(self) -> int:
+        return DFlatGraphCode.blocks.cache(self)
 
 
 class DFlatGraphCode:
@@ -849,6 +1197,9 @@ class DFlatGraphCode:
     diana_storevars : Builder[Diana_StoreVar] = Builder()
     diana_actions : Builder[Diana_Action] = Builder()
     diana_controlifs : Builder[Diana_ControlIf] = Builder()
+    diana_jumpifnots : Builder[Diana_JumpIfNot] = Builder()
+    diana_jumpifs : Builder[Diana_JumpIf] = Builder()
+    diana_jumps : Builder[Diana_Jump] = Builder()
     diana_controls : Builder[Diana_Control] = Builder()
     diana_trys : Builder[Diana_Try] = Builder()
     diana_loops : Builder[Diana_Loop] = Builder()
@@ -856,18 +1207,26 @@ class DFlatGraphCode:
     diana_withs : Builder[Diana_With] = Builder()
     diana_getattrs : Builder[Diana_GetAttr] = Builder()
     diana_setattrs : Builder[Diana_SetAttr] = Builder()
-    diana_setattrop_adds : Builder[Diana_SetAttrOp_add] = Builder()
-    diana_setattrop_subs : Builder[Diana_SetAttrOp_sub] = Builder()
-    diana_setattrop_muls : Builder[Diana_SetAttrOp_mul] = Builder()
-    diana_setattrop_truedivs : Builder[Diana_SetAttrOp_truediv] = Builder()
-    diana_setattrop_floordivs : Builder[Diana_SetAttrOp_floordiv] = Builder()
-    diana_setattrop_mods : Builder[Diana_SetAttrOp_mod] = Builder()
-    diana_setattrop_pows : Builder[Diana_SetAttrOp_pow] = Builder()
-    diana_setattrop_lshifts : Builder[Diana_SetAttrOp_lshift] = Builder()
-    diana_setattrop_rshifts : Builder[Diana_SetAttrOp_rshift] = Builder()
-    diana_setattrop_bitors : Builder[Diana_SetAttrOp_bitor] = Builder()
-    diana_setattrop_bitands : Builder[Diana_SetAttrOp_bitand] = Builder()
-    diana_setattrop_bitxors : Builder[Diana_SetAttrOp_bitxor] = Builder()
+    diana_setattr_iadds : Builder[Diana_SetAttr_Iadd] = Builder()
+    diana_setattr_isubs : Builder[Diana_SetAttr_Isub] = Builder()
+    diana_setattr_imuls : Builder[Diana_SetAttr_Imul] = Builder()
+    diana_setattr_itruedivs : Builder[Diana_SetAttr_Itruediv] = Builder()
+    diana_setattr_ifloordivs : Builder[Diana_SetAttr_Ifloordiv] = Builder()
+    diana_setattr_imods : Builder[Diana_SetAttr_Imod] = Builder()
+    diana_setattr_ipows : Builder[Diana_SetAttr_Ipow] = Builder()
+    diana_setattr_ilshifts : Builder[Diana_SetAttr_Ilshift] = Builder()
+    diana_setattr_irshifts : Builder[Diana_SetAttr_Irshift] = Builder()
+    diana_setattr_ibitors : Builder[Diana_SetAttr_Ibitor] = Builder()
+    diana_setattr_ibitands : Builder[Diana_SetAttr_Ibitand] = Builder()
+    diana_setattr_ibitxors : Builder[Diana_SetAttr_Ibitxor] = Builder()
+    diana_setattr_igts : Builder[Diana_SetAttr_Igt] = Builder()
+    diana_setattr_ilts : Builder[Diana_SetAttr_Ilt] = Builder()
+    diana_setattr_iges : Builder[Diana_SetAttr_Ige] = Builder()
+    diana_setattr_iles : Builder[Diana_SetAttr_Ile] = Builder()
+    diana_setattr_ieqs : Builder[Diana_SetAttr_Ieq] = Builder()
+    diana_setattr_ineqs : Builder[Diana_SetAttr_Ineq] = Builder()
+    diana_setattr_iins : Builder[Diana_SetAttr_Iin] = Builder()
+    diana_setattr_inotins : Builder[Diana_SetAttr_Inotin] = Builder()
     diana_mkdicts : Builder[Diana_MKDict] = Builder()
     diana_mksets : Builder[Diana_MKSet] = Builder()
     diana_mklists : Builder[Diana_MKList] = Builder()
@@ -876,6 +1235,7 @@ class DFlatGraphCode:
     diana_consts : Builder[Diana_Const] = Builder()
     diana_mktuples : Builder[Diana_MKTuple] = Builder()
     diana_packs : Builder[Diana_Pack] = Builder()
+    diana_replicates : Builder[Diana_Replicate] = Builder()
 
     @classmethod
     def serialize_(cls, arr: bytearray):
@@ -892,6 +1252,9 @@ class DFlatGraphCode:
         serialize_(cls.diana_storevars, arr)
         serialize_(cls.diana_actions, arr)
         serialize_(cls.diana_controlifs, arr)
+        serialize_(cls.diana_jumpifnots, arr)
+        serialize_(cls.diana_jumpifs, arr)
+        serialize_(cls.diana_jumps, arr)
         serialize_(cls.diana_controls, arr)
         serialize_(cls.diana_trys, arr)
         serialize_(cls.diana_loops, arr)
@@ -899,18 +1262,26 @@ class DFlatGraphCode:
         serialize_(cls.diana_withs, arr)
         serialize_(cls.diana_getattrs, arr)
         serialize_(cls.diana_setattrs, arr)
-        serialize_(cls.diana_setattrop_adds, arr)
-        serialize_(cls.diana_setattrop_subs, arr)
-        serialize_(cls.diana_setattrop_muls, arr)
-        serialize_(cls.diana_setattrop_truedivs, arr)
-        serialize_(cls.diana_setattrop_floordivs, arr)
-        serialize_(cls.diana_setattrop_mods, arr)
-        serialize_(cls.diana_setattrop_pows, arr)
-        serialize_(cls.diana_setattrop_lshifts, arr)
-        serialize_(cls.diana_setattrop_rshifts, arr)
-        serialize_(cls.diana_setattrop_bitors, arr)
-        serialize_(cls.diana_setattrop_bitands, arr)
-        serialize_(cls.diana_setattrop_bitxors, arr)
+        serialize_(cls.diana_setattr_iadds, arr)
+        serialize_(cls.diana_setattr_isubs, arr)
+        serialize_(cls.diana_setattr_imuls, arr)
+        serialize_(cls.diana_setattr_itruedivs, arr)
+        serialize_(cls.diana_setattr_ifloordivs, arr)
+        serialize_(cls.diana_setattr_imods, arr)
+        serialize_(cls.diana_setattr_ipows, arr)
+        serialize_(cls.diana_setattr_ilshifts, arr)
+        serialize_(cls.diana_setattr_irshifts, arr)
+        serialize_(cls.diana_setattr_ibitors, arr)
+        serialize_(cls.diana_setattr_ibitands, arr)
+        serialize_(cls.diana_setattr_ibitxors, arr)
+        serialize_(cls.diana_setattr_igts, arr)
+        serialize_(cls.diana_setattr_ilts, arr)
+        serialize_(cls.diana_setattr_iges, arr)
+        serialize_(cls.diana_setattr_iles, arr)
+        serialize_(cls.diana_setattr_ieqs, arr)
+        serialize_(cls.diana_setattr_ineqs, arr)
+        serialize_(cls.diana_setattr_iins, arr)
+        serialize_(cls.diana_setattr_inotins, arr)
         serialize_(cls.diana_mkdicts, arr)
         serialize_(cls.diana_mksets, arr)
         serialize_(cls.diana_mklists, arr)
@@ -919,5 +1290,6 @@ class DFlatGraphCode:
         serialize_(cls.diana_consts, arr)
         serialize_(cls.diana_mktuples, arr)
         serialize_(cls.diana_packs, arr)
+        serialize_(cls.diana_replicates, arr)
 
-DianaIR = Catch | FuncMeta | Block | Diana_FunctionDef | Diana_LoadGlobalRef | Diana_DelVar | Diana_LoadVar | Diana_StoreVar | Diana_Action | Diana_ControlIf | Diana_Control | Diana_Try | Diana_Loop | Diana_For | Diana_With | Diana_GetAttr | Diana_SetAttr | Diana_SetAttrOp_add | Diana_SetAttrOp_sub | Diana_SetAttrOp_mul | Diana_SetAttrOp_truediv | Diana_SetAttrOp_floordiv | Diana_SetAttrOp_mod | Diana_SetAttrOp_pow | Diana_SetAttrOp_lshift | Diana_SetAttrOp_rshift | Diana_SetAttrOp_bitor | Diana_SetAttrOp_bitand | Diana_SetAttrOp_bitxor | Diana_MKDict | Diana_MKSet | Diana_MKList | Diana_Call | Diana_Format | Diana_Const | Diana_MKTuple | Diana_Pack
+DianaIR = Catch | FuncMeta | Block | Diana_FunctionDef | Diana_LoadGlobalRef | Diana_DelVar | Diana_LoadVar | Diana_StoreVar | Diana_Action | Diana_ControlIf | Diana_JumpIfNot | Diana_JumpIf | Diana_Jump | Diana_Control | Diana_Try | Diana_Loop | Diana_For | Diana_With | Diana_GetAttr | Diana_SetAttr | Diana_SetAttr_Iadd | Diana_SetAttr_Isub | Diana_SetAttr_Imul | Diana_SetAttr_Itruediv | Diana_SetAttr_Ifloordiv | Diana_SetAttr_Imod | Diana_SetAttr_Ipow | Diana_SetAttr_Ilshift | Diana_SetAttr_Irshift | Diana_SetAttr_Ibitor | Diana_SetAttr_Ibitand | Diana_SetAttr_Ibitxor | Diana_SetAttr_Igt | Diana_SetAttr_Ilt | Diana_SetAttr_Ige | Diana_SetAttr_Ile | Diana_SetAttr_Ieq | Diana_SetAttr_Ineq | Diana_SetAttr_Iin | Diana_SetAttr_Inotin | Diana_MKDict | Diana_MKSet | Diana_MKList | Diana_Call | Diana_Format | Diana_Const | Diana_MKTuple | Diana_Pack | Diana_Replicate

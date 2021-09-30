@@ -351,19 +351,17 @@ class Codegen:
                 for field, type in params:
                     py_type = py_parse(type)
                     self << f"{field}: {py_type}"
-                self << f"TAG = {i}"
                 
                 self.newline
                 self << "def serialize_(self, arr: bytearray):"
                 with self.tab():
-                    self << "arr.append(self.TAG)"
                     for field, type in params:
                         self << f"serialize_(self.{field}, arr)"
                 self.newline
                 
-                self << "def as_int(self) -> Ptr:"
+                self << "def as_int(self) -> int:"
                 with self.tab():
-                    self << f"return Ptr(self.TAG, DFlatGraphCode.{kind.lower()}s.cache(self))"                
+                    self << f"return DFlatGraphCode.{kind.lower()}s.cache(self)"                
             self.newline
             self.newline
         

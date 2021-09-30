@@ -37,6 +37,7 @@ obj_box_tags: dict[type, int| None] = {
     set: 4,
     list: 5,
     tuple: 6,
+    type(None): none_bit,
     bool: None
 }
 

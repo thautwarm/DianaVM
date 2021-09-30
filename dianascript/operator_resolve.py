@@ -53,7 +53,7 @@ standard_precedences = {
     "<=": 2,
     ">=": 2,
     "=": 2,
-    "not_in": 2,
+    "notin": 2,
     "in": 2,
     "|": 3,
     "^": 4,
@@ -64,8 +64,9 @@ standard_precedences = {
     "-": 7,
     "*": 8,
     "/": 8,
+    "//": 8,
     "%": 8,
-    "**": 9,
+    "**": 9
 }
 
 standard_associativities = defaultdict(lambda: False)

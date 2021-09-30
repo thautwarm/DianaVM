@@ -37,11 +37,10 @@
 
             
                         
-
   
 
 
-start : nullable{list{stmt}} -> start_0                                   
+start : block -> start_0                    
 
 list{e} : e -> list_0                    
         | list{e} e -> list_1                                        
@@ -52,21 +51,32 @@ seplist{sep, e} : e -> seplist_0
 nullable{seq} : -> nullable_0                          
               | seq -> nullable_1                          
 
+expr_opt: -> expr_opt_0                       
+        | expr -> expr_opt_1                     
+
+lhs_opt : -> lhs_opt_0                  
+        | expr -> lhs_opt_1                     
 
 stmt :   "var" seplist{",", name} -> stmt_0                                                                 
-       | lhs ":=" expr -> stmt_1                                                                       
-       | expr -> stmt_2                                                            
-       | "loop" block "end" -> stmt_3                                                                 
-       | "for" lhs "<-" expr "do" block "end" -> stmt_4                                                                        
+       | seplist{":=", lhs} ":=" expr -> stmt_1                                                                                       
+       | expr -> stmt_2                                                       
+       | "loop" block "end" -> stmt_3                                                                     
+       | "each" lhs_opt "of" expr "do" block "end" -> stmt_4                                                                            
                                                                
-       | "if" expr "then" block "end" -> stmt_5                                                                          
+       | "if" expr "then" block "end" -> stmt_5                                                                         
        | "if" expr "then" block "else" block "end" -> stmt_6                                                                           
        | "break" -> stmt_7                                                               
        | "continue" -> stmt_8                                                                  
+       | "return" expr_opt -> stmt_9                                                                       
+       | "func" name "(" nullable{seplist{",", name}} ")" block "end" -> stmt_10                                                                                                 
 
 
-func : "func" name "(" nullable{seplist{",", name}} ")" block "end" -> func_0                                                                                               
-block : nullable{list{stmt}} -> block_0                                     
+filter{keep, discard} :filter{keep, discard} keep -> filter_0                                                 
+    | filter{keep, discard} discard -> filter_1                                          
+    | keep -> filter_2                   
+    | discard -> filter_3                    
+    | -> filter_4            
+block : filter{stmt, NEWLINE} -> block_0                                     
 
 
 ?expr :  or_expr
@@ -78,8 +88,8 @@ and_expr : and_expr "and" not -> and_expr_0
          | not -> and_expr_1                                      
 
 
-binop : ("<" | ">" |">=" | "<=" | "=" | "==" | "!=" | "in" |"+" | "-" | "*" | "**" | "/" | "//" | "%" |"&" | "|" | "<<" | ">>") -> binop_0                                               
-        | "not" "in" -> binop_1                                            
+binop : ("<" | ">" |">=" | "<=" | "=" | "!=" | "in" |"+" | "-" | "*" | "**" | "/" | "//" | "%" |"&" | "|" | "<<" | ">>") -> binop_0                                               
+        | "not" "in" -> binop_1                                      
 
 bin : atom (binop atom)* -> bin_0                                                   
 
@@ -97,32 +107,41 @@ pair : expr ":" expr -> pair_0
 atom : atom "." "[" expr "]" -> atom_0                                                 
      | atom "." name -> atom_1                                                   
      | atom "(" nullable{seplist{",", expr}} ")" -> atom_2                                                                         
-     | "[" nullable{seplist{",", expr}} trailer "]" -> atom_3                                                                      
-     | "(" nullable{seplist{",", expr}} trailer ")" -> atom_4                                                                         
-     | "{" nullable{seplist{",", pair}} trailer "}" -> atom_5                                                                          
-     | number -> atom_6                                                                 
-     | string -> atom_7                                                                 
-     | "None" -> atom_8                                     
-     | "True" -> atom_9                                     
-     | "False" -> atom_10                                     
-     | NAME -> atom_11                                     
-     | "-" atom -> atom_12                                     
-     | "~" atom -> atom_13                                     
+     | "[" seplist{",", expr} trailer "]" -> atom_3                                                            
+     | "[" "]" -> atom_4                                 
+     | "(" seplist{",", expr} trailer ")" -> atom_5                                                               
+     | "(" ")" -> atom_6                                      
+     | "{" seplist{",", pair} trailer "}" -> atom_7                                                            
+     | "{" "}" -> atom_8                                 
+     | number -> atom_9                                                                 
+     | string -> atom_10                                                                 
+     | "None" -> atom_11                                     
+     | "True" -> atom_12                                     
+     | "False" -> atom_13                                     
+     | NAME -> atom_14                                     
+     | "-" atom -> atom_15                                     
+     | "~" atom -> atom_16                                     
 
      
 
 string: (STRING | LONG_STRING) -> string_0                                     
 name : NAME -> name_0                  
-NAME: /[a-zA-Z_\u4e00-\u9fa5][a-zA-Z0-9_\u4e00-\u9fa5]*?/
-number: (DEC_NUMBER | HEX_NUMBER | BIN_NUMBER | OCT_NUMBER | FLOAT_NUMBER | IMAG_NUMBER) -> number_0                                                                                               
-DEC_NUMBER: /0|[1-9][\d_]*/i
-HEX_NUMBER.2: /0x[\da-f]*/i
-OCT_NUMBER.2: /0o[0-7]*/i
-BIN_NUMBER.2 : /0b[0-1]*/i
+number: (FLOAT_NUMBER | INT_NUMBER) -> number_0                                          
+
+NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
+
 FLOAT_NUMBER.2: /((\d+\.[\d_]*|\.[\d_]+)([Ee][-+]?\d+)?|\d+([Ee][-+]?\d+))/
-IMAG_NUMBER.2: /\d+[Jj]/ | FLOAT_NUMBER /[Jj]/
+INT_NUMBER: /(\+|\-)?[1-9]\d*|0[oO][0-7]+|0[xX][\da-fA-F]+|0[bB][01]+|0/
+
 STRING : /[ubf]?r?("(?!"").*?(?<!\\)(\\\\)*?"|'(?!'').*?(?<!\\)(\\\\)*?')/i
 LONG_STRING: /[ubf]?r?(""".*?(?<!\\)(\\\\)*?"""|'''.*?(?<!\\)(\\\\)*?''')/is
 
-%import common.WS
-%ignore WS
+COMMENT: /#[^\n]*/
+MULTILINE_COMMENT: /\/\*(\*(?!\/)|[^*])*\*\//
+
+%import common.WS_INLINE
+%import common.NEWLINE
+%ignore WS_INLINE
+%ignore COMMENT
+%ignore /\\[\t \f]*\r?\n/ 
+%ignore MULTILINE_COMMENT

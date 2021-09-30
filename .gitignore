@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# generated ran code
+*.ran
+
 # User-specific files
 *.rsuser
 *.suo

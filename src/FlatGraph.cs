@@ -81,7 +81,7 @@ public struct Diana_LoadGlobalRef
 }
 public struct Diana_DelVar
 {
-    public int target;
+    public int[] targets;
 
 }
 public struct Diana_LoadVar
@@ -102,6 +102,21 @@ public struct Diana_Action
 public struct Diana_ControlIf
 {
     public int arg;
+
+}
+public struct Diana_JumpIfNot
+{
+    public int off;
+
+}
+public struct Diana_JumpIf
+{
+    public int off;
+
+}
+public struct Diana_Jump
+{
+    public int off;
 
 }
 public struct Diana_Control
@@ -141,62 +156,102 @@ public struct Diana_SetAttr
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_add
+public struct Diana_SetAttr_Iadd
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_sub
+public struct Diana_SetAttr_Isub
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_mul
+public struct Diana_SetAttr_Imul
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_truediv
+public struct Diana_SetAttr_Itruediv
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_floordiv
+public struct Diana_SetAttr_Ifloordiv
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_mod
+public struct Diana_SetAttr_Imod
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_pow
+public struct Diana_SetAttr_Ipow
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_lshift
+public struct Diana_SetAttr_Ilshift
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_rshift
+public struct Diana_SetAttr_Irshift
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_bitor
+public struct Diana_SetAttr_Ibitor
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_bitand
+public struct Diana_SetAttr_Ibitand
 {
     public InternString attr;
 
 }
-public struct Diana_SetAttrOp_bitxor
+public struct Diana_SetAttr_Ibitxor
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttr_Igt
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttr_Ilt
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttr_Ige
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttr_Ile
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttr_Ieq
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttr_Ineq
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttr_Iin
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttr_Inotin
 {
     public InternString attr;
 
@@ -242,6 +297,11 @@ public struct Diana_Pack
     public int n;
 
 }
+public struct Diana_Replicate
+{
+    public int n;
+
+}
 public enum CODE
 {
     Diana_FunctionDef,
@@ -251,6 +311,9 @@ public enum CODE
     Diana_StoreVar,
     Diana_Action,
     Diana_ControlIf,
+    Diana_JumpIfNot,
+    Diana_JumpIf,
+    Diana_Jump,
     Diana_Control,
     Diana_Try,
     Diana_Loop,
@@ -258,47 +321,72 @@ public enum CODE
     Diana_With,
     Diana_GetAttr,
     Diana_SetAttr,
-    Diana_SetAttrOp_add,
-    Diana_SetAttrOp_sub,
-    Diana_SetAttrOp_mul,
-    Diana_SetAttrOp_truediv,
-    Diana_SetAttrOp_floordiv,
-    Diana_SetAttrOp_mod,
-    Diana_SetAttrOp_pow,
-    Diana_SetAttrOp_lshift,
-    Diana_SetAttrOp_rshift,
-    Diana_SetAttrOp_bitor,
-    Diana_SetAttrOp_bitand,
-    Diana_SetAttrOp_bitxor,
+    Diana_SetAttr_Iadd,
+    Diana_SetAttr_Isub,
+    Diana_SetAttr_Imul,
+    Diana_SetAttr_Itruediv,
+    Diana_SetAttr_Ifloordiv,
+    Diana_SetAttr_Imod,
+    Diana_SetAttr_Ipow,
+    Diana_SetAttr_Ilshift,
+    Diana_SetAttr_Irshift,
+    Diana_SetAttr_Ibitor,
+    Diana_SetAttr_Ibitand,
+    Diana_SetAttr_Ibitxor,
+    Diana_SetAttr_Igt,
+    Diana_SetAttr_Ilt,
+    Diana_SetAttr_Ige,
+    Diana_SetAttr_Ile,
+    Diana_SetAttr_Ieq,
+    Diana_SetAttr_Ineq,
+    Diana_SetAttr_Iin,
+    Diana_SetAttr_Inotin,
     Diana_DelItem,
     Diana_GetItem,
     Diana_SetItem,
-    Diana_SetItemOp_add,
-    Diana_SetItemOp_sub,
-    Diana_SetItemOp_mul,
-    Diana_SetItemOp_truediv,
-    Diana_SetItemOp_floordiv,
-    Diana_SetItemOp_mod,
-    Diana_SetItemOp_pow,
-    Diana_SetItemOp_lshift,
-    Diana_SetItemOp_rshift,
-    Diana_SetItemOp_bitor,
-    Diana_SetItemOp_bitand,
-    Diana_SetItemOp_bitxor,
-    Diana_BinaryOp_add,
-    Diana_BinaryOp_sub,
-    Diana_BinaryOp_mul,
-    Diana_BinaryOp_truediv,
-    Diana_BinaryOp_floordiv,
-    Diana_BinaryOp_mod,
-    Diana_BinaryOp_pow,
-    Diana_BinaryOp_lshift,
-    Diana_BinaryOp_rshift,
-    Diana_BinaryOp_bitor,
-    Diana_BinaryOp_bitand,
-    Diana_BinaryOp_bitxor,
+    Diana_SetItem_Iadd,
+    Diana_SetItem_Isub,
+    Diana_SetItem_Imul,
+    Diana_SetItem_Itruediv,
+    Diana_SetItem_Ifloordiv,
+    Diana_SetItem_Imod,
+    Diana_SetItem_Ipow,
+    Diana_SetItem_Ilshift,
+    Diana_SetItem_Irshift,
+    Diana_SetItem_Ibitor,
+    Diana_SetItem_Ibitand,
+    Diana_SetItem_Ibitxor,
+    Diana_SetItem_Igt,
+    Diana_SetItem_Ilt,
+    Diana_SetItem_Ige,
+    Diana_SetItem_Ile,
+    Diana_SetItem_Ieq,
+    Diana_SetItem_Ineq,
+    Diana_SetItem_Iin,
+    Diana_SetItem_Inotin,
+    Diana_add,
+    Diana_sub,
+    Diana_mul,
+    Diana_truediv,
+    Diana_floordiv,
+    Diana_mod,
+    Diana_pow,
+    Diana_lshift,
+    Diana_rshift,
+    Diana_bitor,
+    Diana_bitand,
+    Diana_bitxor,
+    Diana_gt,
+    Diana_lt,
+    Diana_ge,
+    Diana_le,
+    Diana_eq,
+    Diana_neq,
+    Diana_in,
+    Diana_notin,
     Diana_UnaryOp_invert,
     Diana_UnaryOp_not,
+    Diana_UnaryOp_neg,
     Diana_MKDict,
     Diana_MKSet,
     Diana_MKList,
@@ -307,6 +395,8 @@ public enum CODE
     Diana_Const,
     Diana_MKTuple,
     Diana_Pack,
+    Diana_Replicate,
+    Diana_Pop,
 }
 
 public partial class DFlatGraphCode
@@ -337,6 +427,12 @@ public partial class DFlatGraphCode
 
     public Diana_ControlIf[] diana_controlifs;
 
+    public Diana_JumpIfNot[] diana_jumpifnots;
+
+    public Diana_JumpIf[] diana_jumpifs;
+
+    public Diana_Jump[] diana_jumps;
+
     public Diana_Control[] diana_controls;
 
     public Diana_Try[] diana_trys;
@@ -351,29 +447,45 @@ public partial class DFlatGraphCode
 
     public Diana_SetAttr[] diana_setattrs;
 
-    public Diana_SetAttrOp_add[] diana_setattrop_adds;
+    public Diana_SetAttr_Iadd[] diana_setattr_iadds;
 
-    public Diana_SetAttrOp_sub[] diana_setattrop_subs;
+    public Diana_SetAttr_Isub[] diana_setattr_isubs;
 
-    public Diana_SetAttrOp_mul[] diana_setattrop_muls;
+    public Diana_SetAttr_Imul[] diana_setattr_imuls;
 
-    public Diana_SetAttrOp_truediv[] diana_setattrop_truedivs;
+    public Diana_SetAttr_Itruediv[] diana_setattr_itruedivs;
 
-    public Diana_SetAttrOp_floordiv[] diana_setattrop_floordivs;
+    public Diana_SetAttr_Ifloordiv[] diana_setattr_ifloordivs;
 
-    public Diana_SetAttrOp_mod[] diana_setattrop_mods;
+    public Diana_SetAttr_Imod[] diana_setattr_imods;
 
-    public Diana_SetAttrOp_pow[] diana_setattrop_pows;
+    public Diana_SetAttr_Ipow[] diana_setattr_ipows;
 
-    public Diana_SetAttrOp_lshift[] diana_setattrop_lshifts;
+    public Diana_SetAttr_Ilshift[] diana_setattr_ilshifts;
 
-    public Diana_SetAttrOp_rshift[] diana_setattrop_rshifts;
+    public Diana_SetAttr_Irshift[] diana_setattr_irshifts;
 
-    public Diana_SetAttrOp_bitor[] diana_setattrop_bitors;
+    public Diana_SetAttr_Ibitor[] diana_setattr_ibitors;
 
-    public Diana_SetAttrOp_bitand[] diana_setattrop_bitands;
+    public Diana_SetAttr_Ibitand[] diana_setattr_ibitands;
 
-    public Diana_SetAttrOp_bitxor[] diana_setattrop_bitxors;
+    public Diana_SetAttr_Ibitxor[] diana_setattr_ibitxors;
+
+    public Diana_SetAttr_Igt[] diana_setattr_igts;
+
+    public Diana_SetAttr_Ilt[] diana_setattr_ilts;
+
+    public Diana_SetAttr_Ige[] diana_setattr_iges;
+
+    public Diana_SetAttr_Ile[] diana_setattr_iles;
+
+    public Diana_SetAttr_Ieq[] diana_setattr_ieqs;
+
+    public Diana_SetAttr_Ineq[] diana_setattr_ineqs;
+
+    public Diana_SetAttr_Iin[] diana_setattr_iins;
+
+    public Diana_SetAttr_Inotin[] diana_setattr_inotins;
 
     public Diana_MKDict[] diana_mkdicts;
 
@@ -390,6 +502,8 @@ public partial class DFlatGraphCode
     public Diana_MKTuple[] diana_mktuples;
 
     public Diana_Pack[] diana_packs;
+
+    public Diana_Replicate[] diana_replicates;
 
 }
 }
