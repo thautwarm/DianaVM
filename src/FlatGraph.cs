@@ -4,14 +4,11 @@ namespace DianaScript
 {
 public struct Catch
 {
-    public int exc_target;
     public int exc_type;
     public int body;
 
-    public static Catch Make(int exc_target, int exc_type, int body) => new Catch
+    public static Catch Make(int exc_type, int body) => new Catch
     {
-        exc_target = exc_target,
-
         exc_type = exc_type,
 
         body = body,
@@ -22,6 +19,7 @@ public struct FuncMeta
 {
     public bool is_vararg;
     public int[] freeslots;
+    public int[] nonargcells;
     public int narg;
     public int nlocal;
     public InternString name;
@@ -30,11 +28,13 @@ public struct FuncMeta
     public string[] freenames;
     public string[] localnames;
 
-    public static FuncMeta Make(bool is_vararg, int[] freeslots, int narg, int nlocal, InternString name, string filename, int lineno, string[] freenames, string[] localnames) => new FuncMeta
+    public static FuncMeta Make(bool is_vararg, int[] freeslots, int[] nonargcells, int narg, int nlocal, InternString name, string filename, int lineno, string[] freenames, string[] localnames) => new FuncMeta
     {
         is_vararg = is_vararg,
 
         freeslots = freeslots,
+
+        nonargcells = nonargcells,
 
         narg = narg,
 
@@ -49,16 +49,6 @@ public struct FuncMeta
         freenames = freenames,
 
         localnames = localnames,
-
-    };
-}
-public struct Loc
-{
-    public (int,int)[] location_data;
-
-    public static Loc Make((int,int)[] location_data) => new Loc
-    {
-        location_data = location_data,
 
     };
 }
@@ -80,14 +70,13 @@ public struct Block
 }
 public struct Diana_FunctionDef
 {
-    public int target;
     public int metadataInd;
     public int code;
 
 }
-public struct Diana_Return
+public struct Diana_LoadGlobalRef
 {
-    public int reg;
+    public InternString istr;
 
 }
 public struct Diana_DelVar
@@ -95,37 +84,29 @@ public struct Diana_DelVar
     public int target;
 
 }
-public struct Diana_LoadAsCell
-{
-    public int target;
-
-}
-public struct Diana_LoadGlobalRef
-{
-    public int target;
-    public int p_val;
-
-}
 public struct Diana_LoadVar
 {
-    public int target;
-    public int p_val;
+    public int i;
 
 }
-public struct Diana_Raise
+public struct Diana_StoreVar
 {
-    public int p_exc;
+    public int i;
 
 }
-public struct Diana_Assert
+public struct Diana_Action
 {
-    public int value;
-    public int p_msg;
+    public int kind;
+
+}
+public struct Diana_ControlIf
+{
+    public int arg;
 
 }
 public struct Diana_Control
 {
-    public int token;
+    public int arg;
 
 }
 public struct Diana_Try
@@ -135,215 +116,175 @@ public struct Diana_Try
     public int final_body;
 
 }
-public struct Diana_While
+public struct Diana_Loop
 {
-    public int p_cond;
     public int body;
 
 }
 public struct Diana_For
 {
-    public int target;
-    public int p_iter;
     public int body;
 
 }
 public struct Diana_With
 {
-    public int p_resource;
-    public int p_as;
     public int body;
-
-}
-public struct Diana_DelItem
-{
-    public int p_value;
-    public int p_item;
-
-}
-public struct Diana_GetItem
-{
-    public int target;
-    public int p_value;
-    public int p_item;
-
-}
-public struct Diana_BinaryOp_add
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_sub
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_mul
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_truediv
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_floordiv
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_mod
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_pow
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_lshift
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_rshift
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_bitor
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_bitand
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_BinaryOp_bitxor
-{
-    public int target;
-    public int left;
-    public int right;
-
-}
-public struct Diana_UnaryOp_invert
-{
-    public int target;
-    public int p_value;
-
-}
-public struct Diana_UnaryOp_not
-{
-    public int target;
-    public int p_value;
-
-}
-public struct Diana_Dict
-{
-    public int target;
-    public (int, int)[] p_kvs;
-
-}
-public struct Diana_Set
-{
-    public int target;
-    public int[] p_elts;
-
-}
-public struct Diana_List
-{
-    public int target;
-    public int[] p_elts;
-
-}
-public struct Diana_Call
-{
-    public int target;
-    public int p_f;
-    public int[] p_args;
-
-}
-public struct Diana_Format
-{
-    public int target;
-    public int format;
-    public int[] args;
-
-}
-public struct Diana_Const
-{
-    public int target;
-    public int p_const;
 
 }
 public struct Diana_GetAttr
 {
-    public int target;
-    public int p_value;
-    public int p_attr;
+    public InternString attr;
 
 }
-public struct Diana_MoveVar
+public struct Diana_SetAttr
 {
-    public int target;
-    public int slot;
+    public InternString attr;
 
 }
-public struct Diana_Tuple
+public struct Diana_SetAttrOp_add
 {
-    public int target;
-    public int[] p_elts;
+    public InternString attr;
 
 }
-public struct Diana_PackTuple
+public struct Diana_SetAttrOp_sub
 {
-    public int[] targets;
-    public int p_value;
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_mul
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_truediv
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_floordiv
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_mod
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_pow
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_lshift
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_rshift
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_bitor
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_bitand
+{
+    public InternString attr;
+
+}
+public struct Diana_SetAttrOp_bitxor
+{
+    public InternString attr;
+
+}
+public struct Diana_MKDict
+{
+    public int n;
+
+}
+public struct Diana_MKSet
+{
+    public int n;
+
+}
+public struct Diana_MKList
+{
+    public int n;
+
+}
+public struct Diana_Call
+{
+    public int n;
+
+}
+public struct Diana_Format
+{
+    public int format;
+    public int argn;
+
+}
+public struct Diana_Const
+{
+    public int p_const;
+
+}
+public struct Diana_MKTuple
+{
+    public int n;
+
+}
+public struct Diana_Pack
+{
+    public int n;
 
 }
 public enum CODE
 {
     Diana_FunctionDef,
-    Diana_Return,
-    Diana_DelVar,
-    Diana_LoadAsCell,
     Diana_LoadGlobalRef,
+    Diana_DelVar,
     Diana_LoadVar,
-    Diana_Raise,
-    Diana_Assert,
+    Diana_StoreVar,
+    Diana_Action,
+    Diana_ControlIf,
     Diana_Control,
     Diana_Try,
-    Diana_While,
+    Diana_Loop,
     Diana_For,
     Diana_With,
+    Diana_GetAttr,
+    Diana_SetAttr,
+    Diana_SetAttrOp_add,
+    Diana_SetAttrOp_sub,
+    Diana_SetAttrOp_mul,
+    Diana_SetAttrOp_truediv,
+    Diana_SetAttrOp_floordiv,
+    Diana_SetAttrOp_mod,
+    Diana_SetAttrOp_pow,
+    Diana_SetAttrOp_lshift,
+    Diana_SetAttrOp_rshift,
+    Diana_SetAttrOp_bitor,
+    Diana_SetAttrOp_bitand,
+    Diana_SetAttrOp_bitxor,
     Diana_DelItem,
     Diana_GetItem,
+    Diana_SetItem,
+    Diana_SetItemOp_add,
+    Diana_SetItemOp_sub,
+    Diana_SetItemOp_mul,
+    Diana_SetItemOp_truediv,
+    Diana_SetItemOp_floordiv,
+    Diana_SetItemOp_mod,
+    Diana_SetItemOp_pow,
+    Diana_SetItemOp_lshift,
+    Diana_SetItemOp_rshift,
+    Diana_SetItemOp_bitor,
+    Diana_SetItemOp_bitand,
+    Diana_SetItemOp_bitxor,
     Diana_BinaryOp_add,
     Diana_BinaryOp_sub,
     Diana_BinaryOp_mul,
@@ -358,16 +299,14 @@ public enum CODE
     Diana_BinaryOp_bitxor,
     Diana_UnaryOp_invert,
     Diana_UnaryOp_not,
-    Diana_Dict,
-    Diana_Set,
-    Diana_List,
+    Diana_MKDict,
+    Diana_MKSet,
+    Diana_MKList,
     Diana_Call,
     Diana_Format,
     Diana_Const,
-    Diana_GetAttr,
-    Diana_MoveVar,
-    Diana_Tuple,
-    Diana_PackTuple,
+    Diana_MKTuple,
+    Diana_Pack,
 }
 
 public partial class DFlatGraphCode
@@ -382,73 +321,65 @@ public partial class DFlatGraphCode
 
     public FuncMeta[] funcmetas;
 
-    public Loc[] locs;
-
     public Block[] blocks;
 
     public Diana_FunctionDef[] diana_functiondefs;
 
-    public Diana_Return[] diana_returns;
+    public Diana_LoadGlobalRef[] diana_loadglobalrefs;
 
     public Diana_DelVar[] diana_delvars;
 
-    public Diana_LoadAsCell[] diana_loadascells;
-
-    public Diana_LoadGlobalRef[] diana_loadglobalrefs;
-
     public Diana_LoadVar[] diana_loadvars;
 
-    public Diana_Raise[] diana_raises;
+    public Diana_StoreVar[] diana_storevars;
 
-    public Diana_Assert[] diana_asserts;
+    public Diana_Action[] diana_actions;
+
+    public Diana_ControlIf[] diana_controlifs;
 
     public Diana_Control[] diana_controls;
 
     public Diana_Try[] diana_trys;
 
-    public Diana_While[] diana_whiles;
+    public Diana_Loop[] diana_loops;
 
     public Diana_For[] diana_fors;
 
     public Diana_With[] diana_withs;
 
-    public Diana_DelItem[] diana_delitems;
+    public Diana_GetAttr[] diana_getattrs;
 
-    public Diana_GetItem[] diana_getitems;
+    public Diana_SetAttr[] diana_setattrs;
 
-    public Diana_BinaryOp_add[] diana_binaryop_adds;
+    public Diana_SetAttrOp_add[] diana_setattrop_adds;
 
-    public Diana_BinaryOp_sub[] diana_binaryop_subs;
+    public Diana_SetAttrOp_sub[] diana_setattrop_subs;
 
-    public Diana_BinaryOp_mul[] diana_binaryop_muls;
+    public Diana_SetAttrOp_mul[] diana_setattrop_muls;
 
-    public Diana_BinaryOp_truediv[] diana_binaryop_truedivs;
+    public Diana_SetAttrOp_truediv[] diana_setattrop_truedivs;
 
-    public Diana_BinaryOp_floordiv[] diana_binaryop_floordivs;
+    public Diana_SetAttrOp_floordiv[] diana_setattrop_floordivs;
 
-    public Diana_BinaryOp_mod[] diana_binaryop_mods;
+    public Diana_SetAttrOp_mod[] diana_setattrop_mods;
 
-    public Diana_BinaryOp_pow[] diana_binaryop_pows;
+    public Diana_SetAttrOp_pow[] diana_setattrop_pows;
 
-    public Diana_BinaryOp_lshift[] diana_binaryop_lshifts;
+    public Diana_SetAttrOp_lshift[] diana_setattrop_lshifts;
 
-    public Diana_BinaryOp_rshift[] diana_binaryop_rshifts;
+    public Diana_SetAttrOp_rshift[] diana_setattrop_rshifts;
 
-    public Diana_BinaryOp_bitor[] diana_binaryop_bitors;
+    public Diana_SetAttrOp_bitor[] diana_setattrop_bitors;
 
-    public Diana_BinaryOp_bitand[] diana_binaryop_bitands;
+    public Diana_SetAttrOp_bitand[] diana_setattrop_bitands;
 
-    public Diana_BinaryOp_bitxor[] diana_binaryop_bitxors;
+    public Diana_SetAttrOp_bitxor[] diana_setattrop_bitxors;
 
-    public Diana_UnaryOp_invert[] diana_unaryop_inverts;
+    public Diana_MKDict[] diana_mkdicts;
 
-    public Diana_UnaryOp_not[] diana_unaryop_nots;
+    public Diana_MKSet[] diana_mksets;
 
-    public Diana_Dict[] diana_dicts;
-
-    public Diana_Set[] diana_sets;
-
-    public Diana_List[] diana_lists;
+    public Diana_MKList[] diana_mklists;
 
     public Diana_Call[] diana_calls;
 
@@ -456,13 +387,9 @@ public partial class DFlatGraphCode
 
     public Diana_Const[] diana_consts;
 
-    public Diana_GetAttr[] diana_getattrs;
+    public Diana_MKTuple[] diana_mktuples;
 
-    public Diana_MoveVar[] diana_movevars;
-
-    public Diana_Tuple[] diana_tuples;
-
-    public Diana_PackTuple[] diana_packtuples;
+    public Diana_Pack[] diana_packs;
 
 }
 }

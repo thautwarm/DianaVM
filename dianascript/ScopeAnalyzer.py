@@ -398,11 +398,7 @@ if __name__ == "__main__":
     import ast
 
     mod = """
-
-    
 lambda : f(a, out[b])
-
-
 """
     print(mod)
     mod = ast.parse(mod)

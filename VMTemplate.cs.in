@@ -27,6 +27,11 @@ namespace DianaScript
         LOOP_CONTINUE
     }
 
+    public enum @__ACTION
+    {
+        RAISE,
+        ASSERT
+    }
     public struct @__MiniFrame
     {
         public int blockind;
@@ -35,7 +40,6 @@ namespace DianaScript
         public int metadataInd;
 
     }
-
 
     public partial class @__DVM
     {
@@ -54,22 +58,21 @@ namespace DianaScript
             this.errorFrames = new Stack<@__MiniFrame>();
         }
 
-        public DObj exec_func(DFunc dfunc, DObj[] vstack)
+        public DObj exec_func(DFunc dfunc, DObj[] localvars)
         {
             var executor = new @__BlockExecutor
             {
                 virtual_machine = this,
                 offset = 0,
                 token = (int)GO_AHEAD,
-                vstack = vstack,
+                vstack = new List<DObj>(),
                 cur_func = dfunc,
-                @return = null,
                 flatGraph = flatGraph
             };
             executor.exec_block(dfunc.body);
-            if (executor.@return == null)
+            if (executor.vstack.Count == 0)
                 return MK.Nil();
-            return executor.@return;
+            return executor.vstack[executor.vstack.Count - 1];
         }
     }
 
@@ -81,9 +84,9 @@ namespace DianaScript
         public @__DVM virtual_machine;
         public int offset;
         public int token;
+        public List<DObj> vstack;
+        public DObj[] localvars;
         public DFunc cur_func;
-        public DObj[] vstack;
-        public DObj @return;
         public DFlatGraphCode flatGraph;
 
         public const int bit_nonlocal = 0b01;
@@ -92,11 +95,15 @@ namespace DianaScript
         DRef loadref(int slot)
         {
             if ((slot & bit_nonlocal) == 0) // slot & bit_classify must be true
-                return vstack[slot >> 2] as DRef;
+                return localvars[slot >> 2] as DRef;
             else
                 return cur_func.freevals[slot >> 2];
         }
 
+        void clearstack()
+        {
+            vstack.Clear();
+        }
         DObj loadconst(int slot)
         {
             return flatGraph.dobjs[slot];
@@ -105,15 +112,15 @@ namespace DianaScript
         DObj loadvar(int slot)
         {
             DObj c;
-            if ((slot & bit_nonlocal) == 0) 
+            if ((slot & bit_nonlocal) == 0)
             {
                 if ((slot & bit_classify) == 0)
-                    c = vstack[slot >> 2]; // local
+                    c = localvars[slot >> 2]; // local
                 else
                 {
-                    DRef r = vstack[slot >> 2] as DRef; 
+                    DRef r = localvars[slot >> 2] as DRef;
                     c = r.cell_contents; // local cell
-                    
+
                 }
                 if (c == null)
                 {
@@ -125,7 +132,7 @@ namespace DianaScript
             {
                 if ((slot & bit_classify) == 0) // freevals
                 {
-                    c = cur_func.freevals[slot >> 2].cell_contents; 
+                    c = cur_func.freevals[slot >> 2].cell_contents;
                     if (c == null)
                     {
                         var name = flatGraph.funcmetas[cur_func.metadataInd].freenames[slot >> 2];
@@ -134,25 +141,25 @@ namespace DianaScript
                 }
                 else // global
                 {
-                   c = cur_func.nameSpace[flatGraph.internstrings[slot >> 2]];
-                    
+                    c = cur_func.nameSpace[flatGraph.internstrings[slot >> 2]];
+
                 }
             }
             return c;
         }
-        
+
 
         void storevar(int slot, DObj o)
         {
-            if ((slot & bit_nonlocal) == 0) 
+            if ((slot & bit_nonlocal) == 0)
             {
                 if ((slot & bit_classify) == 0)
-                    vstack[slot >> 2] = o; // local
+                    localvars[slot >> 2] = o; // local
                 else
                 {
-                    DRef r = vstack[slot >> 2] as DRef; 
+                    DRef r = localvars[slot >> 2] as DRef;
                     r.cell_contents = o; // local cell
-                    
+
                 }
             }
             else
@@ -163,34 +170,111 @@ namespace DianaScript
                 }
                 else // global
                 {
-                   cur_func.nameSpace[flatGraph.internstrings[slot >> 2]] = o;
-                    
+                    cur_func.nameSpace[flatGraph.internstrings[slot >> 2]] = o;
+
                 }
             }
         }
 
         FuncMeta loadmetadata(int slot) => flatGraph.funcmetas[slot];
         string loadstr(int slot) => flatGraph.strings[slot];
-        InternString loadistr(int slot) => flatGraph.internstrings[slot];
-        void set_return(DObj val) => @return = val;
-        DObj[] create_vstack(DFunc func, int[] s_args)
+        
+        DObj peek(int n){
+            return vstack[vstack.Count - n - 1];
+        }
+        void push(DObj o)
+        {
+            vstack.Add(o);
+        }
+
+        DObj pop()
+        {
+            var i = vstack.Count - 1;
+            var r = vstack[i];
+            vstack.RemoveAt(i);
+            return r;
+        }
+
+        (DObj, DObj) pop2()
+        {
+            var i = vstack.Count - 1;
+            var r = (vstack[i - 1], vstack[i]);
+            vstack.RemoveAt(i);
+            vstack.RemoveAt(i - 1);
+            return r;
+        }
+
+        (DObj, DObj, DObj) pop3()
+        {
+            var i = vstack.Count - 1;
+            var r = (vstack[i - 2], vstack[i - 1], vstack[i]);
+            vstack.RemoveAt(i);
+            vstack.RemoveAt(i - 1);
+            vstack.RemoveAt(i - 2);
+            return r;
+        }
+        
+        List<DObj> list_init(int n){
+            var lst = new List<DObj>(n);
+            for(var i = 0; i < n; i ++)
+            {
+                lst.Add(null);
+            }
+            return lst;
+        }
+        void popNTo(int n, HashSet<DObj> set){
+            for(var i = 0; i < n; i++)
+                set.Add(pop());
+        }
+
+        List<DObj> popNToList(int n){
+            List<DObj> lst = new List<DObj>();
+            for(var i = 0; i < n; i++)
+                lst[n - i -1]  = pop();
+            return lst;
+        }
+        
+        void reversePopNTo(int n, Args args){
+            for(var i = 0; i < n; i++)
+                args.Add(pop());
+        }
+
+        void popNTo(int n, DObj[] lst){
+            for(var i = 0; i < n; i++)
+                lst[n - i -1]  = pop();
+        }
+
+
+        void reversePopNTo(int n, List<DObj> lst){
+            for(var i = 0; i < n; i++)
+                lst.Add(pop());
+        }
+
+        DObj[] create_locals(DFunc func, int argcount)
         {
             var locals = new DObj[func.nlocal];
-            for (var i = 0; i < func.narg; i++)
-            {
-                locals[i] = loadvar(s_args[i]);
-            }
             if (func.is_vararg)
             {
-                var vararg = new DObj[s_args.Length - func.narg];
-                for (var i = func.narg; i < s_args.Length; i++)
+                var nvararg = argcount - func.narg;
+                var vararg = new DObj[nvararg];
+                for (var i = nvararg - 1; i >= 0; i--)
                 {
-                    vararg[i - func.narg] = loadvar(i);
+                    vararg[i] = pop();
                 }
                 locals[func.narg] = DTuple.Make(vararg);
             }
+            for (var i = func.narg - 1; i >= 0; i--)
+            {
+                locals[i] = pop();
+            }
+        
+            var nonargcells = func.nonargcells;
+            if (nonargcells != null)
+                for (var i = 0; i < nonargcells.Length; i++)
+                    locals[i] = new DRef();
             return locals;
         }
+
         public void exec_block(int blockind)
         {
             int old_offset = offset;
@@ -207,7 +291,8 @@ namespace DianaScript
             }
             catch
             {
-                virtual_machine.errorFrames.Push(new @__MiniFrame { 
+                virtual_machine.errorFrames.Push(new @__MiniFrame
+                {
                     metadataInd = cur_func.metadataInd,
                     blockind = blockind,
                     offset = offset

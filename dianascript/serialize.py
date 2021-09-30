@@ -44,6 +44,13 @@ obj_box_tags: dict[type, int| None] = {
 class Ptr:
     kind: int
     ind: int
+    def as_ptr(self) -> Ptr:
+        return self
+    
+    def serialize_(self, barr: bytearray):
+        serialize_(self.kind, barr)
+        serialize_(self.ind, barr)
+
 
 @dataclass(frozen=True)
 class DObj:
@@ -54,7 +61,7 @@ class DObj:
             barr.append(v)
         serialize_(self.o, barr)
 
-    def as_ptr(self) -> int:
+    def as_int(self) -> int:
         return DFlatGraphCode.dobjs.cache(self)
 
 def serialize_(o, barr: bytearray):
@@ -63,7 +70,7 @@ def serialize_(o, barr: bytearray):
             barr.extend(struct.pack('<i', o))
         case float():
             barr.extend(struct.pack('<f', o))
-        case str():
+        case str(): # or InternString
             barr.extend(bytes(o, 'utf-16'))
         case None:
             barr.append(none_bit | special_bit)
@@ -82,7 +89,7 @@ global DFlatGraphCode
 
 class InternString(str):
 
-    def as_ptr(self) -> int:
+    def as_int(self) -> int:
         global DFlatGraphCode
         try:
             DFlatGraphCode
@@ -93,10 +100,8 @@ class InternString(str):
         
 
 def as_ptr(x):
-    if isinstance(x, int):
-        return x
-    if isinstance(x, str):
-        return DFlatGraphCode.strings.cache(x)
+    if isinstance(x, (int, str, Ptr)):
+        raise TypeError
     return x.as_ptr()
         
 

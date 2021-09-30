@@ -211,24 +211,21 @@ namespace DianaScript
     public partial class DFunc : DObj
     {
         public object Native => this;
-
         public string Repr => $"<function>";
-        
         public DRef[] freevals;
+        public int[] nonargcells;
         public bool is_vararg;
         public int narg;
         public int nlocal;
         public int metadataInd;
         public int body;
-
         public Dictionary<InternString, DObj> nameSpace;
-        
-        
-        
         public string __repr__ => $"<code at {(this as DObj).__hash__}>";
 
         public static DFunc Make(
-            int body, int narg, int nlocal, int metadataInd, NameSpace nameSpace = null, bool is_vararg = false, DRef[] freevals = null
+            int body, int narg, int nlocal, int metadataInd, 
+            NameSpace nameSpace = null, bool is_vararg = false,
+            DRef[] freevals = null, int[] nonargcells = null
         )
         {
             return new DFunc
@@ -236,6 +233,7 @@ namespace DianaScript
                 body = body,
                 metadataInd = metadataInd,
                 freevals = freevals ?? new DRef[0],
+                nonargcells = nonargcells,
                 nameSpace = nameSpace ?? new Dictionary<InternString, DObj>()
             };
         }
@@ -266,7 +264,6 @@ namespace DianaScript
                         throw new D_TypeError($"cannot cast {x.GetCls.__repr__} to {(this as DObj).__repr__}");
                 }
             }
-
         }
 
         public int value;
@@ -398,8 +395,6 @@ namespace DianaScript
         // public static implicit operator DFloat(float d) => MK.Float(d);
         // public static implicit operator float(DFloat d) => d.value;
     }
-
-
 
     public partial class DStr : DObj
     {

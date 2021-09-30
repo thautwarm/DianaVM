@@ -8,7 +8,7 @@
 
 // loadmetadata
 // storevar, loadvar, loadstr, loadistr
-// set_return, exec_block
+// exec_block
 // check_argcount
 // check_argcount(dfunc, argcount: int)
 // create_vstack(dfunc, p_args:int[])
@@ -25,10 +25,11 @@ data string
 data DObj
 data InternString
 
-dataclass Catch(exc_target: int, exc_type: int, body: int)
+dataclass Catch(exc_type: int, body: int)
 dataclass FuncMeta(
     is_vararg: bool,
     freeslots: int[],
+    nonargcells: int[], 
     narg: int,
     nlocal: int,
     name: InternString,
@@ -37,134 +38,141 @@ dataclass FuncMeta(
     freenames: string[],
     localnames: string[]
 )
-dataclass Loc(location_data: (int, int)[])
 dataclass Block(codes: Ptr[], location_data: (int, int)[], filename: string)
 
-FunctionDef(target: int, metadataInd: int, code: int)
+FunctionDef(metadataInd: int, code: int)
 [%
-    var meta = loadmetadata($metadataInd);
+    var meta = loadmetadata(metadataInd);
     int nfree = meta.freeslots.Length;
-
     var new_freevals = new DRef[meta.freeslots.Length];
     for(var i = 0; i < nfree; i++)
         new_freevals[i] = loadref(meta.freeslots[i]);
 
-    var dfunc = DFunc.Make($code,
+    var dfunc = DFunc.Make(code,
         freevals:new_freevals,
         is_vararg: meta.is_vararg,
         narg: meta.narg,
         nlocal: meta.nlocal,
-        metadataInd: $metadataInd);
-        
-    storevar($target, dfunc);
+        nonargcells: meta.nonargcells,
+        metadataInd: metadataInd);
+    push(dfunc);
 %]
-Return(reg: int)
+LoadGlobalRef(istr: InternString)
 [%
-    set_return(loadvar($reg));
-    token = (int) TOKEN.RETURN;
+    push(new DRefGlobal(cur_func.nameSpace, istr));
 %]
-DelVar(target: int)
+DelVar(targets: int[])
 [%
-    storevar($target, null);
+    for(var i = 0; i < targets.Length; i++)
+        storevar(targets[i], null);
 %]
-LoadAsCell(target: int)
+LoadVar(i: int)
 [%
-    var refobj = new DRef();
-    refobj.cell_contents = loadvar($target);
-    storevar($target, refobj);
+    push(loadvar(i));
 %]
-LoadGlobalRef(target: int, p_val: int)
+StoreVar(i: int)
 [%
-    storevar($target, new DRefGlobal(cur_func.nameSpace, loadistr($p_val)));
+    storevar(i, pop());
 %]
-LoadVar(target: int, p_val: int)
+Action(kind: int)
 [%
-    storevar($target, loadvar($p_val));
+    switch (kind)
+    {
+        case (int) ACTION.ASSERT: 
+            assert(pop().__bool__, pop());
+            break;
+        case (int) ACTION.RAISE:
+            throw MK.unbox<Exception>(pop());
+        default:
+            throw new Exception("unknown action " + ((ACTION) kind));
+    }
 %]
-Raise(p_exc: int)
+ControlIf(arg: int) // break, continue, reraise
 [%
-    var e = MK.unbox<Exception>(loadvar($p_exc));
-    throw e;
+    if(pop().__bool__)
+        token = arg;
 %]
-Assert(value: int, p_msg: int)
+JumpIf(off: int)
 [%
-    assert(loadvar($value).__bool__, loadvar($p_msg));
+    if(pop().__bool__)
+        offset = off; 
 %]
-Control(token: int) // break, continue, reraise
+Control(arg: int) // break, continue, reraise
 [%
-    token = $token;
+    token = arg;
 %]
 Try(body: int, except_handlers: Catch[], final_body: int)
-[%
-        try
-        {
-            exec_block($body);
-        }
-        catch (Exception e)
-        {
-            foreach(var handler in $except_handlers){
-                var exc_type = loadvar(handler.exc_type);
-                var e_boxed = MK.create(e);
-                if (exc_type.__subclasscheck__(e_boxed.GetCls))
-                {
-                    storevar(handler.exc_target, e_boxed);
-                    exec_block(handler.body);
-                    storevar(handler.exc_target, null);
-                    virtual_machine.errorFrames.Clear();
-                    goto end_handled;
-                }
-            }
-            throw;
-            end_handled: ;
-        }
-        finally{
-            exec_block($final_body);
-        }
-%]
-While(p_cond: int, body: int)
-[%
-    while(loadvar($p_cond).__bool__)
-    {
-        exec_block($body);
-        switch(token)
-        {
-            case (int) TOKEN.LOOP_BREAK:
-                break;
-            case (int) TOKEN.RETURN:
-                return;
-            default:
-                token = (int) TOKEN.GO_AHEAD;
-                break;
-        }
-    }
-%]
-For(target: int, p_iter: int, body: int)
-[%
-    var iter = loadvar($p_iter);
-    foreach(var it in iter.__iter__){
-        storevar($target, it);
-        exec_block($body);
-        switch(token)
-        {
-            case (int) TOKEN.LOOP_BREAK:
-                break;
-            case (int) TOKEN.RETURN:
-                return;
-            default:
-                token = (int) TOKEN.GO_AHEAD;
-                break;
-        }
-        
-    }
-%]
-With(p_resource: int, p_as: int, body: int)
-[%
-    var resource = loadvar($p_resource);
-    var val = resource.__enter__();
-    storevar($p_as, val);
+[%   
     try
     {
-        exec_block($body);
+        exec_block(body);
+    }
+    catch (Exception e)
+    {
+        clearstack();
+        foreach(var handler in except_handlers){
+            exec_block(handler.exc_type);
+            var exc_type = pop();
+            var e_boxed = MK.create(e);
+            if (exc_type.__subclasscheck__(e_boxed.GetCls))
+            {
+                push(e_boxed);
+                exec_block(handler.body);   
+                virtual_machine.errorFrames.Clear();
+                goto end_handled;
+            }
+        }
+        throw;
+        end_handled: ;
+    }
+    finally
+    {
+        clearstack();
+        exec_block(final_body);
+    }
+%]
+Loop(body: int)
+[%
+    while(true)
+    {
+        exec_block(body);
+        switch(token)
+        {
+            case (int) TOKEN.LOOP_BREAK:
+                break;
+            case (int) TOKEN.RETURN:
+                return;
+            default:
+                token = (int) TOKEN.GO_AHEAD;
+                break;
+        }
+    }
+%]
+For(body: int)
+[%
+    var iter = pop();
+    foreach(var it in iter.__iter__){
+        push(it);
+        exec_block(body);
+        switch(token)
+        {
+            case (int) TOKEN.LOOP_BREAK:
+                break;
+            case (int) TOKEN.RETURN:
+                return;
+            default:
+                token = (int) TOKEN.GO_AHEAD;
+                break;
+        }
+    }
+%]
+With(body: int)
+[%
+    var resource = pop();
+    try
+    {
+        push(resource.__enter__());
+        exec_block(body);
         resource.__exit__(
             MK.Nil(),
             MK.Nil(),
@@ -182,100 +190,132 @@ With(p_resource: int, p_as: int, body: int)
         );
     }
 %]
-DelItem(p_value: int,p_item: int)
+GetAttr(attr: InternString)
 [%
-    var value = loadvar($p_value);
-    var item = loadvar($p_item);
-    value.__delitem__(item);
+    var value = pop();
+    push(value.Get(attr));
 %]
-GetItem(target: int, p_value: int, p_item: int)
+
+SetAttr(attr: InternString)
 [%
-    var value = loadvar($p_value);
-    var item = loadvar($p_item);
-    value = value.__getitem__(item);
-    storevar($target, item);
+    var (subject, value) = pop2();
+    subject.Set(
+        attr,
+        value
+    );
 %]
-BinaryOp_$T(target: int, left: int, right: int) from {
+SetAttr_I$T(attr: InternString)  from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
 }
 [%
-    var left = loadvar($left);
-    var right = loadvar($right);
-    storevar($target, left.__${T}__(right));
+    var (subject, value) = pop2();
+    subject.Set(
+        attr,
+        subject.Get(attr).__${T}__(value)
+    );
 %]
-UnaryOp_$T(target: int, p_value: int) from { invert not }
+DelItem()
 [%
-    var val = loadvar($p_value);
-    storevar($target, MK.create(val.__${T}__));
+    var (subject, item) = pop2();
+    subject.__delitem__(item);
 %]
-Dict(target: int, p_kvs: Tuple<int, int>[])
+GetItem()
 [%
-    var dict = new Dictionary<DObj, DObj>($p_kvs.Length);
-    for(var i = 0; i < $p_kvs.Length; i++){
-        var kv = $p_kvs[i];
-        dict[loadvar(kv.Item1)] = loadvar(kv.Item2);
+    var (subject, item) = pop2();
+    push(subject.__getitem__(item));
+%]
+SetItem()
+[%
+    var (subject, item, value) = pop3();
+    subject.__setitem__(
+        item,
+        value
+    );
+%]
+SetItem_I$T()  from {
+    add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
+}
+[%
+    var (subject, item, value) = pop3();
+    subject.__setitem__(
+        item,
+        subject.__getitem__(item).__${T}__(value)
+    );
+    push(item);
+%]
+$T() from {
+    add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
+}
+[%
+    var (left, right) = pop2();
+    push(left.__${T}__(right));
+%]
+UnaryOp_$T() from { invert not }
+[%
+    var val = pop();
+    push(MK.create(val.__${T}__));
+%]
+MKDict(n: int)
+[%
+    var dict = new Dictionary<DObj, DObj>(n);
+    for(var i = 0; i < n; i++){
+        var (k, v) = pop2();
+        dict[k] = v;
     }
-    storevar($target, MK.Dict(dict));
+    push(MK.Dict(dict));
 %]
-Set(target: int, p_elts: int[])
+MKSet(n: int)
 [%
-    var hset = new HashSet<DObj>($p_elts.Length);
-    for(var i = 0; i < $p_elts.Length; i++)
-        hset.Add(loadvar(i));
-    storevar($target, MK.Set(hset));
+    var hset = new HashSet<DObj>(n);
+    popNTo(n, hset);
+    push(MK.Set(hset));
 %]
-List(target: int, p_elts: int[])
+MKList(n: int)
 [%
-    var list = new List<DObj>($p_elts.Length);
-    for(var i = 0; i < $p_elts.Length; i++)
-        list.Add(loadvar(i));
-    storevar($target, MK.List(list));
+    var list = popNToList(n);
+    push(MK.List(list));
 %]
-Call(target: int, p_f: int, p_args: int[])
+Call(n: int)
 [%
-    var f = loadvar($p_f);
-    if (f is DFunc dfunc){
-        check_argcount(dfunc, $p_args.Length);
-        var vstack = create_vstack(dfunc, $p_args);
-        storevar($target, virtual_machine.exec_func(dfunc, vstack));
+    var f = peek(n);
+    if (f is DFunc dfunc)
+    {
+        check_argcount(dfunc, n);
+        var locals = create_locals(dfunc, n);
+        pop(); // f
+        push(virtual_machine.exec_func(dfunc, locals));
     }
-    var args = new Args();
-    for(var i = $p_args.Length - 1; i >= 0; i--)
-        args.Prepend(loadvar($p_args[i]));
-    storevar($target, f.__call__(args));
+    else
+    {
+        var args = new Args();
+        reversePopNTo(n, args);
+        pop(); // f
+        push(f.__call__(args));
+    }
 %]
-Format(target: int, format: int, args: int[])
+Format(format: int, argn: int)
 [%
-    var argvals = new string[$args.Length];
-    for(var i = 0; i < $args.Length; i++)
-        argvals[i] = loadvar($args[i]).__str__; // TODO: format repr
-    var str = String.Format(loadstr($format), argvals);
-    storevar($target, MK.String(str));
+    var argvals = new string[argn];
+    for(var i = 0; i < argn; i++)
+        argvals[argn - i - 1] = pop().__str__; // TODO: format style
+    var str = String.Format(loadstr(format), argvals);
+    push(MK.String(str));
 %]
-Const(target: int, p_const: int)
+Const(p_const: int)
 [%
-    storevar($target, loadconst($p_const));
+    push(loadconst(p_const));
 %]
-GetAttr(target: int, p_value: int,  p_attr: int)
+MKTuple(n: int)
 [%
-    var value = loadvar($p_value);
-    storevar($target, value.Get(loadistr($p_attr)));
+    var tuple_elts = new DObj[n];
+    popNTo(n, tuple_elts);
+    push(MK.Tuple(tuple_elts));
 %]
-MoveVar(target: int, slot: int)
+Pack(n: int)
 [%
-    storevar($target, loadvar($slot));
-%]
-Tuple(target: int, p_elts: int[])
-[%
-    var tuple_elts = new DObj[$p_elts.Length];
-    for(var i = 0; i < $p_elts.Length; i++)
-        tuple_elts[i] = loadvar($p_elts[i]);
-    storevar($target, MK.Tuple(tuple_elts));
-%]
-PackTuple(targets: int[], p_value: int)
-[%
-    var tuple = (DTuple) loadvar($p_value);
+    var tuple = (DTuple) pop();
     var tuple_elts = tuple.elts;
-    for(var i = 0; i < tuple_elts.Length; i++)
-        storevar($targets[i], tuple_elts[i]);
+    // TODO check exact
+    for(var i = 0; i < n; i++)
+        push(tuple_elts[i]);
 %]

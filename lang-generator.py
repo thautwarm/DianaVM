@@ -1,7 +1,9 @@
 from __future__ import annotations
 from collections import defaultdict
+import dataclasses
 from functools import wraps
 import functools
+import textwrap
 from typing import is_typeddict
 from lark import Lark, Transformer, v_args
 from dataclasses import dataclass, field
@@ -145,7 +147,7 @@ def attr(attr): return lambda x: getattr(x, attr)
 
 class Codegen:
     IO: io.TextIOWrapper
-    gen_seqs : list[tuple[str, list[tuple[str, str]]]] = []
+    datagen_seqs : list[tuple[str, list[tuple[str, str]]]] = []
 
     def __init__(self):
         self.indent = ""
@@ -201,7 +203,7 @@ class Codegen:
         self << "namespace DianaScript"
         self << "{"
         
-        gen_seqs = self.gen_seqs
+        datagen_seqs = self.datagen_seqs
         match language:
             case Language(langname, nodes):
                 pass
@@ -213,11 +215,10 @@ class Codegen:
                     tcode = Template(code)
                     for temp_arg in temp_args:
                         kind_name = langname + '_' + Template(template_id).substitute(T=temp_arg)
-                        gen_seqs.append((kind_name, params))
+                        if params:
+                            datagen_seqs.append((kind_name, params))
                         # print(params)
-                        code = tcode.substitute(T=temp_arg, **{field: f"flatGraph.{kind_name.lower()}s[curPtr.ind].{field}"
-                            for field, _ in params
-                        })
+                        code = tcode.substitute(T=temp_arg)
                         self.enums[kind_name] = params
                         self.codes[kind_name] = code
                         
@@ -226,23 +227,20 @@ class Codegen:
                 case Node(kind_name, params, None, code):
                     kind_name = langname + "_" + kind_name
                     self.enums[kind_name] = params
-                    gen_seqs.append((kind_name, params))
-                    # print(params)
-                    code = Template(code).substitute(**{field: f"flatGraph.{kind_name.lower()}s[curPtr.ind].{field}"
-                        for field, _ in params
-                    })                    
+                    if params:
+                        datagen_seqs.append((kind_name, params))
                     self.codes[kind_name] = code
                 
                 case Dataclass(classname, params):
                     self.dataclasses.append(classname)
-                    gen_seqs.append((classname, params))
+                    datagen_seqs.append((classname, params))
                 case Data(type):
                     self.data.append(type)
-                    gen_seqs.append((type, []))
+                    datagen_seqs.append((type, []))
                 case a:
                     raise Exception(a)
-        print(list(map(fst, gen_seqs)))
-        for kind_name, params in gen_seqs:
+        print(list(map(fst, datagen_seqs)))
+        for kind_name, params in datagen_seqs:
             if params:
                 self.generate_data_class(kind_name, params, generate_constructor=kind_name in self.dataclasses)
         
@@ -255,7 +253,7 @@ class Codegen:
         
         self << "public partial class DFlatGraphCode"
         self << "{"
-        for kind,  params in self.tab_iter(gen_seqs):
+        for kind,  params in self.tab_iter(datagen_seqs):
             self << f"public {kind}[] {kind.lower()}s;"
             self.newline
         self << "}"
@@ -268,7 +266,7 @@ class Codegen:
         self << "namespace DianaScript"
         self << "{"
         
-        gen_seqs = self.gen_seqs
+        datagen_seqs = self.datagen_seqs
         
         self << "public partial class AIRParser"
         self << "{"
@@ -283,7 +281,7 @@ class Codegen:
             self.newline
 
             self << f"public Ptr Read(THint<Ptr> _) => new Ptr(Read{CODE}(), ReadInt());"
-            for kind, params in gen_seqs:
+            for kind, params in datagen_seqs:
                 if not params: continue
                 self << f"public {kind} Read(THint<{kind}> _) => new {kind}"
                 self << "{"
@@ -294,11 +292,11 @@ class Codegen:
             
             self << f"public DFlatGraphCode Read(THint<DFlatGraphCode> _) => new DFlatGraphCode"
             self << "{"
-            for kind, params in self.tab_iter(gen_seqs):    
+            for kind, params in self.tab_iter(datagen_seqs):    
                 self << f"{kind.lower()}s = Read(THint<{kind}[]>.val),"
             self << "};"
             self.newline
-            for t in ["int", "(int, int)", "float", "bool", *(map(fst, gen_seqs)), "Ptr" ]:
+            for t in ["int", "(int, int)", "float", "bool", *(map(fst, datagen_seqs)), "Ptr" ]:
                 generate_array_read(self, t)
                     
         self << "}" << "}"
@@ -314,17 +312,17 @@ class Codegen:
         @functools.lru_cache()
         def py_parse(s) -> str:
             return type_parser.parse(s)
-
-        for i, (kind, params) in enumerate(self.gen_seqs):
-            if not params:
-                continue
+    
+        params_lookup = dict(self.datagen_seqs)
+        for i, kind in enumerate(self.enums):
+            params = params_lookup.get(kind, [])
             self << "@dataclass(frozen=True)"
             self << f"class {kind}:"
             with self.tab():
                 for field, type in params:
                     py_type = py_parse(type)
                     self << f"{field}: {py_type}"
-                self << f"TAG : int = {i}"
+                self << f"TAG = {i}"
                 
                 self.newline
                 self << "def serialize_(self, arr: bytearray):"
@@ -333,13 +331,44 @@ class Codegen:
                     for field, type in params:
                         self << f"serialize_(self.{field}, arr)"
                 self.newline
-                self << "def as_ptr(self) -> int:"
+                if params:
+                    self << "def as_ptr(self) -> Ptr:"
+                    with self.tab():
+                        self << f"return Ptr(self.TAG, DFlatGraphCode.{kind.lower()}s.cache(self))"
+                else:
+                    self << "def as_ptr(self) -> Ptr:"
+                    with self.tab():
+                        self << f"return Ptr(self.TAG, 0)"
+            self.newline
+            self.newline
+        
+        
+        for i, kind in enumerate(self.dataclasses):
+            params = params_lookup[kind]
+            self << "@dataclass(frozen=True)"
+            self << f"class {kind}:"
+            with self.tab():
+                for field, type in params:
+                    py_type = py_parse(type)
+                    self << f"{field}: {py_type}"
+                self << f"TAG = {i}"
+                
+                self.newline
+                self << "def serialize_(self, arr: bytearray):"
                 with self.tab():
-                    self << f"return DFlatGraphCode.{kind.lower()}s.cache(self)"
+                    self << "arr.append(self.TAG)"
+                    for field, type in params:
+                        self << f"serialize_(self.{field}, arr)"
+                self.newline
+                
+                self << "def as_int(self) -> Ptr:"
+                with self.tab():
+                    self << f"return Ptr(self.TAG, DFlatGraphCode.{kind.lower()}s.cache(self))"                
             self.newline
             self.newline
+        
         kind = "DFlatGraphCode"
-        params =  [(f"{kind.lower()}s", kind) for kind, _ in self.gen_seqs]
+        params =  [(f"{kind.lower()}s", kind) for kind, _ in self.datagen_seqs]
         self << f"class {kind}:"
         with self.tab():
             for field, type in params:
@@ -353,7 +382,7 @@ class Codegen:
                 for field, type in params:
                     self << f"serialize_(cls.{field}, arr)"
         self.newline
-        self << f"{language.name}IR" + " = " + ' | '.join(py_parse(type) for type, params in self.gen_seqs if params)
+        self << f"{language.name}IR" + " = " + ' | '.join(py_parse(type) for type, params in self.datagen_seqs if params)
     
 
     def generate_interpreter(self, language: Language):
@@ -363,14 +392,18 @@ class Codegen:
                 break
             self << each[:-1].replace('@__', '')
         
+        INDENT = "            "
         with self.tab(n=2):
             self << f"switch(curPtr.kind)"
             self << "{"
             for kind_name, code in self.tab_iter(self.codes.items()):
-                
+                params = self.enums[kind_name]
                 self << f"case (int) {CODE}.{kind_name}:"
                 self << "{"
-                self << indent(code, "            ")
+                for field, _ in self.tab_iter(params):
+                    self << f"var {field} = flatGraph.{kind_name.lower()}s[curPtr.ind].{field};"
+                self << indent(code, INDENT)
+                
                 self << "    break;"
                 self << "}"
             else:

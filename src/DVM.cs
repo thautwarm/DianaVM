@@ -27,6 +27,11 @@ namespace DianaScript
         LOOP_CONTINUE
     }
 
+    public enum ACTION
+    {
+        RAISE,
+        ASSERT
+    }
     public struct MiniFrame
     {
         public int blockind;
@@ -35,7 +40,6 @@ namespace DianaScript
         public int metadataInd;
 
     }
-
 
     public partial class DVM
     {
@@ -54,22 +58,21 @@ namespace DianaScript
             this.errorFrames = new Stack<MiniFrame>();
         }
 
-        public DObj exec_func(DFunc dfunc, DObj[] vstack)
+        public DObj exec_func(DFunc dfunc, DObj[] localvars)
         {
             var executor = new BlockExecutor
             {
                 virtual_machine = this,
                 offset = 0,
                 token = (int)GO_AHEAD,
-                vstack = vstack,
+                vstack = new List<DObj>(),
                 cur_func = dfunc,
-                @return = null,
                 flatGraph = flatGraph
             };
             executor.exec_block(dfunc.body);
-            if (executor.@return == null)
+            if (executor.vstack.Count == 0)
                 return MK.Nil();
-            return executor.@return;
+            return executor.vstack[executor.vstack.Count - 1];
         }
     }
 
@@ -81,9 +84,9 @@ namespace DianaScript
         public DVM virtual_machine;
         public int offset;
         public int token;
+        public List<DObj> vstack;
+        public DObj[] localvars;
         public DFunc cur_func;
-        public DObj[] vstack;
-        public DObj @return;
         public DFlatGraphCode flatGraph;
 
         public const int bit_nonlocal = 0b01;
@@ -92,11 +95,15 @@ namespace DianaScript
         DRef loadref(int slot)
         {
             if ((slot & bit_nonlocal) == 0) // slot & bit_classify must be true
-                return vstack[slot >> 2] as DRef;
+                return localvars[slot >> 2] as DRef;
             else
                 return cur_func.freevals[slot >> 2];
         }
 
+        void clearstack()
+        {
+            vstack.Clear();
+        }
         DObj loadconst(int slot)
         {
             return flatGraph.dobjs[slot];
@@ -105,15 +112,15 @@ namespace DianaScript
         DObj loadvar(int slot)
         {
             DObj c;
-            if ((slot & bit_nonlocal) == 0) 
+            if ((slot & bit_nonlocal) == 0)
             {
                 if ((slot & bit_classify) == 0)
-                    c = vstack[slot >> 2]; // local
+                    c = localvars[slot >> 2]; // local
                 else
                 {
-                    DRef r = vstack[slot >> 2] as DRef; 
+                    DRef r = localvars[slot >> 2] as DRef;
                     c = r.cell_contents; // local cell
-                    
+
                 }
                 if (c == null)
                 {
@@ -125,7 +132,7 @@ namespace DianaScript
             {
                 if ((slot & bit_classify) == 0) // freevals
                 {
-                    c = cur_func.freevals[slot >> 2].cell_contents; 
+                    c = cur_func.freevals[slot >> 2].cell_contents;
                     if (c == null)
                     {
                         var name = flatGraph.funcmetas[cur_func.metadataInd].freenames[slot >> 2];
@@ -134,25 +141,25 @@ namespace DianaScript
                 }
                 else // global
                 {
-                   c = cur_func.nameSpace[flatGraph.internstrings[slot >> 2]];
-                    
+                    c = cur_func.nameSpace[flatGraph.internstrings[slot >> 2]];
+
                 }
             }
             return c;
         }
-        
+
 
         void storevar(int slot, DObj o)
         {
-            if ((slot & bit_nonlocal) == 0) 
+            if ((slot & bit_nonlocal) == 0)
             {
                 if ((slot & bit_classify) == 0)
-                    vstack[slot >> 2] = o; // local
+                    localvars[slot >> 2] = o; // local
                 else
                 {
-                    DRef r = vstack[slot >> 2] as DRef; 
+                    DRef r = localvars[slot >> 2] as DRef;
                     r.cell_contents = o; // local cell
-                    
+
                 }
             }
             else
@@ -163,34 +170,111 @@ namespace DianaScript
                 }
                 else // global
                 {
-                   cur_func.nameSpace[flatGraph.internstrings[slot >> 2]] = o;
-                    
+                    cur_func.nameSpace[flatGraph.internstrings[slot >> 2]] = o;
+
                 }
             }
         }
 
         FuncMeta loadmetadata(int slot) => flatGraph.funcmetas[slot];
         string loadstr(int slot) => flatGraph.strings[slot];
-        InternString loadistr(int slot) => flatGraph.internstrings[slot];
-        void set_return(DObj val) => @return = val;
-        DObj[] create_vstack(DFunc func, int[] s_args)
+        
+        DObj peek(int n){
+            return vstack[vstack.Count - n - 1];
+        }
+        void push(DObj o)
+        {
+            vstack.Add(o);
+        }
+
+        DObj pop()
+        {
+            var i = vstack.Count - 1;
+            var r = vstack[i];
+            vstack.RemoveAt(i);
+            return r;
+        }
+
+        (DObj, DObj) pop2()
+        {
+            var i = vstack.Count - 1;
+            var r = (vstack[i - 1], vstack[i]);
+            vstack.RemoveAt(i);
+            vstack.RemoveAt(i - 1);
+            return r;
+        }
+
+        (DObj, DObj, DObj) pop3()
+        {
+            var i = vstack.Count - 1;
+            var r = (vstack[i - 2], vstack[i - 1], vstack[i]);
+            vstack.RemoveAt(i);
+            vstack.RemoveAt(i - 1);
+            vstack.RemoveAt(i - 2);
+            return r;
+        }
+        
+        List<DObj> list_init(int n){
+            var lst = new List<DObj>(n);
+            for(var i = 0; i < n; i ++)
+            {
+                lst.Add(null);
+            }
+            return lst;
+        }
+        void popNTo(int n, HashSet<DObj> set){
+            for(var i = 0; i < n; i++)
+                set.Add(pop());
+        }
+
+        List<DObj> popNToList(int n){
+            List<DObj> lst = new List<DObj>();
+            for(var i = 0; i < n; i++)
+                lst[n - i -1]  = pop();
+            return lst;
+        }
+        
+        void reversePopNTo(int n, Args args){
+            for(var i = 0; i < n; i++)
+                args.Add(pop());
+        }
+
+        void popNTo(int n, DObj[] lst){
+            for(var i = 0; i < n; i++)
+                lst[n - i -1]  = pop();
+        }
+
+
+        void reversePopNTo(int n, List<DObj> lst){
+            for(var i = 0; i < n; i++)
+                lst.Add(pop());
+        }
+
+        DObj[] create_locals(DFunc func, int argcount)
         {
             var locals = new DObj[func.nlocal];
-            for (var i = 0; i < func.narg; i++)
-            {
-                locals[i] = loadvar(s_args[i]);
-            }
             if (func.is_vararg)
             {
-                var vararg = new DObj[s_args.Length - func.narg];
-                for (var i = func.narg; i < s_args.Length; i++)
+                var nvararg = argcount - func.narg;
+                var vararg = new DObj[nvararg];
+                for (var i = nvararg - 1; i >= 0; i--)
                 {
-                    vararg[i - func.narg] = loadvar(i);
+                    vararg[i] = pop();
                 }
                 locals[func.narg] = DTuple.Make(vararg);
             }
+            for (var i = func.narg - 1; i >= 0; i--)
+            {
+                locals[i] = pop();
+            }
+        
+            var nonargcells = func.nonargcells;
+            if (nonargcells != null)
+                for (var i = 0; i < nonargcells.Length; i++)
+                    locals[i] = new DRef();
             return locals;
         }
+
         public void exec_block(int blockind)
         {
             int old_offset = offset;
@@ -207,7 +291,8 @@ namespace DianaScript
             }
             catch
             {
-                virtual_machine.errorFrames.Push(new MiniFrame { 
+                virtual_machine.errorFrames.Push(new MiniFrame
+                {
                     metadataInd = cur_func.metadataInd,
                     blockind = blockind,
                     offset = offset
@@ -226,102 +311,114 @@ namespace DianaScript
         {
             case (int) CODE.Diana_FunctionDef:
             {
+                var metadataInd = flatGraph.diana_functiondefs[curPtr.ind].metadataInd;
+                var code = flatGraph.diana_functiondefs[curPtr.ind].code;
             
-                var meta = loadmetadata(flatGraph.diana_functiondefs[curPtr.ind].metadataInd);
+                var meta = loadmetadata(metadataInd);
                 int nfree = meta.freeslots.Length;
-
                 var new_freevals = new DRef[meta.freeslots.Length];
                 for(var i = 0; i < nfree; i++)
                     new_freevals[i] = loadref(meta.freeslots[i]);
 
-                var dfunc = DFunc.Make(flatGraph.diana_functiondefs[curPtr.ind].code,
+                var dfunc = DFunc.Make(code,
                     freevals:new_freevals,
                     is_vararg: meta.is_vararg,
                     narg: meta.narg,
                     nlocal: meta.nlocal,
-                    metadataInd: flatGraph.diana_functiondefs[curPtr.ind].metadataInd);
-        
-                storevar(flatGraph.diana_functiondefs[curPtr.ind].target, dfunc);
-
-                break;
-            }
-            case (int) CODE.Diana_Return:
-            {
-            
-                set_return(loadvar(flatGraph.diana_returns[curPtr.ind].reg));
-                token = (int) TOKEN.RETURN;
-
-                break;
-            }
-            case (int) CODE.Diana_DelVar:
-            {
-            
-                storevar(flatGraph.diana_delvars[curPtr.ind].target, null);
-
-                break;
-            }
-            case (int) CODE.Diana_LoadAsCell:
-            {
-            
-                var refobj = new DRef();
-                refobj.cell_contents = loadvar(flatGraph.diana_loadascells[curPtr.ind].target);
-                storevar(flatGraph.diana_loadascells[curPtr.ind].target, refobj);
+                    nonargcells: meta.nonargcells,
+                    metadataInd: metadataInd);
+                push(dfunc);
 
                 break;
             }
             case (int) CODE.Diana_LoadGlobalRef:
             {
+                var istr = flatGraph.diana_loadglobalrefs[curPtr.ind].istr;
             
-                storevar(flatGraph.diana_loadglobalrefs[curPtr.ind].target, new DRefGlobal(cur_func.nameSpace, loadistr(flatGraph.diana_loadglobalrefs[curPtr.ind].p_val)));
+                push(new DRefGlobal(cur_func.nameSpace, istr));
+
+                break;
+            }
+            case (int) CODE.Diana_DelVar:
+            {
+                var target = flatGraph.diana_delvars[curPtr.ind].target;
+            
+                storevar(target, null);
 
                 break;
             }
             case (int) CODE.Diana_LoadVar:
             {
+                var i = flatGraph.diana_loadvars[curPtr.ind].i;
             
-                storevar(flatGraph.diana_loadvars[curPtr.ind].target, loadvar(flatGraph.diana_loadvars[curPtr.ind].p_val));
+                push(loadvar(i));
 
                 break;
             }
-            case (int) CODE.Diana_Raise:
+            case (int) CODE.Diana_StoreVar:
             {
+                var i = flatGraph.diana_storevars[curPtr.ind].i;
             
-                var e = MK.unbox<Exception>(loadvar(flatGraph.diana_raises[curPtr.ind].p_exc));
-                throw e;
+                storevar(i, pop());
 
                 break;
             }
-            case (int) CODE.Diana_Assert:
+            case (int) CODE.Diana_Action:
             {
+                var kind = flatGraph.diana_actions[curPtr.ind].kind;
             
-                assert(loadvar(flatGraph.diana_asserts[curPtr.ind].value).__bool__, loadvar(flatGraph.diana_asserts[curPtr.ind].p_msg));
+                switch (kind)
+                {
+                    case (int) ACTION.ASSERT: 
+                        assert(pop().__bool__, pop());
+                        break;
+                    case (int) ACTION.RAISE:
+                        throw MK.unbox<Exception>(pop());
+                    default:
+                        throw new Exception("unknown action " + ((ACTION) kind));
+                }
+
+                break;
+            }
+            case (int) CODE.Diana_ControlIf:
+            {
+                var arg = flatGraph.diana_controlifs[curPtr.ind].arg;
+            
+                if(pop().__bool__)
+                    token = arg;
 
                 break;
             }
             case (int) CODE.Diana_Control:
             {
+                var arg = flatGraph.diana_controls[curPtr.ind].arg;
             
-                token = flatGraph.diana_controls[curPtr.ind].token;
+                token = arg;
 
                 break;
             }
             case (int) CODE.Diana_Try:
             {
+                var body = flatGraph.diana_trys[curPtr.ind].body;
+                var except_handlers = flatGraph.diana_trys[curPtr.ind].except_handlers;
+                var final_body = flatGraph.diana_trys[curPtr.ind].final_body;
             
+   
                     try
                     {
-                        exec_block(flatGraph.diana_trys[curPtr.ind].body);
+                        exec_block(body);
                     }
                     catch (Exception e)
                     {
-                        foreach(var handler in flatGraph.diana_trys[curPtr.ind].except_handlers){
-                            var exc_type = loadvar(handler.exc_type);
+                        clearstack();
+                        foreach(var handler in except_handlers){
+                            exec_block(handler.exc_type);
+                            var exc_type = pop();
                             var e_boxed = MK.create(e);
                             if (exc_type.__subclasscheck__(e_boxed.GetCls))
                             {
-                                storevar(handler.exc_target, e_boxed);
-                                exec_block(handler.body);
-                                storevar(handler.exc_target, null);
+                                push(e_boxed);
+                                exec_block(handler.body);   
                                 virtual_machine.errorFrames.Clear();
                                 goto end_handled;
                             }
@@ -329,18 +426,21 @@ namespace DianaScript
                         throw;
                         end_handled: ;
                     }
-                    finally{
-                        exec_block(flatGraph.diana_trys[curPtr.ind].final_body);
+                    finally
+                    {
+                        clearstack();
+                        exec_block(final_body);
                     }
 
                 break;
             }
-            case (int) CODE.Diana_While:
+            case (int) CODE.Diana_Loop:
             {
+                var body = flatGraph.diana_loops[curPtr.ind].body;
             
-                while(loadvar(flatGraph.diana_whiles[curPtr.ind].p_cond).__bool__)
+                while(true)
                 {
-                    exec_block(flatGraph.diana_whiles[curPtr.ind].body);
+                    exec_block(body);
                     switch(token)
                     {
                         case (int) TOKEN.LOOP_BREAK:
@@ -357,11 +457,12 @@ namespace DianaScript
             }
             case (int) CODE.Diana_For:
             {
+                var body = flatGraph.diana_fors[curPtr.ind].body;
             
-                var iter = loadvar(flatGraph.diana_fors[curPtr.ind].p_iter);
+                var iter = pop();
                 foreach(var it in iter.__iter__){
-                    storevar(flatGraph.diana_fors[curPtr.ind].target, it);
-                    exec_block(flatGraph.diana_fors[curPtr.ind].body);
+                    push(it);
+                    exec_block(body);
                     switch(token)
                     {
                         case (int) TOKEN.LOOP_BREAK:
@@ -372,20 +473,19 @@ namespace DianaScript
                             token = (int) TOKEN.GO_AHEAD;
                             break;
                     }
-        
                 }
 
                 break;
             }
             case (int) CODE.Diana_With:
             {
+                var body = flatGraph.diana_withs[curPtr.ind].body;
             
-                var resource = loadvar(flatGraph.diana_withs[curPtr.ind].p_resource);
-                var val = resource.__enter__();
-                storevar(flatGraph.diana_withs[curPtr.ind].p_as, val);
+                var resource = pop();
                 try
                 {
-                    exec_block(flatGraph.diana_withs[curPtr.ind].body);
+                    push(resource.__enter__());
+                    exec_block(body);
                     resource.__exit__(
                         MK.Nil(),
                         MK.Nil(),
@@ -405,247 +505,548 @@ namespace DianaScript
 
                 break;
             }
+            case (int) CODE.Diana_GetAttr:
+            {
+                var attr = flatGraph.diana_getattrs[curPtr.ind].attr;
+            
+                var value = pop();
+                push(value.Get(attr));
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttr:
+            {
+                var attr = flatGraph.diana_setattrs[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    value
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_add:
+            {
+                var attr = flatGraph.diana_setattrop_adds[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__add__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_sub:
+            {
+                var attr = flatGraph.diana_setattrop_subs[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__sub__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_mul:
+            {
+                var attr = flatGraph.diana_setattrop_muls[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__mul__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_truediv:
+            {
+                var attr = flatGraph.diana_setattrop_truedivs[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__truediv__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_floordiv:
+            {
+                var attr = flatGraph.diana_setattrop_floordivs[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__floordiv__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_mod:
+            {
+                var attr = flatGraph.diana_setattrop_mods[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__mod__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_pow:
+            {
+                var attr = flatGraph.diana_setattrop_pows[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__pow__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_lshift:
+            {
+                var attr = flatGraph.diana_setattrop_lshifts[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__lshift__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_rshift:
+            {
+                var attr = flatGraph.diana_setattrop_rshifts[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__rshift__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_bitor:
+            {
+                var attr = flatGraph.diana_setattrop_bitors[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__bitor__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_bitand:
+            {
+                var attr = flatGraph.diana_setattrop_bitands[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__bitand__(value)
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetAttrOp_bitxor:
+            {
+                var attr = flatGraph.diana_setattrop_bitxors[curPtr.ind].attr;
+            
+                var (subject, value) = pop2();
+                subject.Set(
+                    attr,
+                    subject.Get(attr).__bitxor__(value)
+                );
+
+                break;
+            }
             case (int) CODE.Diana_DelItem:
             {
             
-                var value = loadvar(flatGraph.diana_delitems[curPtr.ind].p_value);
-                var item = loadvar(flatGraph.diana_delitems[curPtr.ind].p_item);
-                value.__delitem__(item);
+                var (subject, item) = pop2();
+                subject.__delitem__(item);
 
                 break;
             }
             case (int) CODE.Diana_GetItem:
             {
             
-                var value = loadvar(flatGraph.diana_getitems[curPtr.ind].p_value);
-                var item = loadvar(flatGraph.diana_getitems[curPtr.ind].p_item);
-                value = value.__getitem__(item);
-                storevar(flatGraph.diana_getitems[curPtr.ind].target, item);
+                var (subject, item) = pop2();
+                push(subject.__getitem__(item));
+
+                break;
+            }
+            case (int) CODE.Diana_SetItem:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    value
+                );
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_add:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__add__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_sub:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__sub__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_mul:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__mul__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_truediv:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__truediv__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_floordiv:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__floordiv__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_mod:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__mod__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_pow:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__pow__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_lshift:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__lshift__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_rshift:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__rshift__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_bitor:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__bitor__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_bitand:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__bitand__(value)
+                );
+                push(item);
+
+                break;
+            }
+            case (int) CODE.Diana_SetItemOp_bitxor:
+            {
+            
+                var (subject, item, value) = pop3();
+                subject.__setitem__(
+                    item,
+                    subject.__getitem__(item).__bitxor__(value)
+                );
+                push(item);
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_add:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_adds[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_adds[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_adds[curPtr.ind].target, left.__add__(right));
+                var (left, right) = pop2();
+                push(left.__add__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_sub:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_subs[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_subs[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_subs[curPtr.ind].target, left.__sub__(right));
+                var (left, right) = pop2();
+                push(left.__sub__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_mul:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_muls[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_muls[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_muls[curPtr.ind].target, left.__mul__(right));
+                var (left, right) = pop2();
+                push(left.__mul__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_truediv:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_truedivs[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_truedivs[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_truedivs[curPtr.ind].target, left.__truediv__(right));
+                var (left, right) = pop2();
+                push(left.__truediv__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_floordiv:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_floordivs[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_floordivs[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_floordivs[curPtr.ind].target, left.__floordiv__(right));
+                var (left, right) = pop2();
+                push(left.__floordiv__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_mod:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_mods[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_mods[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_mods[curPtr.ind].target, left.__mod__(right));
+                var (left, right) = pop2();
+                push(left.__mod__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_pow:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_pows[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_pows[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_pows[curPtr.ind].target, left.__pow__(right));
+                var (left, right) = pop2();
+                push(left.__pow__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_lshift:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_lshifts[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_lshifts[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_lshifts[curPtr.ind].target, left.__lshift__(right));
+                var (left, right) = pop2();
+                push(left.__lshift__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_rshift:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_rshifts[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_rshifts[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_rshifts[curPtr.ind].target, left.__rshift__(right));
+                var (left, right) = pop2();
+                push(left.__rshift__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_bitor:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_bitors[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_bitors[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_bitors[curPtr.ind].target, left.__bitor__(right));
+                var (left, right) = pop2();
+                push(left.__bitor__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_bitand:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_bitands[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_bitands[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_bitands[curPtr.ind].target, left.__bitand__(right));
+                var (left, right) = pop2();
+                push(left.__bitand__(right));
 
                 break;
             }
             case (int) CODE.Diana_BinaryOp_bitxor:
             {
             
-                var left = loadvar(flatGraph.diana_binaryop_bitxors[curPtr.ind].left);
-                var right = loadvar(flatGraph.diana_binaryop_bitxors[curPtr.ind].right);
-                storevar(flatGraph.diana_binaryop_bitxors[curPtr.ind].target, left.__bitxor__(right));
+                var (left, right) = pop2();
+                push(left.__bitxor__(right));
 
                 break;
             }
             case (int) CODE.Diana_UnaryOp_invert:
             {
             
-                var val = loadvar(flatGraph.diana_unaryop_inverts[curPtr.ind].p_value);
-                storevar(flatGraph.diana_unaryop_inverts[curPtr.ind].target, MK.create(val.__invert__));
+                var val = pop();
+                push(MK.create(val.__invert__));
 
                 break;
             }
             case (int) CODE.Diana_UnaryOp_not:
             {
             
-                var val = loadvar(flatGraph.diana_unaryop_nots[curPtr.ind].p_value);
-                storevar(flatGraph.diana_unaryop_nots[curPtr.ind].target, MK.create(val.__not__));
+                var val = pop();
+                push(MK.create(val.__not__));
 
                 break;
             }
-            case (int) CODE.Diana_Dict:
+            case (int) CODE.Diana_MKDict:
             {
+                var n = flatGraph.diana_mkdicts[curPtr.ind].n;
             
-                var dict = new Dictionary<DObj, DObj>(flatGraph.diana_dicts[curPtr.ind].p_kvs.Length);
-                for(var i = 0; i < flatGraph.diana_dicts[curPtr.ind].p_kvs.Length; i++){
-                    var kv = flatGraph.diana_dicts[curPtr.ind].p_kvs[i];
-                    dict[loadvar(kv.Item1)] = loadvar(kv.Item2);
+                var dict = new Dictionary<DObj, DObj>(n);
+                for(var i = 0; i < n; i++){
+                    var (k, v) = pop2();
+                    dict[k] = v;
                 }
-                storevar(flatGraph.diana_dicts[curPtr.ind].target, MK.Dict(dict));
+                push(MK.Dict(dict));
 
                 break;
             }
-            case (int) CODE.Diana_Set:
+            case (int) CODE.Diana_MKSet:
             {
+                var n = flatGraph.diana_mksets[curPtr.ind].n;
             
-                var hset = new HashSet<DObj>(flatGraph.diana_sets[curPtr.ind].p_elts.Length);
-                for(var i = 0; i < flatGraph.diana_sets[curPtr.ind].p_elts.Length; i++)
-                    hset.Add(loadvar(i));
-                storevar(flatGraph.diana_sets[curPtr.ind].target, MK.Set(hset));
+                var hset = new HashSet<DObj>(n);
+                popNTo(n, hset);
+                push(MK.Set(hset));
 
                 break;
             }
-            case (int) CODE.Diana_List:
+            case (int) CODE.Diana_MKList:
             {
+                var n = flatGraph.diana_mklists[curPtr.ind].n;
             
-                var list = new List<DObj>(flatGraph.diana_lists[curPtr.ind].p_elts.Length);
-                for(var i = 0; i < flatGraph.diana_lists[curPtr.ind].p_elts.Length; i++)
-                    list.Add(loadvar(i));
-                storevar(flatGraph.diana_lists[curPtr.ind].target, MK.List(list));
+                var list = popNToList(n);
+                push(MK.List(list));
 
                 break;
             }
             case (int) CODE.Diana_Call:
             {
+                var n = flatGraph.diana_calls[curPtr.ind].n;
             
-                var f = loadvar(flatGraph.diana_calls[curPtr.ind].p_f);
-                if (f is DFunc dfunc){
-                    check_argcount(dfunc, flatGraph.diana_calls[curPtr.ind].p_args.Length);
-                    var vstack = create_vstack(dfunc, flatGraph.diana_calls[curPtr.ind].p_args);
-                    storevar(flatGraph.diana_calls[curPtr.ind].target, virtual_machine.exec_func(dfunc, vstack));
+                var f = peek(n);
+                if (f is DFunc dfunc)
+                {
+                    check_argcount(dfunc, n);
+                    var locals = create_locals(dfunc, n);
+                    pop(); // f
+                    push(virtual_machine.exec_func(dfunc, locals));
                 }
-                var args = new Args();
-                for(var i = flatGraph.diana_calls[curPtr.ind].p_args.Length - 1; i >= 0; i--)
-                    args.Prepend(loadvar(flatGraph.diana_calls[curPtr.ind].p_args[i]));
-                storevar(flatGraph.diana_calls[curPtr.ind].target, f.__call__(args));
+                else
+                {
+                    var args = new Args();
+                    reversePopNTo(n, args);
+                    pop(); // f
+                    push(f.__call__(args));
+                }
 
                 break;
             }
             case (int) CODE.Diana_Format:
             {
+                var format = flatGraph.diana_formats[curPtr.ind].format;
+                var argn = flatGraph.diana_formats[curPtr.ind].argn;
             
-                var argvals = new string[flatGraph.diana_formats[curPtr.ind].args.Length];
-                for(var i = 0; i < flatGraph.diana_formats[curPtr.ind].args.Length; i++)
-                    argvals[i] = loadvar(flatGraph.diana_formats[curPtr.ind].args[i]).__str__; // TODO: format repr
-                var str = String.Format(loadstr(flatGraph.diana_formats[curPtr.ind].format), argvals);
-                storevar(flatGraph.diana_formats[curPtr.ind].target, MK.String(str));
+                var argvals = new string[argn];
+                for(var i = 0; i < argn; i++)
+                    argvals[argn - i - 1] = pop().__str__; // TODO: format style
+                var str = String.Format(loadstr(format), argvals);
+                push(MK.String(str));
 
                 break;
             }
             case (int) CODE.Diana_Const:
             {
+                var p_const = flatGraph.diana_consts[curPtr.ind].p_const;
             
-                storevar(flatGraph.diana_consts[curPtr.ind].target, loadconst(flatGraph.diana_consts[curPtr.ind].p_const));
+                push(loadconst(p_const));
 
                 break;
             }
-            case (int) CODE.Diana_GetAttr:
+            case (int) CODE.Diana_MKTuple:
             {
+                var n = flatGraph.diana_mktuples[curPtr.ind].n;
             
-                var value = loadvar(flatGraph.diana_getattrs[curPtr.ind].p_value);
-                storevar(flatGraph.diana_getattrs[curPtr.ind].target, value.Get(loadistr(flatGraph.diana_getattrs[curPtr.ind].p_attr)));
+                var tuple_elts = new DObj[n];
+                popNTo(n, tuple_elts);
+                push(MK.Tuple(tuple_elts));
 
                 break;
             }
-            case (int) CODE.Diana_MoveVar:
+            case (int) CODE.Diana_Pack:
             {
+                var n = flatGraph.diana_packs[curPtr.ind].n;
             
-                storevar(flatGraph.diana_movevars[curPtr.ind].target, loadvar(flatGraph.diana_movevars[curPtr.ind].slot));
-
-                break;
-            }
-            case (int) CODE.Diana_Tuple:
-            {
-            
-                var tuple_elts = new DObj[flatGraph.diana_tuples[curPtr.ind].p_elts.Length];
-                for(var i = 0; i < flatGraph.diana_tuples[curPtr.ind].p_elts.Length; i++)
-                    tuple_elts[i] = loadvar(flatGraph.diana_tuples[curPtr.ind].p_elts[i]);
-                storevar(flatGraph.diana_tuples[curPtr.ind].target, MK.Tuple(tuple_elts));
-
-                break;
-            }
-            case (int) CODE.Diana_PackTuple:
-            {
-            
-                var tuple = (DTuple) loadvar(flatGraph.diana_packtuples[curPtr.ind].p_value);
+                var tuple = (DTuple) pop();
                 var tuple_elts = tuple.elts;
-                for(var i = 0; i < tuple_elts.Length; i++)
-                    storevar(flatGraph.diana_packtuples[curPtr.ind].targets[i], tuple_elts[i]);
+                // TODO check exact
+                for(var i = 0; i < n; i++)
+                    push(tuple_elts[i]);
 
                 break;
             }
