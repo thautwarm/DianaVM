@@ -48,6 +48,7 @@ for FROM, TO in [(path, path.with_suffix('.py'))
         elif head == 'data':
             name, *fields = each
             datatypes.append(name)
+            code.append("@dataclass")
             code.append(f'class {name}:')
             if fields:
                 for v in fields:

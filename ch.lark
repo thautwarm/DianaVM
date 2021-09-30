@@ -1,14 +1,17 @@
+# 创创子语言前端
 %mkrepl
 
-NAME: /[a-zA-Z_\u4e00-\u9fa5][a-zA-Z0-9_\u4e00-\u9fa5]*?/
+
 
 %%
 from contextlib import contextmanager
 from dianascript.operator_resolve import Operator, binop_reduce
-
+from dianascript.chexpr import *
+from dianascript.chlhs import *
+from dianascript.chstmt import *
 def cons(op):
     def ap(l, r):
-        loc, opname = op
+        loc, opname = op.val
         return EOp(l, opname, r)
     return ap
 
@@ -38,33 +41,35 @@ def emit(x):
 %%
 
 
-list{sep, e} : list{sep, e} e  -> append($1, $3)
-             |  -> []
+start : nullable{list{stmt}} -> $1
 
-seplist{sep, e} : seplist{sep, e} sep e  -> append($1, $3)
-                | -> []
+list{e} : e -> [$1]
+        | list{e} e  -> append($1, $2) 
 
-# enter block 1
-eblock :  -> enter_block()
+seplist{sep, e} : e -> [$1]
+                | seplist{sep, e} sep e  -> append($1, $3)
+                
+nullable{seq} :     -> []
+              | seq -> $1
 
-name : NAME -> *1
-
-func : "func" name "(" arglist ")" block "end" ->  SFunc($2, $4, $6) | @1
-block : list{stmt}                             ->  $1
 
 stmt :   "var" seplist{",", name}              -> SDecl($2) | @1
-       | id ":=" expr                          -> SAssign($1, $3) | @2
-        | expr                                 -> SExpr($1)
-       | "loop" block "end"                    -> SWhile($2) | @1
-       | "for" lhs "in" expr "do" block "end"  -> SFor($2, $4, $6) | @1
-       | "del" seplist{",", id}                -> SDel($2) | @1
-       | "if" expr "then" block "end"          -> SIf($2, $4, None) | @1
+       | lhs ":=" expr                         -> SAssign($1, $3) | @2
+       | expr                                  -> SExpr($1)
+       | "loop" block "end"                    -> SLoop($2) | @1
+       | "for" lhs "<-" expr "do" block "end"  -> SFor($2, $4, $6) | @1
+#      | "del" seplist{",", name}              -> SDel($2) | @1
+       | "if" expr "then" block "end"           -> SIf($2, $4, None) | @1
        | "if" expr "then" block "else" block "end" -> SIf($2, $4, $6) | @1
        | "break"                                   -> SBreak()
        | "continue"                                -> SContinue()
 
 
-expr :  bool_expr
+func : "func" name "(" nullable{seplist{",", name}} ")" block "end" ->  SFunc($2, $4, $6) | @1
+block : nullable{list{stmt}}  ->  $1
+
+
+?expr :  or_expr
 
 or_expr : or_expr "or" and_expr -> EOr($1, $2) | @1
         | and_expr              -> $1
@@ -73,46 +78,44 @@ and_expr : and_expr "and" not   -> EAnd($1, $2) | @1
          | not                  -> $1
 
 
-binop1 : ("<" | ">" |">=" | "<=" | "=" | "==" | "!=" | "in" | \
-          "+" | "-" | "*" | "/" | "//" | "%" |\
+binop : ("<" | ">" |">=" | "<=" | "=" | "==" | "!=" | "in" | \
+          "+" | "-" | "*" | "**" | "/" | "//" | "%" |\
           "&" | "|" | "<<" | ">>") -> (@1, *1)
+        | "not" "in" -> (@1, *1 + "_" + *2)
 
-binop2 : "not" "in" -> (@1, *1 + "_" + *2)
-
-binop : (binop1 | binop2) -> $1
 bin : atom (binop atom)*  -> resolve_binop(__args)
 
-not : 'not' binop -> ENot($2) | @1
-    | binop       -> $1
+not : "not" bin -> ENot($2) | @1
+    | bin       -> $1
 
 trailer : "," -> True
         |     -> False
 
 lhs  : NAME                  -> LVar(*1) | @1
      | atom "." "[" expr "]" -> LIt($1, $4) | @2
-     | atom "." name         -> IAttr($1, $3) | @2
+     | atom "." name         -> LAttr($1, $3) | @2
 
 pair : expr ":" expr         -> ($1, $3)
-
-atom : atom "." "[" expr "]" -> EIt($1, $4) | @1
+atom : atom "." "[" expr "]" -> EIt($1, $4) | @2
      | atom "." name         -> EAttr($1, $3) | @2
-     | atom "(" seplist{",", expr} ")"    -> EApp($1, $3) | @2
-     | "[" seplist{",", expr} trailer "]" -> EList($2) | @1
-     | "(" seplist{",", expr} trailer ")" -> EPar($2, $3) | @1
-     | "{" seplist{",", pair} trailer "}" -> EDict($2, $3) | @1
+     | atom "(" nullable{seplist{",", expr}} ")"    -> EApp($1, $3) | @2
+     | "[" nullable{seplist{",", expr}} trailer "]" -> EList($2) | @1
+     | "(" nullable{seplist{",", expr}} trailer ")" -> EPar($2, $3) | @1
+     | "{" nullable{seplist{",", pair}} trailer "}" -> EDict($2, $3) | @1
      | number                             -> EVal(eval(*1)) | @1
      | string                             -> EVal(eval(*1)) | @1
-     | "None"    -> EVal(None) | @1
-     | "True"    -> EVal(True) | @1
+     | "None"    -> EVal(None)  | @1
+     | "True"    -> EVal(True)  | @1
      | "False"   -> EVal(False) | @1
      | NAME      -> EVar(*1)    | @1
      | "-" atom  -> ENeg($2)    | @1
      | "~" atom  -> EInv($2)    | @1
+
      
 
 string: (STRING | LONG_STRING) -> $1
-
-
+name : NAME -> *1
+NAME: /[a-zA-Z_\u4e00-\u9fa5][a-zA-Z0-9_\u4e00-\u9fa5]*?/
 number: (DEC_NUMBER | HEX_NUMBER | BIN_NUMBER | OCT_NUMBER | FLOAT_NUMBER | IMAG_NUMBER) -> $1
 DEC_NUMBER: /0|[1-9][\d_]*/i
 HEX_NUMBER.2: /0x[\da-f]*/i
@@ -122,3 +125,6 @@ FLOAT_NUMBER.2: /((\d+\.[\d_]*|\.[\d_]+)([Ee][-+]?\d+)?|\d+([Ee][-+]?\d+))/
 IMAG_NUMBER.2: /\d+[Jj]/ | FLOAT_NUMBER /[Jj]/
 STRING : /[ubf]?r?("(?!"").*?(?<!\\)(\\\\)*?"|'(?!'').*?(?<!\\)(\\\\)*?')/i
 LONG_STRING: /[ubf]?r?(""".*?(?<!\\)(\\\\)*?"""|'''.*?(?<!\\)(\\\\)*?''')/is
+
+%import common.WS
+%ignore WS

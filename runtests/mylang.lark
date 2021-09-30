@@ -1,0 +1,123 @@
+          
+
+
+NAME: /[a-zA-Z_\u4e00-\u9fa5][a-zA-Z0-9_\u4e00-\u9fa5]*?/
+
+  
+                                     
+                                                               
+                                
+                               
+                                
+             
+                 
+                        
+                                
+             
+
+                        
+                      
+                      
+
+                                    
+                                         
+                    
+                                     
+                                   
+
+                  
+                
+             
+
+             
+
+                  
+                 
+                     
+
+            
+                        
+
+  
+
+
+start : list{stmt} -> start_0                         
+
+list{e} : list{e} e -> list_0                                       
+        | -> list_1                 
+
+seplist{sep, e} : seplist{sep, e} sep e -> seplist_0                                                           
+                | -> seplist_1                        
+
+name : NAME -> name_0                  
+
+func : "func" name "(" seplist{",", name} ")" block "end" -> func_0                                                                                     
+block : list{stmt} -> block_0                                                      
+
+binder : lhs ":+" -> binder_0                        
+stmt :   "var" seplist{",", name} -> stmt_0                                                                 
+       | list{binder} expr -> stmt_1                                                                       
+       | expr -> stmt_2                                                            
+       | "loop" block "end" -> stmt_3                                                                 
+       | "for" lhs "in" expr "do" block "end" -> stmt_4                                                                        
+                                                                
+       | "if" expr "then" block "end" -> stmt_5                                                                         
+       | "if" expr "then" block "else" block "end" -> stmt_6                                                                           
+       | "break" -> stmt_7                                                               
+       | "continue" -> stmt_8                                                                  
+
+
+expr :  or_expr
+
+or_expr : or_expr "or" and_expr -> or_expr_0                                                    
+        | and_expr -> or_expr_1                                      
+
+and_expr : and_expr "and" not -> and_expr_0                                                     
+         | not -> and_expr_1                                      
+
+
+binop : ("<" | ">" |">=" | "<=" | "=" | "==" | "!=" | "in" |"+" | "-" | "*" | "/" | "//" | "%" |"&" | "|" | "<<" | ">>") -> binop_0                                               
+        | "not" "in" -> binop_1                                            
+
+bin : atom (binop atom)* -> bin_0                                                   
+
+not : "not" bin -> not_0                                 
+    | binop -> not_1                        
+
+trailer : "," -> trailer_0                      
+        | -> trailer_1                       
+
+lhs  : NAME -> lhs_0                                              
+     | atom "." "[" expr "]" -> lhs_1                                                 
+     | atom "." name -> lhs_2                                                   
+
+pair : expr ":" expr -> pair_0                                         
+
+atom : atom "." "[" expr "]" -> atom_0                                                 
+     | atom "." name -> atom_1                                                   
+     | atom "(" seplist{",", expr} ")" -> atom_2                                                               
+     | "[" seplist{",", expr} trailer "]" -> atom_3                                                            
+     | "(" seplist{",", expr} trailer ")" -> atom_4                                                               
+     | "{" seplist{",", pair} trailer "}" -> atom_5                                                                
+     | number -> atom_6                                                                 
+     | string -> atom_7                                                                 
+     | "None" -> atom_8                                    
+     | "True" -> atom_9                                    
+     | "False" -> atom_10                                     
+     | NAME -> atom_11                                     
+     | "-" atom -> atom_12                                     
+     | "~" atom -> atom_13                                     
+     
+
+string: (STRING | LONG_STRING) -> string_0                                     
+
+
+number: (DEC_NUMBER | HEX_NUMBER | BIN_NUMBER | OCT_NUMBER | FLOAT_NUMBER | IMAG_NUMBER) -> number_0                                                                                               
+DEC_NUMBER: /0|[1-9][\d_]*/i
+HEX_NUMBER.2: /0x[\da-f]*/i
+OCT_NUMBER.2: /0o[0-7]*/i
+BIN_NUMBER.2 : /0b[0-1]*/i
+FLOAT_NUMBER.2: /((\d+\.[\d_]*|\.[\d_]+)([Ee][-+]?\d+)?|\d+([Ee][-+]?\d+))/
+IMAG_NUMBER.2: /\d+[Jj]/ | FLOAT_NUMBER /[Jj]/
+STRING : /[ubf]?r?("(?!"").*?(?<!\\)(\\\\)*?"|'(?!'').*?(?<!\\)(\\\\)*?')/i
+LONG_STRING: /[ubf]?r?(""".*?(?<!\\)(\\\\)*?"""|'''.*?(?<!\\)(\\\\)*?''')/is

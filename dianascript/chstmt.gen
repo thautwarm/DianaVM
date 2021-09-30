@@ -1,0 +1,12 @@
+import dianascript.chexpr;
+import dianascript.chlhs;
+
+data SFunc name:str args:list[str] body:list[Chstmt] ;
+data SDecl vars:list[str];
+data SAssign targets:list[Chlhs] value:Chexpr;
+data SExpr expr:Chexpr;
+data SFor target:Chlhs iter:Chexpr body:list[Chstmt];
+data SLoop block:list[Chstmt];
+data SIf cond:Chexpr then:list[Chstmt] ;orelse:list[Chstmt]|None;
+data SBreak;
+data SContinue;

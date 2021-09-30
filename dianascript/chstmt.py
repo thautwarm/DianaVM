@@ -4,9 +4,17 @@ import typing
 from dataclasses import dataclass
 
 
+from dianascript.chexpr import *
+
+
+from dianascript.chlhs import *
+
+
 @dataclass
-class EVal:
-    val:object
+class SFunc:
+    name:str
+    args:list[str]
+    body:list[Chstmt]
     loc: tuple[int, int] | None = None
 
 
@@ -16,8 +24,8 @@ class EVal:
 
 
 @dataclass
-class EVar:
-    var:str
+class SDecl:
+    vars:list[str]
     loc: tuple[int, int] | None = None
 
 
@@ -27,21 +35,9 @@ class EVar:
 
 
 @dataclass
-class EApp:
-    f:Chexpr
-    args:list[Chexpr]
-    loc: tuple[int, int] | None = None
-
-
-    def __or__(self, loc):
-        self.loc = loc
-        return self
-
-
-@dataclass
-class EIt:
+class SAssign:
+    targets:list[Chlhs]
     value:Chexpr
-    item:Chexpr
     loc: tuple[int, int] | None = None
 
 
@@ -51,54 +47,7 @@ class EIt:
 
 
 @dataclass
-class EAttr:
-    value:Chexpr
-    attr:str
-    loc: tuple[int, int] | None = None
-
-
-    def __or__(self, loc):
-        self.loc = loc
-        return self
-
-
-@dataclass
-class EPar:
-    elts:list[Chexpr]
-    trailer:bool
-    loc: tuple[int, int] | None = None
-
-
-    def __or__(self, loc):
-        self.loc = loc
-        return self
-
-
-@dataclass
-class EDict:
-    pairs:list[tuple[Chexpr,
-    Chexpr]]
-    loc: tuple[int, int] | None = None
-
-
-    def __or__(self, loc):
-        self.loc = loc
-        return self
-
-
-@dataclass
-class EList:
-    elts:list[Chexpr]
-    loc: tuple[int, int] | None = None
-
-
-    def __or__(self, loc):
-        self.loc = loc
-        return self
-
-
-@dataclass
-class ENot:
+class SExpr:
     expr:Chexpr
     loc: tuple[int, int] | None = None
 
@@ -109,8 +58,10 @@ class ENot:
 
 
 @dataclass
-class ENeg:
-    expr:Chexpr
+class SFor:
+    target:Chlhs
+    iter:Chexpr
+    body:list[Chstmt]
     loc: tuple[int, int] | None = None
 
 
@@ -120,8 +71,8 @@ class ENeg:
 
 
 @dataclass
-class EInv:
-    expr:Chexpr
+class SLoop:
+    block:list[Chstmt]
     loc: tuple[int, int] | None = None
 
 
@@ -131,9 +82,21 @@ class EInv:
 
 
 @dataclass
-class EAnd:
-    left:Chexpr
-    right:Chexpr
+class SIf:
+    cond:Chexpr
+    then:list[Chstmt]
+    loc: tuple[int, int] | None = None
+
+
+    def __or__(self, loc):
+        self.loc = loc
+        return self
+
+
+
+
+@dataclass
+class SBreak:
     loc: tuple[int, int] | None = None
 
 
@@ -143,9 +106,7 @@ class EAnd:
 
 
 @dataclass
-class EOr:
-    left:Chexpr
-    right:Chexpr
+class SContinue:
     loc: tuple[int, int] | None = None
 
 
@@ -154,17 +115,4 @@ class EOr:
         return self
 
 
-@dataclass
-class EOp:
-    left:Chexpr
-    op:str
-    right:Chexpr
-    loc: tuple[int, int] | None = None
-
-
-    def __or__(self, loc):
-        self.loc = loc
-        return self
-
-
-Chexpr = EVal | EVar | EApp | EIt | EAttr | EPar | EDict | EList | ENot | ENeg | EInv | EAnd | EOr | EOp
+Chstmt = SFunc | SDecl | SAssign | SExpr | SFor | SLoop | SIf | SBreak | SContinue
