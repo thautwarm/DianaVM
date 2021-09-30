@@ -11,11 +11,11 @@ multi-line comment
 */
 
 var x # global level declaration makes no sense
-function f()
+func f()
     var x, y, z # local variable
     # ... single-line comment
     
-    function g() # a locally visible function
+    func g() # a locally visible function
         x + 1 # x is global variable!
     end
 
