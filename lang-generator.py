@@ -221,16 +221,12 @@ class Codegen:
                         code = tcode.substitute(T=temp_arg)
                         self.enums[kind_name] = params
                         self.codes[kind_name] = code
-                        
-                
-
                 case Node(kind_name, params, None, code):
                     kind_name = langname + "_" + kind_name
                     self.enums[kind_name] = params
                     if params:
                         datagen_seqs.append((kind_name, params))
                     self.codes[kind_name] = code
-                
                 case Dataclass(classname, params):
                     self.dataclasses.append(classname)
                     datagen_seqs.append((classname, params))
@@ -246,15 +242,17 @@ class Codegen:
         
         self << f"public enum {CODE}"
         self << "{"
-        for kind in self.tab_iter(self.enums):
-            self << f"{kind},"
+        for i, kind in self.tab_iter(enumerate(self.enums)):
+            self << f"{kind} = {i},"
         self << "}"
         self.newline
         
-        self << "public partial class DFlatGraphCode"
+        self << "public partial class AWorld"
         self << "{"
+        self << "private static readonly object _loaderSync = new object();"
         for kind,  params in self.tab_iter(datagen_seqs):
-            self << f"public {kind}[] {kind.lower()}s;"
+            self << f"public static List<{kind}> {kind.lower()}s = new List<{kind}>(200);"
+            self << f"private static int Num_{kind} = 0;"
             self.newline
         self << "}"
         self << "}"
@@ -268,35 +266,72 @@ class Codegen:
         
         datagen_seqs = self.datagen_seqs
         
-        self << "public partial class AIRParser"
+        self << "public partial class AWorld"
         self << "{"
 
         
         with self.tab():
-            self << f"public {CODE} Read{CODE}()"
+            self << f"private {CODE} Read{CODE}()"
             self << "{"
             self << "    fileStream.Read(cache_4byte, 0, 1);"
             self << f"    return ({CODE})cache_4byte[0];"
             self << "}"
             self.newline
-
-            self << f"public Ptr Read(THint<Ptr> _) => new Ptr(Read{CODE}(), ReadInt());"
+            
+            self << f"private Ptr ReadFromCode({CODE} code) => code switch"
+            self << "{"
+            for  kind, params in self.tab_iter(self.enums.items()):
+                if params:
+                    ind = f"Num_{kind} + ReadInt()"
+                else:
+                    ind = "0"
+                self << f"{CODE}.{kind} => new Ptr(code, {ind}),"
+            self << "    _ => throw new ArgumentOutOfRangeException(\"unknown code {code}.\")"
+            self << "};"
+            
+            self << "private Ptr Read(THint<Ptr> _) => ReadFromCode(ReadCODE());"
             for kind, params in datagen_seqs:
-                if not params: continue
-                self << f"public {kind} Read(THint<{kind}> _) => new {kind}"
+                if params:
+                    self << f"private {kind} Read{kind}() => new {kind}"
+                    self << "{"
+                    for field, type in self.tab_iter(params):
+                        self << f"{field} = Read(THint<{type}>.val),"
+                    self << "};"
+                    self.newline
+                else:
+                    self << f"private void Load_{kind.lower()}s()"
+                    self << "{"
+                    with self.tab():
+                        self << "int len = ReadInt();"
+                        self << "for(var i = 0; i < len; i++)"
+                        with self.tab():
+                            self << f"{kind.lower()}s.Add(Read(THint<{kind}>.val));"
+                    self << "}"
+                    continue
+                                    
+                if kind in self.dataclasses:
+                    self << f"private {kind} Read(THint<{kind}> _) => Read{kind}();"
+                self << f"private void Load_{kind.lower()}s()"
                 self << "{"
-                for field, type in self.tab_iter(params):
-                    self << f"{field} = Read(THint<{type}>.val),"
-                self << "};"
+                with self.tab():
+                    self << "int len = ReadInt();"
+                    self << "for(var i = 0; i < len; i++)"
+                    with self.tab():
+                        self << f"{kind.lower()}s.Add(Read{kind}());"
+                self << "}"
                 self.newline
             
-            self << f"public DFlatGraphCode Read(THint<DFlatGraphCode> _) => new DFlatGraphCode"
+            self << f"public void LoadCode()"
             self << "{"
-            for kind, params in self.tab_iter(datagen_seqs):    
-                self << f"{kind.lower()}s = Read(THint<{kind}[]>.val),"
-            self << "};"
+            with self.tab():
+                self << "lock(_loaderSync)"
+                self << "{"
+                for kind, params in self.tab_iter(datagen_seqs):
+                    self << f"Load_{kind.lower()}s();"
+                self << "}"
+            self << "}"
             self.newline
-            for t in ["int", "(int, int)", "float", "bool", *(map(fst, datagen_seqs)), "Ptr" ]:
+            for t in ["int", "(int, int)", "float", "bool", "Ptr", "string", *self.dataclasses]:
                 generate_array_read(self, t)
                     
         self << "}" << "}"
@@ -338,7 +373,7 @@ class Codegen:
                 else:
                     self << "def as_ptr(self) -> Ptr:"
                     with self.tab():
-                        self << f"return Ptr(self.TAG, 0)"
+                        self << f"return Ptr(self.TAG, None)"
             self.newline
             self.newline
         
@@ -399,7 +434,7 @@ class Codegen:
                 self << f"case (int) {CODE}.{kind_name}:"
                 self << "{"
                 for field, _ in self.tab_iter(params):
-                    self << f"var {field} = flatGraph.{kind_name.lower()}s[curPtr.ind].{field};"
+                    self << f"var {field} = AWorld.{kind_name.lower()}s[curPtr.ind].{field};"
                 self << indent(code, INDENT)
                 
                 self << "    break;"
@@ -411,12 +446,7 @@ class Codegen:
             self << "}"
         for each in template_file:
             self << each[:-1].replace('@__', '')
-        
-        
-            
 
-        
-    
 def generate_array_read(self: Codegen, tname: str):
     hint_name = tname.replace('<', '__').replace('>', '__')
     if not hint_name.isidentifier():

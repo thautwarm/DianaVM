@@ -5,7 +5,7 @@
 
 // public static class DevCode
 // {
-    
+
 //     public class S
 //     {
 //         public int x;
@@ -14,7 +14,7 @@
 //             x = x_;
 //         }
 //     }
- 
+
 
 //     public static int Main(String[] args)
 //     {

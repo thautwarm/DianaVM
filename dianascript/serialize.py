@@ -44,13 +44,14 @@ obj_box_tags: dict[type, int| None] = {
 @dataclass(frozen=True)
 class Ptr:
     kind: int
-    ind: int
+    ind: int | None
     def as_ptr(self) -> Ptr:
         return self
     
     def serialize_(self, barr: bytearray):
         serialize_(self.kind, barr)
-        serialize_(self.ind, barr)
+        if self.ind is not None:
+            serialize_(self.ind, barr)
 
 
 @dataclass(frozen=True)

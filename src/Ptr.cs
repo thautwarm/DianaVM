@@ -7,10 +7,11 @@ namespace DianaScript
 
         public int kind;
         public int ind;
-        
-        public Ptr(CODE code, int ind){
+
+        public Ptr(CODE code, int ind)
+        {
             this.ind = ind;
-            this.kind = (int) code;
+            this.kind = (int)code;
         }
     }
 }

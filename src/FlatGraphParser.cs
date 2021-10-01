@@ -3,901 +3,765 @@ using System.IO;
 using System.Collections.Generic;
 namespace DianaScript
 {
-public partial class AIRParser
-{
-    public CODE ReadCODE()
+    public partial class AWorld
     {
-        fileStream.Read(cache_4byte, 0, 1);
-        return (CODE)cache_4byte[0];
-    }
+        private CODE ReadCODE()
+        {
+            fileStream.Read(cache_4byte, 0, 1);
+            return (CODE)cache_4byte[0];
+        }
 
-    public Ptr Read(THint<Ptr> _) => new Ptr(ReadCODE(), ReadInt());
-    public Catch Read(THint<Catch> _) => new Catch
-    {
-        exc_type = Read(THint<int>.val),
-        body = Read(THint<int>.val),
-    };
+        private Ptr ReadFromCode(CODE code) => code switch
+        {
+            CODE.Diana_FunctionDef => new Ptr(code, Num_Diana_FunctionDef + ReadInt()),
+            CODE.Diana_LoadGlobalRef => new Ptr(code, Num_Diana_LoadGlobalRef + ReadInt()),
+            CODE.Diana_DelVar => new Ptr(code, Num_Diana_DelVar + ReadInt()),
+            CODE.Diana_LoadVar => new Ptr(code, Num_Diana_LoadVar + ReadInt()),
+            CODE.Diana_StoreVar => new Ptr(code, Num_Diana_StoreVar + ReadInt()),
+            CODE.Diana_Action => new Ptr(code, Num_Diana_Action + ReadInt()),
+            CODE.Diana_ControlIf => new Ptr(code, Num_Diana_ControlIf + ReadInt()),
+            CODE.Diana_JumpIfNot => new Ptr(code, Num_Diana_JumpIfNot + ReadInt()),
+            CODE.Diana_JumpIf => new Ptr(code, Num_Diana_JumpIf + ReadInt()),
+            CODE.Diana_Jump => new Ptr(code, Num_Diana_Jump + ReadInt()),
+            CODE.Diana_Control => new Ptr(code, Num_Diana_Control + ReadInt()),
+            CODE.Diana_Try => new Ptr(code, Num_Diana_Try + ReadInt()),
+            CODE.Diana_Loop => new Ptr(code, Num_Diana_Loop + ReadInt()),
+            CODE.Diana_For => new Ptr(code, Num_Diana_For + ReadInt()),
+            CODE.Diana_With => new Ptr(code, Num_Diana_With + ReadInt()),
+            CODE.Diana_GetAttr => new Ptr(code, Num_Diana_GetAttr + ReadInt()),
+            CODE.Diana_SetAttr => new Ptr(code, Num_Diana_SetAttr + ReadInt()),
+            CODE.Diana_SetAttr_Iadd => new Ptr(code, Num_Diana_SetAttr_Iadd + ReadInt()),
+            CODE.Diana_SetAttr_Isub => new Ptr(code, Num_Diana_SetAttr_Isub + ReadInt()),
+            CODE.Diana_SetAttr_Imul => new Ptr(code, Num_Diana_SetAttr_Imul + ReadInt()),
+            CODE.Diana_SetAttr_Itruediv => new Ptr(code, Num_Diana_SetAttr_Itruediv + ReadInt()),
+            CODE.Diana_SetAttr_Ifloordiv => new Ptr(code, Num_Diana_SetAttr_Ifloordiv + ReadInt()),
+            CODE.Diana_SetAttr_Imod => new Ptr(code, Num_Diana_SetAttr_Imod + ReadInt()),
+            CODE.Diana_SetAttr_Ipow => new Ptr(code, Num_Diana_SetAttr_Ipow + ReadInt()),
+            CODE.Diana_SetAttr_Ilshift => new Ptr(code, Num_Diana_SetAttr_Ilshift + ReadInt()),
+            CODE.Diana_SetAttr_Irshift => new Ptr(code, Num_Diana_SetAttr_Irshift + ReadInt()),
+            CODE.Diana_SetAttr_Ibitor => new Ptr(code, Num_Diana_SetAttr_Ibitor + ReadInt()),
+            CODE.Diana_SetAttr_Ibitand => new Ptr(code, Num_Diana_SetAttr_Ibitand + ReadInt()),
+            CODE.Diana_SetAttr_Ibitxor => new Ptr(code, Num_Diana_SetAttr_Ibitxor + ReadInt()),
+            CODE.Diana_DelItem => new Ptr(code, 0),
+            CODE.Diana_GetItem => new Ptr(code, 0),
+            CODE.Diana_SetItem => new Ptr(code, 0),
+            CODE.Diana_SetItem_Iadd => new Ptr(code, 0),
+            CODE.Diana_SetItem_Isub => new Ptr(code, 0),
+            CODE.Diana_SetItem_Imul => new Ptr(code, 0),
+            CODE.Diana_SetItem_Itruediv => new Ptr(code, 0),
+            CODE.Diana_SetItem_Ifloordiv => new Ptr(code, 0),
+            CODE.Diana_SetItem_Imod => new Ptr(code, 0),
+            CODE.Diana_SetItem_Ipow => new Ptr(code, 0),
+            CODE.Diana_SetItem_Ilshift => new Ptr(code, 0),
+            CODE.Diana_SetItem_Irshift => new Ptr(code, 0),
+            CODE.Diana_SetItem_Ibitor => new Ptr(code, 0),
+            CODE.Diana_SetItem_Ibitand => new Ptr(code, 0),
+            CODE.Diana_SetItem_Ibitxor => new Ptr(code, 0),
+            CODE.Diana_add => new Ptr(code, 0),
+            CODE.Diana_sub => new Ptr(code, 0),
+            CODE.Diana_mul => new Ptr(code, 0),
+            CODE.Diana_truediv => new Ptr(code, 0),
+            CODE.Diana_floordiv => new Ptr(code, 0),
+            CODE.Diana_mod => new Ptr(code, 0),
+            CODE.Diana_pow => new Ptr(code, 0),
+            CODE.Diana_lshift => new Ptr(code, 0),
+            CODE.Diana_rshift => new Ptr(code, 0),
+            CODE.Diana_bitor => new Ptr(code, 0),
+            CODE.Diana_bitand => new Ptr(code, 0),
+            CODE.Diana_bitxor => new Ptr(code, 0),
+            CODE.Diana_gt => new Ptr(code, 0),
+            CODE.Diana_lt => new Ptr(code, 0),
+            CODE.Diana_ge => new Ptr(code, 0),
+            CODE.Diana_le => new Ptr(code, 0),
+            CODE.Diana_eq => new Ptr(code, 0),
+            CODE.Diana_ne => new Ptr(code, 0),
+            CODE.Diana_in => new Ptr(code, 0),
+            CODE.Diana_notin => new Ptr(code, 0),
+            CODE.Diana_UnaryOp_invert => new Ptr(code, 0),
+            CODE.Diana_UnaryOp_not => new Ptr(code, 0),
+            CODE.Diana_UnaryOp_neg => new Ptr(code, 0),
+            CODE.Diana_MKDict => new Ptr(code, Num_Diana_MKDict + ReadInt()),
+            CODE.Diana_MKSet => new Ptr(code, Num_Diana_MKSet + ReadInt()),
+            CODE.Diana_MKList => new Ptr(code, Num_Diana_MKList + ReadInt()),
+            CODE.Diana_Call => new Ptr(code, Num_Diana_Call + ReadInt()),
+            CODE.Diana_Format => new Ptr(code, Num_Diana_Format + ReadInt()),
+            CODE.Diana_Const => new Ptr(code, Num_Diana_Const + ReadInt()),
+            CODE.Diana_MKTuple => new Ptr(code, Num_Diana_MKTuple + ReadInt()),
+            CODE.Diana_Pack => new Ptr(code, Num_Diana_Pack + ReadInt()),
+            CODE.Diana_Replicate => new Ptr(code, Num_Diana_Replicate + ReadInt()),
+            CODE.Diana_Pop => new Ptr(code, 0),
+            _ => throw new ArgumentOutOfRangeException("unknown code {code}.")
+        };
+        private Ptr Read(THint<Ptr> _) => ReadFromCode(ReadCODE());
+        private void Load_strings()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                strings.Add(Read(THint<string>.val));
+        }
+        private void Load_dobjs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                dobjs.Add(Read(THint<DObj>.val));
+        }
+        private void Load_internstrings()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                internstrings.Add(Read(THint<InternString>.val));
+        }
+        private Catch ReadCatch() => new Catch
+        {
+            exc_type = Read(THint<int>.val),
+            body = Read(THint<int>.val),
+        };
 
-    public FuncMeta Read(THint<FuncMeta> _) => new FuncMeta
-    {
-        is_vararg = Read(THint<bool>.val),
-        freeslots = Read(THint<int[]>.val),
-        nonargcells = Read(THint<int[]>.val),
-        narg = Read(THint<int>.val),
-        nlocal = Read(THint<int>.val),
-        name = Read(THint<InternString>.val),
-        filename = Read(THint<string>.val),
-        lineno = Read(THint<int>.val),
-        freenames = Read(THint<string[]>.val),
-        localnames = Read(THint<string[]>.val),
-    };
+        private Catch Read(THint<Catch> _) => ReadCatch();
+        private void Load_catchs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                catchs.Add(ReadCatch());
+        }
 
-    public Block Read(THint<Block> _) => new Block
-    {
-        codes = Read(THint<Ptr[]>.val),
-        location_data = Read(THint<(int,int)[]>.val),
-        filename = Read(THint<string>.val),
-    };
+        private FuncMeta ReadFuncMeta() => new FuncMeta
+        {
+            is_vararg = Read(THint<bool>.val),
+            freeslots = Read(THint<int[]>.val),
+            nonargcells = Read(THint<int[]>.val),
+            narg = Read(THint<int>.val),
+            nlocal = Read(THint<int>.val),
+            name = Read(THint<InternString>.val),
+            filename = Read(THint<string>.val),
+            lineno = Read(THint<int>.val),
+            freenames = Read(THint<string[]>.val),
+            localnames = Read(THint<string[]>.val),
+        };
 
-    public Diana_FunctionDef Read(THint<Diana_FunctionDef> _) => new Diana_FunctionDef
-    {
-        metadataInd = Read(THint<int>.val),
-        code = Read(THint<int>.val),
-    };
+        private FuncMeta Read(THint<FuncMeta> _) => ReadFuncMeta();
+        private void Load_funcmetas()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                funcmetas.Add(ReadFuncMeta());
+        }
 
-    public Diana_LoadGlobalRef Read(THint<Diana_LoadGlobalRef> _) => new Diana_LoadGlobalRef
-    {
-        istr = Read(THint<InternString>.val),
-    };
+        private Block ReadBlock() => new Block
+        {
+            codes = Read(THint<Ptr[]>.val),
+            location_data = Read(THint<(int, int)[]>.val),
+            filename = Read(THint<string>.val),
+        };
 
-    public Diana_DelVar Read(THint<Diana_DelVar> _) => new Diana_DelVar
-    {
-        targets = Read(THint<int[]>.val),
-    };
+        private Block Read(THint<Block> _) => ReadBlock();
+        private void Load_blocks()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                blocks.Add(ReadBlock());
+        }
 
-    public Diana_LoadVar Read(THint<Diana_LoadVar> _) => new Diana_LoadVar
-    {
-        i = Read(THint<int>.val),
-    };
+        private Diana_FunctionDef ReadDiana_FunctionDef() => new Diana_FunctionDef
+        {
+            metadataInd = Read(THint<int>.val),
+            code = Read(THint<int>.val),
+        };
 
-    public Diana_StoreVar Read(THint<Diana_StoreVar> _) => new Diana_StoreVar
-    {
-        i = Read(THint<int>.val),
-    };
+        private void Load_diana_functiondefs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_functiondefs.Add(ReadDiana_FunctionDef());
+        }
 
-    public Diana_Action Read(THint<Diana_Action> _) => new Diana_Action
-    {
-        kind = Read(THint<int>.val),
-    };
+        private Diana_LoadGlobalRef ReadDiana_LoadGlobalRef() => new Diana_LoadGlobalRef
+        {
+            istr = Read(THint<InternString>.val),
+        };
 
-    public Diana_ControlIf Read(THint<Diana_ControlIf> _) => new Diana_ControlIf
-    {
-        arg = Read(THint<int>.val),
-    };
+        private void Load_diana_loadglobalrefs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_loadglobalrefs.Add(ReadDiana_LoadGlobalRef());
+        }
 
-    public Diana_JumpIfNot Read(THint<Diana_JumpIfNot> _) => new Diana_JumpIfNot
-    {
-        off = Read(THint<int>.val),
-    };
+        private Diana_DelVar ReadDiana_DelVar() => new Diana_DelVar
+        {
+            targets = Read(THint<int[]>.val),
+        };
 
-    public Diana_JumpIf Read(THint<Diana_JumpIf> _) => new Diana_JumpIf
-    {
-        off = Read(THint<int>.val),
-    };
+        private void Load_diana_delvars()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_delvars.Add(ReadDiana_DelVar());
+        }
 
-    public Diana_Jump Read(THint<Diana_Jump> _) => new Diana_Jump
-    {
-        off = Read(THint<int>.val),
-    };
+        private Diana_LoadVar ReadDiana_LoadVar() => new Diana_LoadVar
+        {
+            i = Read(THint<int>.val),
+        };
 
-    public Diana_Control Read(THint<Diana_Control> _) => new Diana_Control
-    {
-        arg = Read(THint<int>.val),
-    };
+        private void Load_diana_loadvars()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_loadvars.Add(ReadDiana_LoadVar());
+        }
 
-    public Diana_Try Read(THint<Diana_Try> _) => new Diana_Try
-    {
-        body = Read(THint<int>.val),
-        except_handlers = Read(THint<Catch[]>.val),
-        final_body = Read(THint<int>.val),
-    };
+        private Diana_StoreVar ReadDiana_StoreVar() => new Diana_StoreVar
+        {
+            i = Read(THint<int>.val),
+        };
 
-    public Diana_Loop Read(THint<Diana_Loop> _) => new Diana_Loop
-    {
-        body = Read(THint<int>.val),
-    };
+        private void Load_diana_storevars()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_storevars.Add(ReadDiana_StoreVar());
+        }
 
-    public Diana_For Read(THint<Diana_For> _) => new Diana_For
-    {
-        body = Read(THint<int>.val),
-    };
+        private Diana_Action ReadDiana_Action() => new Diana_Action
+        {
+            kind = Read(THint<int>.val),
+        };
 
-    public Diana_With Read(THint<Diana_With> _) => new Diana_With
-    {
-        body = Read(THint<int>.val),
-    };
+        private void Load_diana_actions()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_actions.Add(ReadDiana_Action());
+        }
 
-    public Diana_GetAttr Read(THint<Diana_GetAttr> _) => new Diana_GetAttr
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_ControlIf ReadDiana_ControlIf() => new Diana_ControlIf
+        {
+            arg = Read(THint<int>.val),
+        };
 
-    public Diana_SetAttr Read(THint<Diana_SetAttr> _) => new Diana_SetAttr
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_controlifs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_controlifs.Add(ReadDiana_ControlIf());
+        }
 
-    public Diana_SetAttr_Iadd Read(THint<Diana_SetAttr_Iadd> _) => new Diana_SetAttr_Iadd
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_JumpIfNot ReadDiana_JumpIfNot() => new Diana_JumpIfNot
+        {
+            off = Read(THint<int>.val),
+        };
 
-    public Diana_SetAttr_Isub Read(THint<Diana_SetAttr_Isub> _) => new Diana_SetAttr_Isub
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_jumpifnots()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_jumpifnots.Add(ReadDiana_JumpIfNot());
+        }
 
-    public Diana_SetAttr_Imul Read(THint<Diana_SetAttr_Imul> _) => new Diana_SetAttr_Imul
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_JumpIf ReadDiana_JumpIf() => new Diana_JumpIf
+        {
+            off = Read(THint<int>.val),
+        };
 
-    public Diana_SetAttr_Itruediv Read(THint<Diana_SetAttr_Itruediv> _) => new Diana_SetAttr_Itruediv
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_jumpifs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_jumpifs.Add(ReadDiana_JumpIf());
+        }
 
-    public Diana_SetAttr_Ifloordiv Read(THint<Diana_SetAttr_Ifloordiv> _) => new Diana_SetAttr_Ifloordiv
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_Jump ReadDiana_Jump() => new Diana_Jump
+        {
+            off = Read(THint<int>.val),
+        };
 
-    public Diana_SetAttr_Imod Read(THint<Diana_SetAttr_Imod> _) => new Diana_SetAttr_Imod
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_jumps()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_jumps.Add(ReadDiana_Jump());
+        }
 
-    public Diana_SetAttr_Ipow Read(THint<Diana_SetAttr_Ipow> _) => new Diana_SetAttr_Ipow
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_Control ReadDiana_Control() => new Diana_Control
+        {
+            arg = Read(THint<int>.val),
+        };
 
-    public Diana_SetAttr_Ilshift Read(THint<Diana_SetAttr_Ilshift> _) => new Diana_SetAttr_Ilshift
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_controls()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_controls.Add(ReadDiana_Control());
+        }
 
-    public Diana_SetAttr_Irshift Read(THint<Diana_SetAttr_Irshift> _) => new Diana_SetAttr_Irshift
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_Try ReadDiana_Try() => new Diana_Try
+        {
+            body = Read(THint<int>.val),
+            except_handlers = Read(THint<Catch[]>.val),
+            final_body = Read(THint<int>.val),
+        };
 
-    public Diana_SetAttr_Ibitor Read(THint<Diana_SetAttr_Ibitor> _) => new Diana_SetAttr_Ibitor
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_trys()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_trys.Add(ReadDiana_Try());
+        }
 
-    public Diana_SetAttr_Ibitand Read(THint<Diana_SetAttr_Ibitand> _) => new Diana_SetAttr_Ibitand
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_Loop ReadDiana_Loop() => new Diana_Loop
+        {
+            body = Read(THint<int>.val),
+        };
 
-    public Diana_SetAttr_Ibitxor Read(THint<Diana_SetAttr_Ibitxor> _) => new Diana_SetAttr_Ibitxor
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_loops()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_loops.Add(ReadDiana_Loop());
+        }
 
-    public Diana_SetAttr_Igt Read(THint<Diana_SetAttr_Igt> _) => new Diana_SetAttr_Igt
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_For ReadDiana_For() => new Diana_For
+        {
+            body = Read(THint<int>.val),
+        };
 
-    public Diana_SetAttr_Ilt Read(THint<Diana_SetAttr_Ilt> _) => new Diana_SetAttr_Ilt
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_fors()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_fors.Add(ReadDiana_For());
+        }
 
-    public Diana_SetAttr_Ige Read(THint<Diana_SetAttr_Ige> _) => new Diana_SetAttr_Ige
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_With ReadDiana_With() => new Diana_With
+        {
+            body = Read(THint<int>.val),
+        };
 
-    public Diana_SetAttr_Ile Read(THint<Diana_SetAttr_Ile> _) => new Diana_SetAttr_Ile
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_withs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_withs.Add(ReadDiana_With());
+        }
 
-    public Diana_SetAttr_Ieq Read(THint<Diana_SetAttr_Ieq> _) => new Diana_SetAttr_Ieq
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_GetAttr ReadDiana_GetAttr() => new Diana_GetAttr
+        {
+            attr = Read(THint<InternString>.val),
+        };
 
-    public Diana_SetAttr_Ineq Read(THint<Diana_SetAttr_Ineq> _) => new Diana_SetAttr_Ineq
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_getattrs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_getattrs.Add(ReadDiana_GetAttr());
+        }
 
-    public Diana_SetAttr_Iin Read(THint<Diana_SetAttr_Iin> _) => new Diana_SetAttr_Iin
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private Diana_SetAttr ReadDiana_SetAttr() => new Diana_SetAttr
+        {
+            attr = Read(THint<InternString>.val),
+        };
 
-    public Diana_SetAttr_Inotin Read(THint<Diana_SetAttr_Inotin> _) => new Diana_SetAttr_Inotin
-    {
-        attr = Read(THint<InternString>.val),
-    };
+        private void Load_diana_setattrs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattrs.Add(ReadDiana_SetAttr());
+        }
 
-    public Diana_MKDict Read(THint<Diana_MKDict> _) => new Diana_MKDict
-    {
-        n = Read(THint<int>.val),
-    };
+        private Diana_SetAttr_Iadd ReadDiana_SetAttr_Iadd() => new Diana_SetAttr_Iadd
+        {
+            attr = Read(THint<InternString>.val),
+        };
 
-    public Diana_MKSet Read(THint<Diana_MKSet> _) => new Diana_MKSet
-    {
-        n = Read(THint<int>.val),
-    };
+        private void Load_diana_setattr_iadds()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_iadds.Add(ReadDiana_SetAttr_Iadd());
+        }
 
-    public Diana_MKList Read(THint<Diana_MKList> _) => new Diana_MKList
-    {
-        n = Read(THint<int>.val),
-    };
+        private Diana_SetAttr_Isub ReadDiana_SetAttr_Isub() => new Diana_SetAttr_Isub
+        {
+            attr = Read(THint<InternString>.val),
+        };
 
-    public Diana_Call Read(THint<Diana_Call> _) => new Diana_Call
-    {
-        n = Read(THint<int>.val),
-    };
+        private void Load_diana_setattr_isubs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_isubs.Add(ReadDiana_SetAttr_Isub());
+        }
 
-    public Diana_Format Read(THint<Diana_Format> _) => new Diana_Format
-    {
-        format = Read(THint<int>.val),
-        argn = Read(THint<int>.val),
-    };
+        private Diana_SetAttr_Imul ReadDiana_SetAttr_Imul() => new Diana_SetAttr_Imul
+        {
+            attr = Read(THint<InternString>.val),
+        };
 
-    public Diana_Const Read(THint<Diana_Const> _) => new Diana_Const
-    {
-        p_const = Read(THint<int>.val),
-    };
+        private void Load_diana_setattr_imuls()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_imuls.Add(ReadDiana_SetAttr_Imul());
+        }
 
-    public Diana_MKTuple Read(THint<Diana_MKTuple> _) => new Diana_MKTuple
-    {
-        n = Read(THint<int>.val),
-    };
+        private Diana_SetAttr_Itruediv ReadDiana_SetAttr_Itruediv() => new Diana_SetAttr_Itruediv
+        {
+            attr = Read(THint<InternString>.val),
+        };
 
-    public Diana_Pack Read(THint<Diana_Pack> _) => new Diana_Pack
-    {
-        n = Read(THint<int>.val),
-    };
+        private void Load_diana_setattr_itruedivs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_itruedivs.Add(ReadDiana_SetAttr_Itruediv());
+        }
 
-    public Diana_Replicate Read(THint<Diana_Replicate> _) => new Diana_Replicate
-    {
-        n = Read(THint<int>.val),
-    };
+        private Diana_SetAttr_Ifloordiv ReadDiana_SetAttr_Ifloordiv() => new Diana_SetAttr_Ifloordiv
+        {
+            attr = Read(THint<InternString>.val),
+        };
 
-    public DFlatGraphCode Read(THint<DFlatGraphCode> _) => new DFlatGraphCode
-    {
-        strings = Read(THint<string[]>.val),
-        dobjs = Read(THint<DObj[]>.val),
-        internstrings = Read(THint<InternString[]>.val),
-        catchs = Read(THint<Catch[]>.val),
-        funcmetas = Read(THint<FuncMeta[]>.val),
-        blocks = Read(THint<Block[]>.val),
-        diana_functiondefs = Read(THint<Diana_FunctionDef[]>.val),
-        diana_loadglobalrefs = Read(THint<Diana_LoadGlobalRef[]>.val),
-        diana_delvars = Read(THint<Diana_DelVar[]>.val),
-        diana_loadvars = Read(THint<Diana_LoadVar[]>.val),
-        diana_storevars = Read(THint<Diana_StoreVar[]>.val),
-        diana_actions = Read(THint<Diana_Action[]>.val),
-        diana_controlifs = Read(THint<Diana_ControlIf[]>.val),
-        diana_jumpifnots = Read(THint<Diana_JumpIfNot[]>.val),
-        diana_jumpifs = Read(THint<Diana_JumpIf[]>.val),
-        diana_jumps = Read(THint<Diana_Jump[]>.val),
-        diana_controls = Read(THint<Diana_Control[]>.val),
-        diana_trys = Read(THint<Diana_Try[]>.val),
-        diana_loops = Read(THint<Diana_Loop[]>.val),
-        diana_fors = Read(THint<Diana_For[]>.val),
-        diana_withs = Read(THint<Diana_With[]>.val),
-        diana_getattrs = Read(THint<Diana_GetAttr[]>.val),
-        diana_setattrs = Read(THint<Diana_SetAttr[]>.val),
-        diana_setattr_iadds = Read(THint<Diana_SetAttr_Iadd[]>.val),
-        diana_setattr_isubs = Read(THint<Diana_SetAttr_Isub[]>.val),
-        diana_setattr_imuls = Read(THint<Diana_SetAttr_Imul[]>.val),
-        diana_setattr_itruedivs = Read(THint<Diana_SetAttr_Itruediv[]>.val),
-        diana_setattr_ifloordivs = Read(THint<Diana_SetAttr_Ifloordiv[]>.val),
-        diana_setattr_imods = Read(THint<Diana_SetAttr_Imod[]>.val),
-        diana_setattr_ipows = Read(THint<Diana_SetAttr_Ipow[]>.val),
-        diana_setattr_ilshifts = Read(THint<Diana_SetAttr_Ilshift[]>.val),
-        diana_setattr_irshifts = Read(THint<Diana_SetAttr_Irshift[]>.val),
-        diana_setattr_ibitors = Read(THint<Diana_SetAttr_Ibitor[]>.val),
-        diana_setattr_ibitands = Read(THint<Diana_SetAttr_Ibitand[]>.val),
-        diana_setattr_ibitxors = Read(THint<Diana_SetAttr_Ibitxor[]>.val),
-        diana_setattr_igts = Read(THint<Diana_SetAttr_Igt[]>.val),
-        diana_setattr_ilts = Read(THint<Diana_SetAttr_Ilt[]>.val),
-        diana_setattr_iges = Read(THint<Diana_SetAttr_Ige[]>.val),
-        diana_setattr_iles = Read(THint<Diana_SetAttr_Ile[]>.val),
-        diana_setattr_ieqs = Read(THint<Diana_SetAttr_Ieq[]>.val),
-        diana_setattr_ineqs = Read(THint<Diana_SetAttr_Ineq[]>.val),
-        diana_setattr_iins = Read(THint<Diana_SetAttr_Iin[]>.val),
-        diana_setattr_inotins = Read(THint<Diana_SetAttr_Inotin[]>.val),
-        diana_mkdicts = Read(THint<Diana_MKDict[]>.val),
-        diana_mksets = Read(THint<Diana_MKSet[]>.val),
-        diana_mklists = Read(THint<Diana_MKList[]>.val),
-        diana_calls = Read(THint<Diana_Call[]>.val),
-        diana_formats = Read(THint<Diana_Format[]>.val),
-        diana_consts = Read(THint<Diana_Const[]>.val),
-        diana_mktuples = Read(THint<Diana_MKTuple[]>.val),
-        diana_packs = Read(THint<Diana_Pack[]>.val),
-        diana_replicates = Read(THint<Diana_Replicate[]>.val),
-    };
+        private void Load_diana_setattr_ifloordivs()
+        {
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_ifloordivs.Add(ReadDiana_SetAttr_Ifloordiv());
+        }
 
-    public static readonly THint<int> int_hint = THint<int>.val;
-    public int[] Read(THint<int[]> _)
-    {
-        int[] src = new int[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+        private Diana_SetAttr_Imod ReadDiana_SetAttr_Imod() => new Diana_SetAttr_Imod
         {
-            src[i] = Read(int_hint);
-        }
-        return src;
-    }
-    public static readonly THint<(int, int)> _____int____int___hint = THint<(int, int)>.val;
-    public (int, int)[] Read(THint<(int, int)[]> _)
-    {
-        (int, int)[] src = new (int, int)[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            attr = Read(THint<InternString>.val),
+        };
+
+        private void Load_diana_setattr_imods()
         {
-            src[i] = Read(_____int____int___hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_imods.Add(ReadDiana_SetAttr_Imod());
         }
-        return src;
-    }
-    public static readonly THint<float> float_hint = THint<float>.val;
-    public float[] Read(THint<float[]> _)
-    {
-        float[] src = new float[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_SetAttr_Ipow ReadDiana_SetAttr_Ipow() => new Diana_SetAttr_Ipow
         {
-            src[i] = Read(float_hint);
-        }
-        return src;
-    }
-    public static readonly THint<bool> bool_hint = THint<bool>.val;
-    public bool[] Read(THint<bool[]> _)
-    {
-        bool[] src = new bool[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            attr = Read(THint<InternString>.val),
+        };
+
+        private void Load_diana_setattr_ipows()
         {
-            src[i] = Read(bool_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_ipows.Add(ReadDiana_SetAttr_Ipow());
         }
-        return src;
-    }
-    public static readonly THint<string> string_hint = THint<string>.val;
-    public string[] Read(THint<string[]> _)
-    {
-        string[] src = new string[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_SetAttr_Ilshift ReadDiana_SetAttr_Ilshift() => new Diana_SetAttr_Ilshift
         {
-            src[i] = Read(string_hint);
-        }
-        return src;
-    }
-    public static readonly THint<DObj> DObj_hint = THint<DObj>.val;
-    public DObj[] Read(THint<DObj[]> _)
-    {
-        DObj[] src = new DObj[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            attr = Read(THint<InternString>.val),
+        };
+
+        private void Load_diana_setattr_ilshifts()
         {
-            src[i] = Read(DObj_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_ilshifts.Add(ReadDiana_SetAttr_Ilshift());
         }
-        return src;
-    }
-    public static readonly THint<InternString> InternString_hint = THint<InternString>.val;
-    public InternString[] Read(THint<InternString[]> _)
-    {
-        InternString[] src = new InternString[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_SetAttr_Irshift ReadDiana_SetAttr_Irshift() => new Diana_SetAttr_Irshift
         {
-            src[i] = Read(InternString_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Catch> Catch_hint = THint<Catch>.val;
-    public Catch[] Read(THint<Catch[]> _)
-    {
-        Catch[] src = new Catch[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            attr = Read(THint<InternString>.val),
+        };
+
+        private void Load_diana_setattr_irshifts()
         {
-            src[i] = Read(Catch_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_irshifts.Add(ReadDiana_SetAttr_Irshift());
         }
-        return src;
-    }
-    public static readonly THint<FuncMeta> FuncMeta_hint = THint<FuncMeta>.val;
-    public FuncMeta[] Read(THint<FuncMeta[]> _)
-    {
-        FuncMeta[] src = new FuncMeta[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_SetAttr_Ibitor ReadDiana_SetAttr_Ibitor() => new Diana_SetAttr_Ibitor
         {
-            src[i] = Read(FuncMeta_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Block> Block_hint = THint<Block>.val;
-    public Block[] Read(THint<Block[]> _)
-    {
-        Block[] src = new Block[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            attr = Read(THint<InternString>.val),
+        };
+
+        private void Load_diana_setattr_ibitors()
         {
-            src[i] = Read(Block_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_ibitors.Add(ReadDiana_SetAttr_Ibitor());
         }
-        return src;
-    }
-    public static readonly THint<Diana_FunctionDef> Diana_FunctionDef_hint = THint<Diana_FunctionDef>.val;
-    public Diana_FunctionDef[] Read(THint<Diana_FunctionDef[]> _)
-    {
-        Diana_FunctionDef[] src = new Diana_FunctionDef[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_SetAttr_Ibitand ReadDiana_SetAttr_Ibitand() => new Diana_SetAttr_Ibitand
         {
-            src[i] = Read(Diana_FunctionDef_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_LoadGlobalRef> Diana_LoadGlobalRef_hint = THint<Diana_LoadGlobalRef>.val;
-    public Diana_LoadGlobalRef[] Read(THint<Diana_LoadGlobalRef[]> _)
-    {
-        Diana_LoadGlobalRef[] src = new Diana_LoadGlobalRef[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            attr = Read(THint<InternString>.val),
+        };
+
+        private void Load_diana_setattr_ibitands()
         {
-            src[i] = Read(Diana_LoadGlobalRef_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_ibitands.Add(ReadDiana_SetAttr_Ibitand());
         }
-        return src;
-    }
-    public static readonly THint<Diana_DelVar> Diana_DelVar_hint = THint<Diana_DelVar>.val;
-    public Diana_DelVar[] Read(THint<Diana_DelVar[]> _)
-    {
-        Diana_DelVar[] src = new Diana_DelVar[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_SetAttr_Ibitxor ReadDiana_SetAttr_Ibitxor() => new Diana_SetAttr_Ibitxor
         {
-            src[i] = Read(Diana_DelVar_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_LoadVar> Diana_LoadVar_hint = THint<Diana_LoadVar>.val;
-    public Diana_LoadVar[] Read(THint<Diana_LoadVar[]> _)
-    {
-        Diana_LoadVar[] src = new Diana_LoadVar[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            attr = Read(THint<InternString>.val),
+        };
+
+        private void Load_diana_setattr_ibitxors()
         {
-            src[i] = Read(Diana_LoadVar_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_setattr_ibitxors.Add(ReadDiana_SetAttr_Ibitxor());
         }
-        return src;
-    }
-    public static readonly THint<Diana_StoreVar> Diana_StoreVar_hint = THint<Diana_StoreVar>.val;
-    public Diana_StoreVar[] Read(THint<Diana_StoreVar[]> _)
-    {
-        Diana_StoreVar[] src = new Diana_StoreVar[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_MKDict ReadDiana_MKDict() => new Diana_MKDict
         {
-            src[i] = Read(Diana_StoreVar_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Action> Diana_Action_hint = THint<Diana_Action>.val;
-    public Diana_Action[] Read(THint<Diana_Action[]> _)
-    {
-        Diana_Action[] src = new Diana_Action[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            n = Read(THint<int>.val),
+        };
+
+        private void Load_diana_mkdicts()
         {
-            src[i] = Read(Diana_Action_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_mkdicts.Add(ReadDiana_MKDict());
         }
-        return src;
-    }
-    public static readonly THint<Diana_ControlIf> Diana_ControlIf_hint = THint<Diana_ControlIf>.val;
-    public Diana_ControlIf[] Read(THint<Diana_ControlIf[]> _)
-    {
-        Diana_ControlIf[] src = new Diana_ControlIf[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_MKSet ReadDiana_MKSet() => new Diana_MKSet
         {
-            src[i] = Read(Diana_ControlIf_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_JumpIfNot> Diana_JumpIfNot_hint = THint<Diana_JumpIfNot>.val;
-    public Diana_JumpIfNot[] Read(THint<Diana_JumpIfNot[]> _)
-    {
-        Diana_JumpIfNot[] src = new Diana_JumpIfNot[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            n = Read(THint<int>.val),
+        };
+
+        private void Load_diana_mksets()
         {
-            src[i] = Read(Diana_JumpIfNot_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_mksets.Add(ReadDiana_MKSet());
         }
-        return src;
-    }
-    public static readonly THint<Diana_JumpIf> Diana_JumpIf_hint = THint<Diana_JumpIf>.val;
-    public Diana_JumpIf[] Read(THint<Diana_JumpIf[]> _)
-    {
-        Diana_JumpIf[] src = new Diana_JumpIf[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_MKList ReadDiana_MKList() => new Diana_MKList
         {
-            src[i] = Read(Diana_JumpIf_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Jump> Diana_Jump_hint = THint<Diana_Jump>.val;
-    public Diana_Jump[] Read(THint<Diana_Jump[]> _)
-    {
-        Diana_Jump[] src = new Diana_Jump[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            n = Read(THint<int>.val),
+        };
+
+        private void Load_diana_mklists()
         {
-            src[i] = Read(Diana_Jump_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_mklists.Add(ReadDiana_MKList());
         }
-        return src;
-    }
-    public static readonly THint<Diana_Control> Diana_Control_hint = THint<Diana_Control>.val;
-    public Diana_Control[] Read(THint<Diana_Control[]> _)
-    {
-        Diana_Control[] src = new Diana_Control[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_Call ReadDiana_Call() => new Diana_Call
         {
-            src[i] = Read(Diana_Control_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Try> Diana_Try_hint = THint<Diana_Try>.val;
-    public Diana_Try[] Read(THint<Diana_Try[]> _)
-    {
-        Diana_Try[] src = new Diana_Try[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            n = Read(THint<int>.val),
+        };
+
+        private void Load_diana_calls()
         {
-            src[i] = Read(Diana_Try_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_calls.Add(ReadDiana_Call());
         }
-        return src;
-    }
-    public static readonly THint<Diana_Loop> Diana_Loop_hint = THint<Diana_Loop>.val;
-    public Diana_Loop[] Read(THint<Diana_Loop[]> _)
-    {
-        Diana_Loop[] src = new Diana_Loop[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_Format ReadDiana_Format() => new Diana_Format
         {
-            src[i] = Read(Diana_Loop_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_For> Diana_For_hint = THint<Diana_For>.val;
-    public Diana_For[] Read(THint<Diana_For[]> _)
-    {
-        Diana_For[] src = new Diana_For[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            format = Read(THint<int>.val),
+            argn = Read(THint<int>.val),
+        };
+
+        private void Load_diana_formats()
         {
-            src[i] = Read(Diana_For_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_formats.Add(ReadDiana_Format());
         }
-        return src;
-    }
-    public static readonly THint<Diana_With> Diana_With_hint = THint<Diana_With>.val;
-    public Diana_With[] Read(THint<Diana_With[]> _)
-    {
-        Diana_With[] src = new Diana_With[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_Const ReadDiana_Const() => new Diana_Const
         {
-            src[i] = Read(Diana_With_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_GetAttr> Diana_GetAttr_hint = THint<Diana_GetAttr>.val;
-    public Diana_GetAttr[] Read(THint<Diana_GetAttr[]> _)
-    {
-        Diana_GetAttr[] src = new Diana_GetAttr[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            p_const = Read(THint<int>.val),
+        };
+
+        private void Load_diana_consts()
         {
-            src[i] = Read(Diana_GetAttr_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_consts.Add(ReadDiana_Const());
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr> Diana_SetAttr_hint = THint<Diana_SetAttr>.val;
-    public Diana_SetAttr[] Read(THint<Diana_SetAttr[]> _)
-    {
-        Diana_SetAttr[] src = new Diana_SetAttr[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_MKTuple ReadDiana_MKTuple() => new Diana_MKTuple
         {
-            src[i] = Read(Diana_SetAttr_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Iadd> Diana_SetAttr_Iadd_hint = THint<Diana_SetAttr_Iadd>.val;
-    public Diana_SetAttr_Iadd[] Read(THint<Diana_SetAttr_Iadd[]> _)
-    {
-        Diana_SetAttr_Iadd[] src = new Diana_SetAttr_Iadd[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            n = Read(THint<int>.val),
+        };
+
+        private void Load_diana_mktuples()
         {
-            src[i] = Read(Diana_SetAttr_Iadd_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_mktuples.Add(ReadDiana_MKTuple());
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Isub> Diana_SetAttr_Isub_hint = THint<Diana_SetAttr_Isub>.val;
-    public Diana_SetAttr_Isub[] Read(THint<Diana_SetAttr_Isub[]> _)
-    {
-        Diana_SetAttr_Isub[] src = new Diana_SetAttr_Isub[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_Pack ReadDiana_Pack() => new Diana_Pack
         {
-            src[i] = Read(Diana_SetAttr_Isub_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Imul> Diana_SetAttr_Imul_hint = THint<Diana_SetAttr_Imul>.val;
-    public Diana_SetAttr_Imul[] Read(THint<Diana_SetAttr_Imul[]> _)
-    {
-        Diana_SetAttr_Imul[] src = new Diana_SetAttr_Imul[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            n = Read(THint<int>.val),
+        };
+
+        private void Load_diana_packs()
         {
-            src[i] = Read(Diana_SetAttr_Imul_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_packs.Add(ReadDiana_Pack());
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Itruediv> Diana_SetAttr_Itruediv_hint = THint<Diana_SetAttr_Itruediv>.val;
-    public Diana_SetAttr_Itruediv[] Read(THint<Diana_SetAttr_Itruediv[]> _)
-    {
-        Diana_SetAttr_Itruediv[] src = new Diana_SetAttr_Itruediv[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        private Diana_Replicate ReadDiana_Replicate() => new Diana_Replicate
         {
-            src[i] = Read(Diana_SetAttr_Itruediv_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ifloordiv> Diana_SetAttr_Ifloordiv_hint = THint<Diana_SetAttr_Ifloordiv>.val;
-    public Diana_SetAttr_Ifloordiv[] Read(THint<Diana_SetAttr_Ifloordiv[]> _)
-    {
-        Diana_SetAttr_Ifloordiv[] src = new Diana_SetAttr_Ifloordiv[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+            n = Read(THint<int>.val),
+        };
+
+        private void Load_diana_replicates()
         {
-            src[i] = Read(Diana_SetAttr_Ifloordiv_hint);
+            int len = ReadInt();
+            for (var i = 0; i < len; i++)
+                diana_replicates.Add(ReadDiana_Replicate());
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Imod> Diana_SetAttr_Imod_hint = THint<Diana_SetAttr_Imod>.val;
-    public Diana_SetAttr_Imod[] Read(THint<Diana_SetAttr_Imod[]> _)
-    {
-        Diana_SetAttr_Imod[] src = new Diana_SetAttr_Imod[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        public void LoadCode()
         {
-            src[i] = Read(Diana_SetAttr_Imod_hint);
+            lock (_loaderSync)
+            {
+                Load_strings();
+                Load_dobjs();
+                Load_internstrings();
+                Load_catchs();
+                Load_funcmetas();
+                Load_blocks();
+                Load_diana_functiondefs();
+                Load_diana_loadglobalrefs();
+                Load_diana_delvars();
+                Load_diana_loadvars();
+                Load_diana_storevars();
+                Load_diana_actions();
+                Load_diana_controlifs();
+                Load_diana_jumpifnots();
+                Load_diana_jumpifs();
+                Load_diana_jumps();
+                Load_diana_controls();
+                Load_diana_trys();
+                Load_diana_loops();
+                Load_diana_fors();
+                Load_diana_withs();
+                Load_diana_getattrs();
+                Load_diana_setattrs();
+                Load_diana_setattr_iadds();
+                Load_diana_setattr_isubs();
+                Load_diana_setattr_imuls();
+                Load_diana_setattr_itruedivs();
+                Load_diana_setattr_ifloordivs();
+                Load_diana_setattr_imods();
+                Load_diana_setattr_ipows();
+                Load_diana_setattr_ilshifts();
+                Load_diana_setattr_irshifts();
+                Load_diana_setattr_ibitors();
+                Load_diana_setattr_ibitands();
+                Load_diana_setattr_ibitxors();
+                Load_diana_mkdicts();
+                Load_diana_mksets();
+                Load_diana_mklists();
+                Load_diana_calls();
+                Load_diana_formats();
+                Load_diana_consts();
+                Load_diana_mktuples();
+                Load_diana_packs();
+                Load_diana_replicates();
+            }
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ipow> Diana_SetAttr_Ipow_hint = THint<Diana_SetAttr_Ipow>.val;
-    public Diana_SetAttr_Ipow[] Read(THint<Diana_SetAttr_Ipow[]> _)
-    {
-        Diana_SetAttr_Ipow[] src = new Diana_SetAttr_Ipow[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+
+        public static readonly THint<int> int_hint = THint<int>.val;
+        public int[] Read(THint<int[]> _)
         {
-            src[i] = Read(Diana_SetAttr_Ipow_hint);
+            int[] src = new int[ReadInt()];
+            for (var i = 0; i < src.Length; i++)
+            {
+                src[i] = Read(int_hint);
+            }
+            return src;
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ilshift> Diana_SetAttr_Ilshift_hint = THint<Diana_SetAttr_Ilshift>.val;
-    public Diana_SetAttr_Ilshift[] Read(THint<Diana_SetAttr_Ilshift[]> _)
-    {
-        Diana_SetAttr_Ilshift[] src = new Diana_SetAttr_Ilshift[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+        public static readonly THint<(int, int)> _____int____int___hint = THint<(int, int)>.val;
+        public (int, int)[] Read(THint<(int, int)[]> _)
         {
-            src[i] = Read(Diana_SetAttr_Ilshift_hint);
+            (int, int)[] src = new (int, int)[ReadInt()];
+            for (var i = 0; i < src.Length; i++)
+            {
+                src[i] = Read(_____int____int___hint);
+            }
+            return src;
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Irshift> Diana_SetAttr_Irshift_hint = THint<Diana_SetAttr_Irshift>.val;
-    public Diana_SetAttr_Irshift[] Read(THint<Diana_SetAttr_Irshift[]> _)
-    {
-        Diana_SetAttr_Irshift[] src = new Diana_SetAttr_Irshift[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+        public static readonly THint<float> float_hint = THint<float>.val;
+        public float[] Read(THint<float[]> _)
         {
-            src[i] = Read(Diana_SetAttr_Irshift_hint);
+            float[] src = new float[ReadInt()];
+            for (var i = 0; i < src.Length; i++)
+            {
+                src[i] = Read(float_hint);
+            }
+            return src;
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ibitor> Diana_SetAttr_Ibitor_hint = THint<Diana_SetAttr_Ibitor>.val;
-    public Diana_SetAttr_Ibitor[] Read(THint<Diana_SetAttr_Ibitor[]> _)
-    {
-        Diana_SetAttr_Ibitor[] src = new Diana_SetAttr_Ibitor[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+        public static readonly THint<bool> bool_hint = THint<bool>.val;
+        public bool[] Read(THint<bool[]> _)
         {
-            src[i] = Read(Diana_SetAttr_Ibitor_hint);
+            bool[] src = new bool[ReadInt()];
+            for (var i = 0; i < src.Length; i++)
+            {
+                src[i] = Read(bool_hint);
+            }
+            return src;
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ibitand> Diana_SetAttr_Ibitand_hint = THint<Diana_SetAttr_Ibitand>.val;
-    public Diana_SetAttr_Ibitand[] Read(THint<Diana_SetAttr_Ibitand[]> _)
-    {
-        Diana_SetAttr_Ibitand[] src = new Diana_SetAttr_Ibitand[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+        public static readonly THint<Ptr> Ptr_hint = THint<Ptr>.val;
+        public Ptr[] Read(THint<Ptr[]> _)
         {
-            src[i] = Read(Diana_SetAttr_Ibitand_hint);
+            Ptr[] src = new Ptr[ReadInt()];
+            for (var i = 0; i < src.Length; i++)
+            {
+                src[i] = Read(Ptr_hint);
+            }
+            return src;
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ibitxor> Diana_SetAttr_Ibitxor_hint = THint<Diana_SetAttr_Ibitxor>.val;
-    public Diana_SetAttr_Ibitxor[] Read(THint<Diana_SetAttr_Ibitxor[]> _)
-    {
-        Diana_SetAttr_Ibitxor[] src = new Diana_SetAttr_Ibitxor[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+        public static readonly THint<string> string_hint = THint<string>.val;
+        public string[] Read(THint<string[]> _)
         {
-            src[i] = Read(Diana_SetAttr_Ibitxor_hint);
+            string[] src = new string[ReadInt()];
+            for (var i = 0; i < src.Length; i++)
+            {
+                src[i] = Read(string_hint);
+            }
+            return src;
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Igt> Diana_SetAttr_Igt_hint = THint<Diana_SetAttr_Igt>.val;
-    public Diana_SetAttr_Igt[] Read(THint<Diana_SetAttr_Igt[]> _)
-    {
-        Diana_SetAttr_Igt[] src = new Diana_SetAttr_Igt[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+        public static readonly THint<Catch> Catch_hint = THint<Catch>.val;
+        public Catch[] Read(THint<Catch[]> _)
         {
-            src[i] = Read(Diana_SetAttr_Igt_hint);
+            Catch[] src = new Catch[ReadInt()];
+            for (var i = 0; i < src.Length; i++)
+            {
+                src[i] = Read(Catch_hint);
+            }
+            return src;
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ilt> Diana_SetAttr_Ilt_hint = THint<Diana_SetAttr_Ilt>.val;
-    public Diana_SetAttr_Ilt[] Read(THint<Diana_SetAttr_Ilt[]> _)
-    {
-        Diana_SetAttr_Ilt[] src = new Diana_SetAttr_Ilt[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+        public static readonly THint<FuncMeta> FuncMeta_hint = THint<FuncMeta>.val;
+        public FuncMeta[] Read(THint<FuncMeta[]> _)
         {
-            src[i] = Read(Diana_SetAttr_Ilt_hint);
+            FuncMeta[] src = new FuncMeta[ReadInt()];
+            for (var i = 0; i < src.Length; i++)
+            {
+                src[i] = Read(FuncMeta_hint);
+            }
+            return src;
         }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ige> Diana_SetAttr_Ige_hint = THint<Diana_SetAttr_Ige>.val;
-    public Diana_SetAttr_Ige[] Read(THint<Diana_SetAttr_Ige[]> _)
-    {
-        Diana_SetAttr_Ige[] src = new Diana_SetAttr_Ige[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
+        public static readonly THint<Block> Block_hint = THint<Block>.val;
+        public Block[] Read(THint<Block[]> _)
         {
-            src[i] = Read(Diana_SetAttr_Ige_hint);
+            Block[] src = new Block[ReadInt()];
+            for (var i = 0; i < src.Length; i++)
+            {
+                src[i] = Read(Block_hint);
+            }
+            return src;
         }
-        return src;
     }
-    public static readonly THint<Diana_SetAttr_Ile> Diana_SetAttr_Ile_hint = THint<Diana_SetAttr_Ile>.val;
-    public Diana_SetAttr_Ile[] Read(THint<Diana_SetAttr_Ile[]> _)
-    {
-        Diana_SetAttr_Ile[] src = new Diana_SetAttr_Ile[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_SetAttr_Ile_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ieq> Diana_SetAttr_Ieq_hint = THint<Diana_SetAttr_Ieq>.val;
-    public Diana_SetAttr_Ieq[] Read(THint<Diana_SetAttr_Ieq[]> _)
-    {
-        Diana_SetAttr_Ieq[] src = new Diana_SetAttr_Ieq[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_SetAttr_Ieq_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Ineq> Diana_SetAttr_Ineq_hint = THint<Diana_SetAttr_Ineq>.val;
-    public Diana_SetAttr_Ineq[] Read(THint<Diana_SetAttr_Ineq[]> _)
-    {
-        Diana_SetAttr_Ineq[] src = new Diana_SetAttr_Ineq[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_SetAttr_Ineq_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Iin> Diana_SetAttr_Iin_hint = THint<Diana_SetAttr_Iin>.val;
-    public Diana_SetAttr_Iin[] Read(THint<Diana_SetAttr_Iin[]> _)
-    {
-        Diana_SetAttr_Iin[] src = new Diana_SetAttr_Iin[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_SetAttr_Iin_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_SetAttr_Inotin> Diana_SetAttr_Inotin_hint = THint<Diana_SetAttr_Inotin>.val;
-    public Diana_SetAttr_Inotin[] Read(THint<Diana_SetAttr_Inotin[]> _)
-    {
-        Diana_SetAttr_Inotin[] src = new Diana_SetAttr_Inotin[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_SetAttr_Inotin_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_MKDict> Diana_MKDict_hint = THint<Diana_MKDict>.val;
-    public Diana_MKDict[] Read(THint<Diana_MKDict[]> _)
-    {
-        Diana_MKDict[] src = new Diana_MKDict[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_MKDict_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_MKSet> Diana_MKSet_hint = THint<Diana_MKSet>.val;
-    public Diana_MKSet[] Read(THint<Diana_MKSet[]> _)
-    {
-        Diana_MKSet[] src = new Diana_MKSet[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_MKSet_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_MKList> Diana_MKList_hint = THint<Diana_MKList>.val;
-    public Diana_MKList[] Read(THint<Diana_MKList[]> _)
-    {
-        Diana_MKList[] src = new Diana_MKList[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_MKList_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Call> Diana_Call_hint = THint<Diana_Call>.val;
-    public Diana_Call[] Read(THint<Diana_Call[]> _)
-    {
-        Diana_Call[] src = new Diana_Call[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_Call_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Format> Diana_Format_hint = THint<Diana_Format>.val;
-    public Diana_Format[] Read(THint<Diana_Format[]> _)
-    {
-        Diana_Format[] src = new Diana_Format[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_Format_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Const> Diana_Const_hint = THint<Diana_Const>.val;
-    public Diana_Const[] Read(THint<Diana_Const[]> _)
-    {
-        Diana_Const[] src = new Diana_Const[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_Const_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_MKTuple> Diana_MKTuple_hint = THint<Diana_MKTuple>.val;
-    public Diana_MKTuple[] Read(THint<Diana_MKTuple[]> _)
-    {
-        Diana_MKTuple[] src = new Diana_MKTuple[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_MKTuple_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Pack> Diana_Pack_hint = THint<Diana_Pack>.val;
-    public Diana_Pack[] Read(THint<Diana_Pack[]> _)
-    {
-        Diana_Pack[] src = new Diana_Pack[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_Pack_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Diana_Replicate> Diana_Replicate_hint = THint<Diana_Replicate>.val;
-    public Diana_Replicate[] Read(THint<Diana_Replicate[]> _)
-    {
-        Diana_Replicate[] src = new Diana_Replicate[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Diana_Replicate_hint);
-        }
-        return src;
-    }
-    public static readonly THint<Ptr> Ptr_hint = THint<Ptr>.val;
-    public Ptr[] Read(THint<Ptr[]> _)
-    {
-        Ptr[] src = new Ptr[ReadInt()];
-        for (var i = 0; i < src.Length; i++)
-        {
-            src[i] = Read(Ptr_hint);
-        }
-        return src;
-    }
-}
 }

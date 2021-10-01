@@ -7,7 +7,7 @@ namespace DianaScript
 
 
 
-    
+
     public class ExceptionWithFrames : Exception
     {
 
@@ -29,7 +29,8 @@ namespace DianaScript
                 var tmp = new string[frames.Count];
 
                 var i = 0;
-                foreach(var frame in frames){
+                foreach (var frame in frames)
+                {
 
                     var best_lineno = -1;
                     var block = flatGraph.blocks[frame.blockind];
@@ -38,7 +39,7 @@ namespace DianaScript
                     var func_name = meta.name;
                     var func_lineno = meta.lineno;
 
-                
+
                     foreach (var (offset, lineno) in block.location_data)
                     {
                         best_lineno = lineno;
@@ -47,22 +48,22 @@ namespace DianaScript
                             break;
                         }
                     }
-                    
-                    var kind = ((CODE) block.codes[frame.offset].kind).ToString();
-                    
 
-                    
+                    var kind = ((CODE)block.codes[frame.offset].kind).ToString();
+
+
+
                     // TODO: show source code?
                     if (best_lineno == -1)
                         tmp[i] = $"    calling {func_name}, fail at {kind}.\n" +
-                                 $"       callsite: {block.filename}, line unknown.\n"+
+                                 $"       callsite: {block.filename}, line unknown.\n" +
                                  $"       function defined at: {func_filename}, line {func_lineno}";
-                                
+
                     else
                         tmp[i] = $"    calling {func_name}, fail at {kind}.\n" +
-                                 $"       callsite: {block.filename}, line {best_lineno}."+
+                                 $"       callsite: {block.filename}, line {best_lineno}." +
                                  $"       function defined at: {func_filename}, line {func_lineno}";
-                        
+
                     i++;
                 }
                 return e.Message + "\n" + String.Join("\n", tmp);

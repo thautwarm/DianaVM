@@ -2,10 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
+/*
+primitive types:
+int, float, str, bool, noneclass, meta,
+ref: directref globalref
+*/
 namespace DianaScript
 {
 
-    using NameSpace =  Dictionary<InternString, DObj>;
+    using NameSpace = Dictionary<InternString, DObj>;
+
+
     public interface DObj
     {
 
@@ -24,15 +31,13 @@ namespace DianaScript
             throw new D_AttributeError(this.GetCls, MK.String(attr.ToString()));
         }
 
-        
-
         public void Set(InternString attr, DObj value)
         {
             DObj o;
             var setters = this.GetCls.Setters;
             if (setters != null && setters.TryGetValue(attr, out o))
             {
-                o.__call__(new Args { this, value });
+                o.__call__(new Args { value, this });
             }
 
             throw new D_AttributeError(this.GetCls, MK.String(attr.ToString()));
@@ -47,52 +52,31 @@ namespace DianaScript
         IEnumerable<DObj> __iter__ => throw new D_TypeError($"{this.GetCls.__repr__} instances are not iterable");
         public string __repr__ => $"{Native.ToString()}";
         public string __str__ => __repr__;
-
-        public DObj __add__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support + operator.");
-
-        public DObj __sub__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support - operator.");
-
+        public DObj __add__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '+' operator.");
+        public DObj __sub__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '-' operator.");
         public DObj __truediv__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support / operator.");
-
-        public DObj __floordiv__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support // operator.");
-        public DObj __mul__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support * operator.");
-
-        public DObj __pow__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support ** operator.");
-
-        public DObj __mod__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support % operator.");
-
-        public DObj __lshift__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support << operator.");
-
-        public DObj __rshift__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support >> operator.");
-
-        public DObj __bitand__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support & operator.");
-
-        public DObj __bitor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support | operator.");
-
-        public DObj __bitxor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support ^ operator.");
-
-
-        public DObj __invert__ => throw new D_TypeError($"{this.GetCls.__repr__} does not support ~ operator.");
-
-        public DObj __getitem__(DObj ind) => throw new D_TypeError($"{this.GetCls.__repr__} does not support item get.");
-
-        public void __setitem__(DObj ind, DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support item set.");
-
+        public DObj __floordiv__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '//' operator.");
+        public DObj __mul__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '*' operator.");
+        public DObj __pow__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '**' operator.");
+        public DObj __mod__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '%' operator.");
+        public DObj __lshift__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '<<' operator.");
+        public DObj __rshift__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '>>' operator.");
+        public DObj __bitand__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '&' operator.");
+        public DObj __bitor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '|' operator.");
+        public DObj __bitxor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '^' operator.");
+        public DObj __invert__ => throw new D_TypeError($"{this.GetCls.__repr__} does not support '~' operator.");
+        public DObj __neg__ => throw new D_TypeError($"{this.GetCls.__repr__} does not support unary '-' operator.");
+        public DObj __getitem__(DObj ind) => throw new D_TypeError($"{this.GetCls.__repr__} does not support subscript operation.");
+        public void __setitem__(DObj ind, DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support subscript store operation.");
         public void __delitem__(DObj ind) => throw new D_TypeError($"{this.GetCls.__repr__} does not support item delete.");
-
         int __len__ => throw new D_TypeError($"{this.GetCls.__repr__} does not support length.");
         bool __bool__ => true;
         bool __not__ => !__bool__;
-
         public bool __eq__(DObj other) => this.Native == other.Native;
-
         public bool __ne__(DObj other) => !(this.__eq__(other));
-
         public int __hash__ => Native.GetHashCode();
-
         public bool __contains__(DObj a) => throw new D_TypeError($"{this.GetCls.__repr__} does not support contains operation.");
-        
-        public bool __subclasscheck__(DObj a) => ((DClsObj) this) == ((DClsObj) a);
+        public bool __subclasscheck__(DObj a) => ((DClsObj)this) == ((DClsObj)a);
 
     }
 
@@ -223,7 +207,7 @@ namespace DianaScript
         public string __repr__ => $"<code at {(this as DObj).__hash__}>";
 
         public static DFunc Make(
-            int body, int narg, int nlocal, int metadataInd, 
+            int body, int narg, int nlocal, int metadataInd,
             NameSpace nameSpace = null, bool is_vararg = false,
             DRef[] freevals = null, int[] nonargcells = null
         )
@@ -239,7 +223,7 @@ namespace DianaScript
         }
     }
 
-    
+
     public partial class DInt : DObj
     {
         public static DInt Make(int i) => new DInt { value = i };
@@ -283,7 +267,7 @@ namespace DianaScript
     }
 
 
-    public partial class DRef: Ref
+    public partial class DRef : Ref
     {
         public DObj cell_contents;
 
@@ -295,12 +279,13 @@ namespace DianaScript
 
         public string __repr__ => $"<DRef at {(this as DObj).__hash__}>";
 
-        public DRef(){
+        public DRef()
+        {
             cell_contents = null;
         }
     }
 
-    public partial class DRefGlobal: Ref
+    public partial class DRefGlobal : Ref
     {
         public NameSpace ns;
         public InternString s;
@@ -313,7 +298,8 @@ namespace DianaScript
 
         public string __repr__ => $"<DRef at {(this as DObj).__hash__}>";
 
-        public DRefGlobal(NameSpace ns, InternString s){
+        public DRefGlobal(NameSpace ns, InternString s)
+        {
             this.ns = ns;
             this.s = s;
         }

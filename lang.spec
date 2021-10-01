@@ -215,7 +215,6 @@ SetAttr(attr: InternString)
 %]
 SetAttr_I$T(attr: InternString)  from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
-    gt lt ge le eq neq in notin
 }
 [%
     var (value, subject) = pop2();
@@ -244,7 +243,6 @@ SetItem()
 %]
 SetItem_I$T()  from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
-    gt lt ge le eq neq in notin
 }
 [%
     var (value, subject, item) = pop3();
@@ -256,7 +254,7 @@ SetItem_I$T()  from {
 %]
 $T() from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
-    gt lt ge le eq neq
+    gt lt ge le eq ne
 }
 [%
     var (left, right) = pop2();

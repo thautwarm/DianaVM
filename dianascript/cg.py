@@ -265,7 +265,6 @@ class CG:
                 pass
 
 _op_map = {
-
     "+": "add",
     "-": "sub",
     "*": "mul",
@@ -283,7 +282,7 @@ _op_map = {
     ">=": "ge",
     "<=": "le",
     "=": "eq",
-    "!=": "neq",
+    "!=": "ne",
     "in": "in",
     "notin": "notin"
 }

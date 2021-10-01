@@ -20,37 +20,37 @@ namespace DianaScript
         public const byte List = 5;
         public const byte Tuple = 6;
     }
-    
 
-    
-    public partial class AIRParser
+
+
+    public partial class AWorld
     {
-        FileStream fileStream;
-        byte[] cache_4byte;
-        
-        byte[] cache_32byte;
+        private FileStream fileStream;
+        private byte[] cache_4byte = new byte[4];
+        private byte[] cache_32byte = new byte[32];
 
-        public void setup_cache()
-        {
-            cache_4byte = new byte[4];
-            cache_32byte = new byte[4];
-        }
-        public AIRParser(FileStream fs)
+
+        private AWorld(FileStream fs)
         {
             fileStream = fs;
-            setup_cache();
+
         }
-        public AIRParser(string path)
+        private AWorld(string path)
         {
             var fs = File.Open(path, FileMode.Open);
             fileStream = fs;
-            setup_cache();
         }
-        
-        public (int, int) Read(THint<(int, int)> _){
+
+        public AWorld GetLoaderFrom(string path) => new AWorld(path);
+        public AWorld GetLoaderFrom(FileStream fs) => new AWorld(fs);
+
+
+        public (int, int) Read(THint<(int, int)> _)
+        {
             return (ReadInt(), ReadInt());
         }
-        public InternString Read(THint<InternString> _){
+        public InternString Read(THint<InternString> _)
+        {
             return ReadStr().ToIStr();
         }
         public int Read(THint<int> _) => ReadInt();
@@ -108,8 +108,8 @@ namespace DianaScript
             }
             throw new InvalidDataException("invalid data format for boolean.");
         }
-        
-        
+
+
 
         public DObj Read(THint<DObj> _) => ReadObj();
         public DObj ReadObj()
