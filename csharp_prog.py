@@ -170,7 +170,9 @@ def asexpr(x) -> Expr:
         return x
     if isinstance(x, tuple):
         return Tuple([asexpr(e) for e in x])
-    if isinstance(x, (int, str, bool)):
+    if isinstance(x, str):
+        return Const(x)
+    if isinstance(x, (int, bool)):
         return Const(x)
     if isinstance(x, bool):
         return Named(("false", "true")[x])
@@ -282,7 +284,7 @@ class Const(ExprBase):
     def cg(self):
         o = self.o
         if isinstance(o, str):
-            return json.dumps("$@" + o)
+            return "$@" + json.dumps(o)
         return str(o)
 
 
@@ -392,6 +394,11 @@ class Tuple(ExprBase):
 import types
 
 
+def astype2(x, g: dict):
+    if isinstance(x, str):
+        x = eval(x, g)
+    return astype(x)
+
 def astype(x) -> Type:
     if isinstance(x, TypeBase):
         return x
@@ -424,7 +431,13 @@ class Method(StmtBase):  # method def and decl
 
     def cg(self, io: IO):
         params = ", ".join(map(repr, self.params))
+        
+        if not self.body:
+            io << f"{self.modifier.value}{self.ret} {self.name}({params});"
+            return
+        
         io << f"{self.modifier.value}{self.ret} {self.name}({params})"
+        
         io << "{"
         for each in io.tab_iter(self.body):
             each.cg(io)
@@ -439,6 +452,12 @@ class Assign(StmtBase):
     def cg(self, io: IO):
         io << f"{self.lhs.S} = {self.rhs.S};"
 
+@dataclass
+class Throw(StmtBase):
+    type: Type
+    msg: Expr
+    def cg(self, io: IO):
+         io << f"throw new {self.type}({self.msg.S});"
 
 @dataclass
 class If(StmtBase):
@@ -574,6 +593,11 @@ class Field(StmtBase):
             return
         io << f"{s} = {self.value.S};"
 
+@dataclass
+class Emit(StmtBase):
+    code: str
+    def cg(self, io: IO):
+        io << self.code
 
 @dataclass
 class Class(StmtBase):
@@ -587,7 +611,10 @@ class Class(StmtBase):
     def cg(self, io: IO):
         static = self.is_static and "static " or ""
         kind = self.is_interface and "interface " or "class "
-        io << f"{self.modifier.value}{static}{kind}{self.name}"
+        bases = ', '.join(map(str, self.bases))
+        if bases:
+            bases = ": " + bases
+        io << f"{self.modifier.value}{static}{kind}{self.name}{bases}"
         io << "{"
         for each in io.tab_iter(self.body):
             each.cg(io)
@@ -609,6 +636,8 @@ Stmt = (
     | Class
     | Field
     | Ignore
+    | Emit
+    | Throw
 )
 
 
@@ -650,6 +679,9 @@ class This:
         if isinstance(x, types.FunctionType):
             return Attr(Named("this"), attr)
         raise
+    
+    def __repr__(self):
+        return "{this}"
 
 
 class Generator:
@@ -658,8 +690,13 @@ class Generator:
         self.modifiers = {}
         self.statics = {}
         self.classes = []
+        self.interfaces = {}
+        self.bases = {}
         self.globals = globals
-
+    
+    def append(self, *args: Stmt):
+        self.block.extend(args)
+    
     def __setitem__(self, lhs: Expr | tuple, rhs: Expr | Value):
         assert isinstance(lhs, Expr)
         rhs = asexpr(rhs)
@@ -736,10 +773,12 @@ class Generator:
         val = asexpr(val)
         self.block.append(Yield(val))
 
-    def modifier(self, static=False, modifier=Modifier.none):
+    def modifier(self, static=False, modifier=Modifier.none, is_interface=False, bases=()):
         def ap(f):
             self.statics[f] = static
             self.modifiers[f] = modifier
+            self.interfaces[f] = is_interface
+            self.bases[f] = bases
             return f
 
         return ap
@@ -748,23 +787,26 @@ class Generator:
         old_block = self.block
         self.block = []
         for k, v in getattr(cls, "__annotations__", {}).items():
-            t = astype(eval(v, self.globals))
+            t = astype2(v, self.globals)
             field = Field(Param(k, t), cls.__dict__.get(k))
             self.block.append(field)
         for k, v in cls.__dict__.items():
             if not k.startswith("__"):
                 if isinstance(v, staticmethod):
                     self.method_(v.__func__, cls, use_self=False)
-                elif callable(v):
+                elif isinstance(v, types.FunctionType):
                     self.method_(v, cls, use_self=True)
+                elif isinstance(v, StmtBase):
+                    self.block.append(v)
                 else:
                     print(f"{cls.__name__}.{k} = {v} unknown")
         cls_code = Class(
             name=cls.__name__,
-            bases=[],
+            bases=self.bases.get(cls, ()),
             body=self.block,
             modifier=self.modifiers.get(cls, Modifier.none),
             is_static=self.statics.get(cls, False),
+            is_interface=self.interfaces.get(cls, False)
         )
 
         self.block = old_block
@@ -775,7 +817,7 @@ class Generator:
         self.block = []
         g = f.__globals__
         f.__annotations__.update(
-            {k: astype(eval(v, g)) for k, v in f.__annotations__.items()}
+            {k: astype2(v, g) for k, v in f.__annotations__.items()}
         )
         params = []
         args = []
@@ -799,13 +841,14 @@ class Generator:
         self.block = old_block
         old_block.append(cls_code)
 
-    def __call__(self, cls: type | Expr):
+    def __call__(self, cls: type | Expr) -> type:
         if isinstance(cls, type):
             _tmap[cls.__name__] = cls.__name__
             self.classes.append(cls)
             return cls
         else:
-            return self.expr(asexpr(cls))
+            self.expr(asexpr(cls))
+            return whatever(type)
 
     def build(self):
         for cls in self.classes:
@@ -826,38 +869,38 @@ class CodePack:
 
 
 
-myio = IO()
 
-G = Generator(globals())
 
 def whatever(_: typing.Type[T]) -> T:
     return # type: ignore
 
-@G
-class SS:
-    x: int
 
-    @staticmethod
-    def p(x: int) -> int:
-        a = G.decl("a")
-        G[a] = TName("List")[int]()
-        G(a.Add(x))
-        G.return_(a)
-        return whatever(int)
-    
-    def f(self, a: tuple[int, int]):
-        b = G.decl("b", int)
-        G[b] = 0
-        with G.loop(a[1] < 2):
-            G[b] += a[0]
-        G.return_(b)
+if __name__ == '__main__':
+    G = Generator(globals())
+    @G
+    class SS:
+        x: int
+
+        @staticmethod
+        def p(x: int) -> int:
+            a = G.decl("a")
+            G[a] = TName("List")[int]()
+            G(a.Add(x))
+            G.return_(a)
+            return whatever(int)
+        
+        def f(self, a: tuple[int, int]):
+            b = G.decl("b", int)
+            G[b] = 0
+            with G.loop(a[1] < 2):
+                G[b] += a[0]
+            G.return_(b)
 
 
-Item(Var("a"), Var("b")) < 1
-G.build()
+    G.build()
 
-for each in G.block:
-    each.cg(myio)
+    for each in G.block:
+        each.cg(myio)
 
-print(myio.x.getvalue())
+    print(myio.x.getvalue())
 

@@ -260,11 +260,6 @@ namespace DianaScript
 
     }
 
-    public interface Ref : DObj
-    {
-        public void set_contents(DObj value);
-        public DObj get_contents();
-    }
 
 
     public partial class DRef : Ref
