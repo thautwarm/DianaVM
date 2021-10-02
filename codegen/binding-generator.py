@@ -596,7 +596,6 @@ cg = Codegen()
 
 import shutil
 root = Path(__file__).parent.parent / "src" / "structures"
-shutil.rmtree(str(root))
 root.mkdir(exist_ok=True)
 for cls in ast:
     cls: ClassBind

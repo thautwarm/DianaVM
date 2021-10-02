@@ -147,7 +147,7 @@ class CG:
                 target_offset = len(self.block) + len(new_block)
                 self.block.extend(new_block)
                 self.linenos.extend(linenos)
-                self << Diana_JumpIfNot(target_offset).as_ptr()
+                self << Diana_JumpIfNot(target_offset - 1).as_ptr()
 
             case SIf(cond, [], orelse):
                 self.cg_for_expr(cond)
@@ -159,16 +159,16 @@ class CG:
                 target_offset = len(self.block) + len(new_block)
                 self.block.extend(new_block)
                 self.linenos.extend(linenos)
-                self << Diana_JumpIf(target_offset).as_ptr()
+                self << Diana_JumpIf(target_offset - 1).as_ptr()
 
             case SIf(cond, then, orelse):
                 self.cg_for_expr(cond)
                 i_jump_to_orelse_if_not = self << PlaceHolder()
                 self.cg_for_stmts(then)
                 i_jump_to_success = self << PlaceHolder()
-                self.block[i_jump_to_orelse_if_not] = Diana_JumpIfNot(self.cur_offset).as_ptr()
+                self.block[i_jump_to_orelse_if_not] = Diana_JumpIfNot(self.cur_offset - 1).as_ptr()
                 self.cg_for_stmts(orelse)
-                self.block[i_jump_to_success] = Diana_Jump(self.cur_offset).as_ptr()
+                self.block[i_jump_to_success] = Diana_Jump(self.cur_offset - 1).as_ptr()
 
             case SBreak():
                 self << Diana_Control(LOOP_BREAK).as_ptr()
@@ -244,13 +244,13 @@ class CG:
                 self.cg_for_expr(a)
                 i = self << PlaceHolder()
                 self.cg_for_expr(b)
-                self.block[i] = Diana_JumpIf(self.cur_offset).as_ptr()
+                self.block[i] = Diana_JumpIf(self.cur_offset - 1).as_ptr()
 
             case EOr(a, b):
                 self.cg_for_expr(a)
                 i = self << PlaceHolder()
                 self.cg_for_expr(b)
-                self.block[i] = Diana_JumpIfNot(self.cur_offset).as_ptr()
+                self.block[i] = Diana_JumpIfNot(self.cur_offset - 1).as_ptr()
 
             case EOp(left=left, op=op, right=right):
                 self.cg_for_expr(left)

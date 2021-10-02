@@ -88,12 +88,10 @@ namespace DianaScript
         public static DObj create(HashSet<DObj> d) => Set(d);
 
         public static DArray Array<T>(T[] d) => throw new NotImplementedException();
-
         public static DObj create<T>(T[] d) => Array(d);
-
-
+        public static DObj create(DObj a) => a;
         public static DWrap Wrap(object o) => new DWrap(o);
-        public static DObj create<T>(T a) => Wrap(a);
+        public static DObj create(object a) => Wrap(a);
 
         // public static A unbox<A>(DObj o){
         //     if (o is A){

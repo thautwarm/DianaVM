@@ -1,6 +1,7 @@
 // begin
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DianaScript
 {
@@ -144,7 +145,11 @@ namespace DianaScript
         {
             return AWorld.dobjs[slot];
         }
-
+        public DObj check_vstack()
+        {
+            Console.WriteLine(String.Join("|", vstack.Select(x => x.__repr__())));
+            return MK.Nil();
+        }
         DObj loadvar(int slot)
         {
             
@@ -356,14 +361,15 @@ namespace DianaScript
         {
             int old_offset = offset;
             var codes = AWorld.blocks[blockind].codes;
+            offset = 0;
             try
             {
-                for (var i = 0; i < codes.Length; i++)
+                while (offset < codes.Length)
                 {
-                    offset = i;
-                    exec_code(codes[i]);
+                    exec_code(codes[offset]);
                     if (token != (int)GO_AHEAD)
                         return;
+                    offset++;
                 }
                 offset = old_offset + 1;
             }
@@ -373,7 +379,7 @@ namespace DianaScript
                 {
                     metadataInd = cur_func.metadataInd,
                     blockind = blockind,
-                    offset = offset
+                    offset = old_offset
                 });
                 throw;
             }
