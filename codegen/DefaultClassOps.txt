@@ -4,8 +4,6 @@ ops
         public Ops ops => Ops.defaultOps;
 native
         public Type NativeType => typeof($$);
-dict
-        public Dictionary<InternString, DObj> Dict => null;
 
 nativetype_correspond
         public object Native => NativeType;

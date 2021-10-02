@@ -21,12 +21,14 @@ from "src/Parser.cs": for Object Encoding
     }
 """
 from __future__ import annotations
-import struct
 from dataclasses import dataclass
+from pyrsistent import PVector
+import struct
 from typing import Generic, TypeVar
 
 special_bit = 0b10000000
-bool_bit = 0b10000010
+true_bit = 0b10000011
+false_bit = 0b10000010
 none_bit = 0b10000000
 
 obj_box_tags: dict[type, int| None] = {
@@ -36,10 +38,15 @@ obj_box_tags: dict[type, int| None] = {
     dict: 3,
     set: 4,
     list: 5,
-    tuple: 6,
-    type(None): none_bit,
-    bool: None
+    tuple: 6
 }
+
+special_objs = {
+    (bool, True): true_bit,
+    (bool, False): false_bit,
+    (type(None), None): none_bit
+}
+booleans = (false_bit, true_bit)
 
 @dataclass(frozen=True)
 class Ptr:
@@ -49,17 +56,31 @@ class Ptr:
         return self
     
     def serialize_(self, barr: bytearray):
-        serialize_(self.kind, barr)
+        assert self.kind < 256
+        barr.append(self.kind)
         if self.ind is not None:
             serialize_(self.ind, barr)
 
+
+def encode_to_7bit(value: int, barr: bytearray):
+    data = []
+    number = abs(value)
+    while number >= 0x80:
+        data.append((number | 0x80) & 0xff)
+        number >>= 7
+    barr.append(number & 0xff)
 
 @dataclass(frozen=True)
 class DObj:
     o : object
     def serialize_(self, barr: bytearray):
-        v = obj_box_tags[self.o.__class__]
-        if v:
+        o = self.o
+        v = special_objs.get((type(o), o)) # type: ignore
+        if v is not None:
+            barr.append(v)
+            return
+        v = obj_box_tags[type(o)]
+        if v is not None:
             barr.append(v)
         serialize_(self.o, barr)
 
@@ -68,21 +89,30 @@ class DObj:
 
 def serialize_(o, barr: bytearray):
     match o:
-        case int():
+        case bool():
+            barr.append(booleans[o])
+        case int(): 
             barr.extend(struct.pack('<i', o))
         case float():
             barr.extend(struct.pack('<f', o))
         case str(): # or InternString
-            barr.extend(bytes(o, 'utf-16'))
-        case None:
-            barr.append(none_bit | special_bit)
+            encoded = bytes(o, 'utf8')
+            encode_to_7bit(len(encoded), barr)
+            barr.extend(encoded)
         case dict():
+            serialize_(len(o), barr)
             for k, v in o.items():
                 serialize_(k, barr)
                 serialize_(v, barr)
-        case list() | set() | tuple():
+        case list() | set() | PVector():    
+            serialize_(len(o), barr)
             for v in o:
                 serialize_(v, barr)
+        case tuple():
+            for v in o:
+                serialize_(v, barr)
+        case None:
+            barr.append(none_bit | special_bit)
         case _:
             o.serialize_(barr)
 
@@ -118,6 +148,13 @@ class Builder(Generic[_T]):
     def __getitem__(self, i: int) -> _T:
         return self._revmap[i]
 
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self._revmap[i]
+    
+    def __len__(self):
+        return len(self._map)
+
     def cache(self, x: _T) -> int:
         o = object()
         i = self._map.get(x, o)
@@ -130,6 +167,7 @@ class Builder(Generic[_T]):
             return i
 
     def serialize_(self, arr: bytearray):
+        serialize_(len(self), arr)
         for i in range(len(self._revmap)):
             serialize_(self._revmap[i], arr)
 

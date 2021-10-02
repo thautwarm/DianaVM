@@ -338,9 +338,6 @@ public partial class DBuiltinFunc
 
         public Ops ops => Ops.defaultOps;
 
-        public Dictionary<InternString, DObj> Dict => null;
-
-
         public object Native => NativeType;
 
 

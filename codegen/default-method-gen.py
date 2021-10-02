@@ -63,9 +63,9 @@ ExceptionList2 = {
     "DDict": ["native"],
     "DTuple": ["native"],
     "DFunc": ["native"],
-    "DWrap": ["native", "dict"],
+    "DWrap": ["native"],
 
-    "DUserObj": ["native", "dict", "nativetype_correspond", "ops"],
+    "DUserObj": ["native", "nativetype_correspond", "ops"],
 
     "GlobalNamespace": ["native"],
 }

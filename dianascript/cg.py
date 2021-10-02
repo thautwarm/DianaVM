@@ -1,10 +1,13 @@
 from contextlib import contextmanager
-import enum
 from typing import Callable
 from dianascript.chexpr import *
 from dianascript.chlhs import *
 from dianascript.chstmt import *
 from dianascript.code_cons import *
+from dianascript.logger import logger
+from pyrsistent import pvector
+import logging
+
 
 RETURN = 0
 GO_AHEAD = 1
@@ -25,7 +28,7 @@ class CG:
         self.local_names = []
         self.linenos = []
         self.is_global = is_global
-    
+
     @contextmanager
     def enter_block(self):
         old_code = self.block
@@ -37,13 +40,13 @@ class CG:
         finally:
             self.block = old_code
             self.linenos = linenos
-        
+
     @property
     def cur_offset(self):
         return len(self.block)
 
     def mk_block(self):
-        return Block(tuple(self.block), tuple(self.linenos), self.filename)
+        return Block(pvector(self.block), pvector(self.linenos), self.filename)
 
     def declarevar(self, name: str):
         if not self.is_global:
@@ -57,24 +60,24 @@ class CG:
             return pair[1] << 2
         else:
             return (InternString(name).as_int() << 2) | GLOBAL_FLAG
-    
+
     def __lshift__(self, other: Ptr | PlaceHolder):
         self.block.append(other) # type: ignore
         return len(self.block) - 1
-    
+
     def cg_for_stmts(self, stmts):
         for stmt in stmts:
             self.cg_for_stmt(stmt)
-        
+
 
     def cg_for_stmt(self, stmt: Chstmt):
         if stmt.loc:
-            
+
             new_lineno = stmt.loc[0]
             if self.lineno < new_lineno:
                 self.linenos.append((self.cur_offset, new_lineno))
             self.lineno = new_lineno
-    
+
         match stmt:
             case SFunc(name, args, body):
                 narg = len(args)
@@ -85,29 +88,31 @@ class CG:
                 sub_cg.cg_for_stmts(body)
                 block = sub_cg.mk_block()
                 meta = FuncMeta(
-                    nonargcells = (),
+                    nonargcells = pvector(),
                     is_vararg = False,
-                    freeslots = (),
+                    freeslots = pvector(),
                     narg = narg,
                     nlocal = len(sub_cg.local_names),
-                    name = InternString(name), 
-                    filename = self.filename,
+                    name = InternString(name),
+                    filename = sub_cg.filename,
                     lineno = start_lineno,
-                    freenames=tuple([]),
-                    localnames=tuple(sub_cg.local_names),
+                    freenames=pvector([]),
+                    localnames=pvector(sub_cg.local_names),
                 )
                 d = Diana_FunctionDef(meta.as_int(), block.as_int())
                 self << d.as_ptr()
+                i = self.varid(name)
+                self << Diana_StoreVar(i).as_ptr()
             case SDecl(vars):
                 for each in vars:
                     self.declarevar(each)
-            
+
             case SAssign(targets, value):
                 self.cg_for_expr(value)
                 self << Diana_Replicate(len(targets)).as_ptr()
                 for each in reversed(targets):
                     self.cg_for_lhs(each)
-            
+
             case SExpr(expr):
                 self.cg_for_expr(expr)
                 self << Diana_Pop().as_ptr()
@@ -120,42 +125,42 @@ class CG:
                         self << Diana_Pop().as_ptr()
                     self.cg_for_stmts(body)
                     new_block = self.mk_block()
-                    
+
                 self << Diana_For(new_block.as_int()).as_ptr()
-        
+
             case SLoop(body):
                 with self.enter_block():
                     self.cg_for_stmts(body)
                     new_block = self.mk_block()
                 self << Diana_Loop(new_block.as_int()).as_ptr()
-        
+
             case SIf(cond, [], None):
                 self.cg_for_expr(cond)
-            
+
             case SIf(cond, then, None):
                 self.cg_for_expr(cond)
                 with self.enter_block():
                     self.cg_for_stmts(then)
                     new_block = self.block
                     linenos = self.linenos
-                
+
                 target_offset = len(self.block) + len(new_block)
                 self.block.extend(new_block)
                 self.linenos.extend(linenos)
                 self << Diana_JumpIfNot(target_offset).as_ptr()
-            
+
             case SIf(cond, [], orelse):
                 self.cg_for_expr(cond)
                 with self.enter_block():
                     self.cg_for_stmts(orelse)
                     new_block = self.block
                     linenos = self.linenos
-                
+
                 target_offset = len(self.block) + len(new_block)
                 self.block.extend(new_block)
                 self.linenos.extend(linenos)
                 self << Diana_JumpIf(target_offset).as_ptr()
-        
+
             case SIf(cond, then, orelse):
                 self.cg_for_expr(cond)
                 i_jump_to_orelse_if_not = self << PlaceHolder()
@@ -164,16 +169,20 @@ class CG:
                 self.block[i_jump_to_orelse_if_not] = Diana_JumpIfNot(self.cur_offset).as_ptr()
                 self.cg_for_stmts(orelse)
                 self.block[i_jump_to_success] = Diana_Jump(self.cur_offset).as_ptr()
-            
+
             case SBreak():
                 self << Diana_Control(LOOP_BREAK).as_ptr()
-            
+
             case SContinue():
                 self << Diana_Control(LOOP_CONTINUE).as_ptr()
-            
+
             case SReturn(val):
                 if val is None:
                     self << Diana_Const(DObj(None).as_int()).as_ptr()
+                else:
+                    self.cg_for_expr(val)
+                self << Diana_Control(RETURN).as_ptr()
+
             case _:
                 raise
 
@@ -216,33 +225,33 @@ class CG:
             case EList(elts):
                 for e in elts:
                     self.cg_for_expr(e)
-                    
+
                 self << Diana_MKDict(len(elts)).as_ptr()
-            
+
             case ENot(expr):
                 self.cg_for_expr(expr)
                 self << Diana_UnaryOp_not().as_ptr()
-            
+
             case ENeg(expr):
                 self.cg_for_expr(expr)
                 self << Diana_UnaryOp_neg().as_ptr()
-            
+
             case EInv(expr):
                 self.cg_for_expr(expr)
                 self << Diana_UnaryOp_invert().as_ptr()
-            
+
             case EAnd(a, b):
                 self.cg_for_expr(a)
                 i = self << PlaceHolder()
                 self.cg_for_expr(b)
                 self.block[i] = Diana_JumpIf(self.cur_offset).as_ptr()
-            
+
             case EOr(a, b):
                 self.cg_for_expr(a)
                 i = self << PlaceHolder()
                 self.cg_for_expr(b)
                 self.block[i] = Diana_JumpIfNot(self.cur_offset).as_ptr()
-            
+
             case EOp(left=left, op=op, right=right):
                 self.cg_for_expr(left)
                 self.cg_for_expr(right)
@@ -293,9 +302,28 @@ del _globals, _op_map
 
 def codegen(filename: str, suite: list[Chstmt], barr: bytearray):
     cg = CG(filename, is_global=True)
-    cg.cg_for_stmt(SFunc("__main__", [], suite))
-    entry = cg.mk_block().as_int()
-    serialize_(entry, barr)
+    cg.cg_for_stmts(suite)
+    cg << Diana_Const(DObj(None).as_int()).as_ptr()
+    cg << Diana_Control(RETURN).as_ptr()
+    block = cg.mk_block()
+    meta = FuncMeta(
+                    nonargcells = pvector(),
+                    is_vararg = False,
+                    freeslots = pvector(),
+                    narg = 0,
+                    nlocal = 0,
+                    name = InternString("__main__"),
+                    filename = filename,
+                    lineno = 1,
+                    freenames=pvector([]),
+                    localnames=pvector(cg.local_names),
+                )
+    metaind = meta.as_int()
+    blockind = block.as_int()
+    if logging.DEBUG >= logger.level :
+        logger.debug("  entry point:")
+        logger.debug(f"  - metaind : {metaind}")
+        logger.debug(f"  - blockind : {blockind}")
+    serialize_(metaind, barr)
+    serialize_(blockind, barr)
     DFlatGraphCode.serialize_(barr)
-
-    

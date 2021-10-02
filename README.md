@@ -15,19 +15,24 @@ DianaScript is a minimal programming language that aims at interfacing with .NET
 
 ## Usage
 
-### AIR Parser
-```C#
+You should firstly compile the source code of Ch-lang(创创语言) to Diana bytecode using the compiler written in Python:
 
-var parser = new DianaScript.Parser("xxx.ran");
-var code = parser.ReadCode()
+```
+python -m dianascript runtests/b.ch --out runtests/b.ran
 ```
 
-### VM
+Then you load the bytecode using Diana VM:
 
 ```C#
-var code = ... // maybe parsed from file using  DianaScript.Parser;
-var vm = new DianaScript.VM();
-vm.Run(code);
+public static void Main(string[] args)
+{
+    var dvm = new DVM();
+    var loader = AWorld.GetLoaderFrom(args[0]);
+    var (metaInd, blockId) = loader.LoadCode();
+
+    var g = GlobalNamespace.GetGlonal();
+    dvm.exec_block(metaInd, blockId, g);
+}
 ```
 
 An exception will get raised to .NET side if it is not handled in DianaScript/DVM.

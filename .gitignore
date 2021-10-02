@@ -5,6 +5,7 @@
 
 # generated ran code
 *.ran
+.vscode/
 runtests/mylang_raw.py
 # User-specific files
 *.rsuser

@@ -121,21 +121,21 @@ public partial class DSet
   public string name => "set";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DSet);
-  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, DObj> Dict {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
+    Dict = new System.Collections.Generic.Dictionary<InternString, DObj>
     {
-      { "__or__".ToIStr(), (false, MK.CreateFunc(bind___or__)) },
-      { "__and__".ToIStr(), (false, MK.CreateFunc(bind___and__)) },
-      { "subset".ToIStr(), (false, MK.CreateFunc(bind_subset)) },
-      { "superset".ToIStr(), (false, MK.CreateFunc(bind_superset)) },
-      { "__contains__".ToIStr(), (false, MK.CreateFunc(bind___contains__)) },
-      { "add".ToIStr(), (false, MK.CreateFunc(bind_add)) },
-      { "remove".ToIStr(), (false, MK.CreateFunc(bind_remove)) },
-      { "__len__".ToIStr(), (false, MK.CreateFunc(bind___len__)) },
-      { "clear".ToIStr(), (false, MK.CreateFunc(bind_clear)) },
+      { "__or__".ToIStr(), MK.CreateFunc(bind___or__) },
+      { "__and__".ToIStr(), MK.CreateFunc(bind___and__) },
+      { "subset".ToIStr(), MK.CreateFunc(bind_subset) },
+      { "superset".ToIStr(), MK.CreateFunc(bind_superset) },
+      { "__contains__".ToIStr(), MK.CreateFunc(bind___contains__) },
+      { "add".ToIStr(), MK.CreateFunc(bind_add) },
+      { "remove".ToIStr(), MK.CreateFunc(bind_remove) },
+      { "__len__".ToIStr(), MK.CreateFunc(bind___len__) },
+      { "clear".ToIStr(), MK.CreateFunc(bind_clear) },
     };
   }
   }

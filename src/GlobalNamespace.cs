@@ -12,14 +12,13 @@ namespace DianaScript
                 Console.Write(obj.__repr__());
             Console.WriteLine("");
         }
-        
         public static Dictionary<InternString, DObj> Globals => throw new NotImplementedException();
         public static Dictionary<InternString, DObj> GetGlonal()
         {
             var ns = new Dictionary<InternString, DObj>();
-            foreach (var kv in GlobalNamespace.Cls.unique.Getters)
+            foreach (var kv in GlobalNamespace.Cls.unique.Dict)
             {
-                ns[kv.Key] = kv.Value.Item2;
+                ns[kv.Key] = kv.Value;
             }
             foreach (var cls in new DClsObj[] {
                  DStr.Cls.unique,

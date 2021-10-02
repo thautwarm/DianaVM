@@ -57,7 +57,9 @@ FunctionDef(metadataInd: int, code: int)
         narg: meta.narg,
         nlocal: meta.nlocal,
         nonargcells: meta.nonargcells,
-        metadataInd: metadataInd);
+        metadataInd: metadataInd,
+        nameSpace: cur_func.nameSpace
+        );
     push(dfunc);
 %]
 LoadGlobalRef(istr: InternString)

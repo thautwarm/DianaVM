@@ -321,9 +321,6 @@ public partial class DTuple
 
         public Ops ops => Ops.defaultOps;
 
-        public Dictionary<InternString, DObj> Dict => null;
-
-
         public object Native => NativeType;
 
 

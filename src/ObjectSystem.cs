@@ -268,17 +268,20 @@ namespace DianaScript
 
         public static DFunc Make(
             int body, int narg, int nlocal, int metadataInd,
-            NameSpace nameSpace = null, bool is_vararg = false,
+            NameSpace nameSpace, bool is_vararg = false,
             DRef[] freevals = null, int[] nonargcells = null
         )
         {
             return new DFunc
             {
                 body = body,
+                narg = narg,
+                nlocal = nlocal,
                 metadataInd = metadataInd,
+                is_vararg = is_vararg,
                 freevals = freevals ?? new DRef[0],
                 nonargcells = nonargcells,
-                nameSpace = nameSpace ?? new Dictionary<InternString, DObj>()
+                nameSpace = nameSpace
             };
         }
     }

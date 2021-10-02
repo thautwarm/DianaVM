@@ -50,16 +50,16 @@ public partial class DInt
   public string name => "int";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DInt);
-  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, DObj> Dict {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
+    Dict = new System.Collections.Generic.Dictionary<InternString, DObj>
     {
-      { "parse".ToIStr(), (false, MK.CreateFunc(bind_parse)) },
-      { "try_parse".ToIStr(), (false, MK.CreateFunc(bind_try_parse)) },
-      { "max".ToIStr(), (false, MK.CreateFunc(bind_max)) },
-      { "min".ToIStr(), (false, MK.CreateFunc(bind_min)) },
+      { "parse".ToIStr(), MK.CreateFunc(bind_parse) },
+      { "try_parse".ToIStr(), MK.CreateFunc(bind_try_parse) },
+      { "max".ToIStr(), MK.CreateFunc(bind_max) },
+      { "min".ToIStr(), MK.CreateFunc(bind_min) },
     };
   }
   }

@@ -57,16 +57,16 @@ public partial class DTuple
   public string name => "tuple";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DTuple);
-  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, DObj> Dict {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
+    Dict = new System.Collections.Generic.Dictionary<InternString, DObj>
     {
-      { "__len__".ToIStr(), (false, MK.CreateFunc(bind___len__)) },
-      { "__contains__".ToIStr(), (false, MK.CreateFunc(bind___contains__)) },
-      { "__eq__".ToIStr(), (false, MK.CreateFunc(bind___eq__)) },
-      { "__add__".ToIStr(), (false, MK.CreateFunc(bind___add__)) },
+      { "__len__".ToIStr(), MK.CreateFunc(bind___len__) },
+      { "__contains__".ToIStr(), MK.CreateFunc(bind___contains__) },
+      { "__eq__".ToIStr(), MK.CreateFunc(bind___eq__) },
+      { "__add__".ToIStr(), MK.CreateFunc(bind___add__) },
     };
   }
   }

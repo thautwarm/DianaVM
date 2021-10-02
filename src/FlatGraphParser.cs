@@ -7,7 +7,7 @@ public partial class AWorld
 {
     private CODE ReadCODE()
     {
-        fileStream.Read(cache_4byte, 0, 1);
+        binaryReader.Read(cache_4byte, 0, 1);
         return (CODE)cache_4byte[0];
     }
 
@@ -92,24 +92,40 @@ public partial class AWorld
         CODE.Diana_Pop => new Ptr(code, 0),
         _ => throw new ArgumentOutOfRangeException("unknown code {code}.")
     };
-    private Ptr Read(THint<Ptr> _) => ReadFromCode(ReadCODE());
+    private Ptr Read(THint<Ptr> _) => ReadPtr();
+    private Ptr ReadPtr() => ReadFromCode(ReadCODE());
     private void Load_strings()
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing string-{i}");
+#endif
             strings.Add(Read(THint<string>.val));
+        }
     }
     private void Load_dobjs()
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing DObj-{i}");
+#endif
             dobjs.Add(Read(THint<DObj>.val));
+        }
     }
     private void Load_internstrings()
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing InternString-{i}");
+#endif
             internstrings.Add(Read(THint<InternString>.val));
+        }
     }
     private Catch ReadCatch() => new Catch
     {
@@ -122,7 +138,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Catch-{i}");
+#endif
             catchs.Add(ReadCatch());
+        }
     }
 
     private FuncMeta ReadFuncMeta() => new FuncMeta
@@ -144,7 +165,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing FuncMeta-{i}");
+#endif
             funcmetas.Add(ReadFuncMeta());
+        }
     }
 
     private Block ReadBlock() => new Block
@@ -159,7 +185,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Block-{i}");
+#endif
             blocks.Add(ReadBlock());
+        }
     }
 
     private Diana_FunctionDef ReadDiana_FunctionDef() => new Diana_FunctionDef
@@ -172,7 +203,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_FunctionDef-{i}");
+#endif
             diana_functiondefs.Add(ReadDiana_FunctionDef());
+        }
     }
 
     private Diana_LoadGlobalRef ReadDiana_LoadGlobalRef() => new Diana_LoadGlobalRef
@@ -184,7 +220,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_LoadGlobalRef-{i}");
+#endif
             diana_loadglobalrefs.Add(ReadDiana_LoadGlobalRef());
+        }
     }
 
     private Diana_DelVar ReadDiana_DelVar() => new Diana_DelVar
@@ -196,7 +237,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_DelVar-{i}");
+#endif
             diana_delvars.Add(ReadDiana_DelVar());
+        }
     }
 
     private Diana_LoadVar ReadDiana_LoadVar() => new Diana_LoadVar
@@ -208,7 +254,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_LoadVar-{i}");
+#endif
             diana_loadvars.Add(ReadDiana_LoadVar());
+        }
     }
 
     private Diana_StoreVar ReadDiana_StoreVar() => new Diana_StoreVar
@@ -220,7 +271,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_StoreVar-{i}");
+#endif
             diana_storevars.Add(ReadDiana_StoreVar());
+        }
     }
 
     private Diana_Action ReadDiana_Action() => new Diana_Action
@@ -232,7 +288,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Action-{i}");
+#endif
             diana_actions.Add(ReadDiana_Action());
+        }
     }
 
     private Diana_ControlIf ReadDiana_ControlIf() => new Diana_ControlIf
@@ -244,7 +305,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_ControlIf-{i}");
+#endif
             diana_controlifs.Add(ReadDiana_ControlIf());
+        }
     }
 
     private Diana_JumpIfNot ReadDiana_JumpIfNot() => new Diana_JumpIfNot
@@ -256,7 +322,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_JumpIfNot-{i}");
+#endif
             diana_jumpifnots.Add(ReadDiana_JumpIfNot());
+        }
     }
 
     private Diana_JumpIf ReadDiana_JumpIf() => new Diana_JumpIf
@@ -268,7 +339,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_JumpIf-{i}");
+#endif
             diana_jumpifs.Add(ReadDiana_JumpIf());
+        }
     }
 
     private Diana_Jump ReadDiana_Jump() => new Diana_Jump
@@ -280,7 +356,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Jump-{i}");
+#endif
             diana_jumps.Add(ReadDiana_Jump());
+        }
     }
 
     private Diana_Control ReadDiana_Control() => new Diana_Control
@@ -292,7 +373,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Control-{i}");
+#endif
             diana_controls.Add(ReadDiana_Control());
+        }
     }
 
     private Diana_Try ReadDiana_Try() => new Diana_Try
@@ -306,7 +392,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Try-{i}");
+#endif
             diana_trys.Add(ReadDiana_Try());
+        }
     }
 
     private Diana_Loop ReadDiana_Loop() => new Diana_Loop
@@ -318,7 +409,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Loop-{i}");
+#endif
             diana_loops.Add(ReadDiana_Loop());
+        }
     }
 
     private Diana_For ReadDiana_For() => new Diana_For
@@ -330,7 +426,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_For-{i}");
+#endif
             diana_fors.Add(ReadDiana_For());
+        }
     }
 
     private Diana_With ReadDiana_With() => new Diana_With
@@ -342,7 +443,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_With-{i}");
+#endif
             diana_withs.Add(ReadDiana_With());
+        }
     }
 
     private Diana_GetAttr ReadDiana_GetAttr() => new Diana_GetAttr
@@ -354,7 +460,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_GetAttr-{i}");
+#endif
             diana_getattrs.Add(ReadDiana_GetAttr());
+        }
     }
 
     private Diana_SetAttr ReadDiana_SetAttr() => new Diana_SetAttr
@@ -366,7 +477,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr-{i}");
+#endif
             diana_setattrs.Add(ReadDiana_SetAttr());
+        }
     }
 
     private Diana_SetAttr_Iadd ReadDiana_SetAttr_Iadd() => new Diana_SetAttr_Iadd
@@ -378,7 +494,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Iadd-{i}");
+#endif
             diana_setattr_iadds.Add(ReadDiana_SetAttr_Iadd());
+        }
     }
 
     private Diana_SetAttr_Isub ReadDiana_SetAttr_Isub() => new Diana_SetAttr_Isub
@@ -390,7 +511,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Isub-{i}");
+#endif
             diana_setattr_isubs.Add(ReadDiana_SetAttr_Isub());
+        }
     }
 
     private Diana_SetAttr_Imul ReadDiana_SetAttr_Imul() => new Diana_SetAttr_Imul
@@ -402,7 +528,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Imul-{i}");
+#endif
             diana_setattr_imuls.Add(ReadDiana_SetAttr_Imul());
+        }
     }
 
     private Diana_SetAttr_Itruediv ReadDiana_SetAttr_Itruediv() => new Diana_SetAttr_Itruediv
@@ -414,7 +545,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Itruediv-{i}");
+#endif
             diana_setattr_itruedivs.Add(ReadDiana_SetAttr_Itruediv());
+        }
     }
 
     private Diana_SetAttr_Ifloordiv ReadDiana_SetAttr_Ifloordiv() => new Diana_SetAttr_Ifloordiv
@@ -426,7 +562,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Ifloordiv-{i}");
+#endif
             diana_setattr_ifloordivs.Add(ReadDiana_SetAttr_Ifloordiv());
+        }
     }
 
     private Diana_SetAttr_Imod ReadDiana_SetAttr_Imod() => new Diana_SetAttr_Imod
@@ -438,7 +579,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Imod-{i}");
+#endif
             diana_setattr_imods.Add(ReadDiana_SetAttr_Imod());
+        }
     }
 
     private Diana_SetAttr_Ipow ReadDiana_SetAttr_Ipow() => new Diana_SetAttr_Ipow
@@ -450,7 +596,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Ipow-{i}");
+#endif
             diana_setattr_ipows.Add(ReadDiana_SetAttr_Ipow());
+        }
     }
 
     private Diana_SetAttr_Ilshift ReadDiana_SetAttr_Ilshift() => new Diana_SetAttr_Ilshift
@@ -462,7 +613,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Ilshift-{i}");
+#endif
             diana_setattr_ilshifts.Add(ReadDiana_SetAttr_Ilshift());
+        }
     }
 
     private Diana_SetAttr_Irshift ReadDiana_SetAttr_Irshift() => new Diana_SetAttr_Irshift
@@ -474,7 +630,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Irshift-{i}");
+#endif
             diana_setattr_irshifts.Add(ReadDiana_SetAttr_Irshift());
+        }
     }
 
     private Diana_SetAttr_Ibitor ReadDiana_SetAttr_Ibitor() => new Diana_SetAttr_Ibitor
@@ -486,7 +647,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Ibitor-{i}");
+#endif
             diana_setattr_ibitors.Add(ReadDiana_SetAttr_Ibitor());
+        }
     }
 
     private Diana_SetAttr_Ibitand ReadDiana_SetAttr_Ibitand() => new Diana_SetAttr_Ibitand
@@ -498,7 +664,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Ibitand-{i}");
+#endif
             diana_setattr_ibitands.Add(ReadDiana_SetAttr_Ibitand());
+        }
     }
 
     private Diana_SetAttr_Ibitxor ReadDiana_SetAttr_Ibitxor() => new Diana_SetAttr_Ibitxor
@@ -510,7 +681,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_SetAttr_Ibitxor-{i}");
+#endif
             diana_setattr_ibitxors.Add(ReadDiana_SetAttr_Ibitxor());
+        }
     }
 
     private Diana_MKDict ReadDiana_MKDict() => new Diana_MKDict
@@ -522,7 +698,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_MKDict-{i}");
+#endif
             diana_mkdicts.Add(ReadDiana_MKDict());
+        }
     }
 
     private Diana_MKSet ReadDiana_MKSet() => new Diana_MKSet
@@ -534,7 +715,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_MKSet-{i}");
+#endif
             diana_mksets.Add(ReadDiana_MKSet());
+        }
     }
 
     private Diana_MKList ReadDiana_MKList() => new Diana_MKList
@@ -546,7 +732,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_MKList-{i}");
+#endif
             diana_mklists.Add(ReadDiana_MKList());
+        }
     }
 
     private Diana_Call ReadDiana_Call() => new Diana_Call
@@ -558,7 +749,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Call-{i}");
+#endif
             diana_calls.Add(ReadDiana_Call());
+        }
     }
 
     private Diana_Format ReadDiana_Format() => new Diana_Format
@@ -571,7 +767,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Format-{i}");
+#endif
             diana_formats.Add(ReadDiana_Format());
+        }
     }
 
     private Diana_Const ReadDiana_Const() => new Diana_Const
@@ -583,7 +784,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Const-{i}");
+#endif
             diana_consts.Add(ReadDiana_Const());
+        }
     }
 
     private Diana_MKTuple ReadDiana_MKTuple() => new Diana_MKTuple
@@ -595,7 +801,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_MKTuple-{i}");
+#endif
             diana_mktuples.Add(ReadDiana_MKTuple());
+        }
     }
 
     private Diana_Pack ReadDiana_Pack() => new Diana_Pack
@@ -607,7 +818,12 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Pack-{i}");
+#endif
             diana_packs.Add(ReadDiana_Pack());
+        }
     }
 
     private Diana_Replicate ReadDiana_Replicate() => new Diana_Replicate
@@ -619,58 +835,373 @@ public partial class AWorld
     {
         int len = ReadInt();
         for(var i = 0; i < len; i++)
+        {
+#if A_DBG
+            Console.WriteLine($"parsing Diana_Replicate-{i}");
+#endif
             diana_replicates.Add(ReadDiana_Replicate());
+        }
     }
 
-    public void LoadCode()
+    public (int, int) LoadCode()
     {
+        var entryPoint = (ReadInt(), ReadInt());
         lock(_loaderSync)
         {
+#if A_DBG
+            Console.WriteLine("start loading strings...");
+#endif
             Load_strings();
+#if A_DBG
+            Console.WriteLine("finished loading strings.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading dobjs...");
+#endif
             Load_dobjs();
+#if A_DBG
+            Console.WriteLine("finished loading dobjs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading internstrings...");
+#endif
             Load_internstrings();
+#if A_DBG
+            Console.WriteLine("finished loading internstrings.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading catchs...");
+#endif
             Load_catchs();
+#if A_DBG
+            Console.WriteLine("finished loading catchs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading funcmetas...");
+#endif
             Load_funcmetas();
+#if A_DBG
+            Console.WriteLine("finished loading funcmetas.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading blocks...");
+#endif
             Load_blocks();
+#if A_DBG
+            Console.WriteLine("finished loading blocks.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_functiondefs...");
+#endif
             Load_diana_functiondefs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_functiondefs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_loadglobalrefs...");
+#endif
             Load_diana_loadglobalrefs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_loadglobalrefs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_delvars...");
+#endif
             Load_diana_delvars();
+#if A_DBG
+            Console.WriteLine("finished loading diana_delvars.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_loadvars...");
+#endif
             Load_diana_loadvars();
+#if A_DBG
+            Console.WriteLine("finished loading diana_loadvars.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_storevars...");
+#endif
             Load_diana_storevars();
+#if A_DBG
+            Console.WriteLine("finished loading diana_storevars.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_actions...");
+#endif
             Load_diana_actions();
+#if A_DBG
+            Console.WriteLine("finished loading diana_actions.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_controlifs...");
+#endif
             Load_diana_controlifs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_controlifs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_jumpifnots...");
+#endif
             Load_diana_jumpifnots();
+#if A_DBG
+            Console.WriteLine("finished loading diana_jumpifnots.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_jumpifs...");
+#endif
             Load_diana_jumpifs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_jumpifs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_jumps...");
+#endif
             Load_diana_jumps();
+#if A_DBG
+            Console.WriteLine("finished loading diana_jumps.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_controls...");
+#endif
             Load_diana_controls();
+#if A_DBG
+            Console.WriteLine("finished loading diana_controls.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_trys...");
+#endif
             Load_diana_trys();
+#if A_DBG
+            Console.WriteLine("finished loading diana_trys.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_loops...");
+#endif
             Load_diana_loops();
+#if A_DBG
+            Console.WriteLine("finished loading diana_loops.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_fors...");
+#endif
             Load_diana_fors();
+#if A_DBG
+            Console.WriteLine("finished loading diana_fors.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_withs...");
+#endif
             Load_diana_withs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_withs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_getattrs...");
+#endif
             Load_diana_getattrs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_getattrs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattrs...");
+#endif
             Load_diana_setattrs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattrs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_iadds...");
+#endif
             Load_diana_setattr_iadds();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_iadds.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_isubs...");
+#endif
             Load_diana_setattr_isubs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_isubs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_imuls...");
+#endif
             Load_diana_setattr_imuls();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_imuls.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_itruedivs...");
+#endif
             Load_diana_setattr_itruedivs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_itruedivs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_ifloordivs...");
+#endif
             Load_diana_setattr_ifloordivs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_ifloordivs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_imods...");
+#endif
             Load_diana_setattr_imods();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_imods.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_ipows...");
+#endif
             Load_diana_setattr_ipows();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_ipows.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_ilshifts...");
+#endif
             Load_diana_setattr_ilshifts();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_ilshifts.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_irshifts...");
+#endif
             Load_diana_setattr_irshifts();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_irshifts.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_ibitors...");
+#endif
             Load_diana_setattr_ibitors();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_ibitors.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_ibitands...");
+#endif
             Load_diana_setattr_ibitands();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_ibitands.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_setattr_ibitxors...");
+#endif
             Load_diana_setattr_ibitxors();
+#if A_DBG
+            Console.WriteLine("finished loading diana_setattr_ibitxors.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_mkdicts...");
+#endif
             Load_diana_mkdicts();
+#if A_DBG
+            Console.WriteLine("finished loading diana_mkdicts.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_mksets...");
+#endif
             Load_diana_mksets();
+#if A_DBG
+            Console.WriteLine("finished loading diana_mksets.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_mklists...");
+#endif
             Load_diana_mklists();
+#if A_DBG
+            Console.WriteLine("finished loading diana_mklists.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_calls...");
+#endif
             Load_diana_calls();
+#if A_DBG
+            Console.WriteLine("finished loading diana_calls.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_formats...");
+#endif
             Load_diana_formats();
+#if A_DBG
+            Console.WriteLine("finished loading diana_formats.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_consts...");
+#endif
             Load_diana_consts();
+#if A_DBG
+            Console.WriteLine("finished loading diana_consts.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_mktuples...");
+#endif
             Load_diana_mktuples();
+#if A_DBG
+            Console.WriteLine("finished loading diana_mktuples.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_packs...");
+#endif
             Load_diana_packs();
+#if A_DBG
+            Console.WriteLine("finished loading diana_packs.");
+#endif
+#if A_DBG
+            Console.WriteLine("start loading diana_replicates...");
+#endif
             Load_diana_replicates();
+#if A_DBG
+            Console.WriteLine("finished loading diana_replicates.");
+#endif
+            Num_string = strings.Count;
+            Num_DObj = dobjs.Count;
+            Num_InternString = internstrings.Count;
+            Num_Catch = catchs.Count;
+            Num_FuncMeta = funcmetas.Count;
+            Num_Block = blocks.Count;
+            Num_Diana_FunctionDef = diana_functiondefs.Count;
+            Num_Diana_LoadGlobalRef = diana_loadglobalrefs.Count;
+            Num_Diana_DelVar = diana_delvars.Count;
+            Num_Diana_LoadVar = diana_loadvars.Count;
+            Num_Diana_StoreVar = diana_storevars.Count;
+            Num_Diana_Action = diana_actions.Count;
+            Num_Diana_ControlIf = diana_controlifs.Count;
+            Num_Diana_JumpIfNot = diana_jumpifnots.Count;
+            Num_Diana_JumpIf = diana_jumpifs.Count;
+            Num_Diana_Jump = diana_jumps.Count;
+            Num_Diana_Control = diana_controls.Count;
+            Num_Diana_Try = diana_trys.Count;
+            Num_Diana_Loop = diana_loops.Count;
+            Num_Diana_For = diana_fors.Count;
+            Num_Diana_With = diana_withs.Count;
+            Num_Diana_GetAttr = diana_getattrs.Count;
+            Num_Diana_SetAttr = diana_setattrs.Count;
+            Num_Diana_SetAttr_Iadd = diana_setattr_iadds.Count;
+            Num_Diana_SetAttr_Isub = diana_setattr_isubs.Count;
+            Num_Diana_SetAttr_Imul = diana_setattr_imuls.Count;
+            Num_Diana_SetAttr_Itruediv = diana_setattr_itruedivs.Count;
+            Num_Diana_SetAttr_Ifloordiv = diana_setattr_ifloordivs.Count;
+            Num_Diana_SetAttr_Imod = diana_setattr_imods.Count;
+            Num_Diana_SetAttr_Ipow = diana_setattr_ipows.Count;
+            Num_Diana_SetAttr_Ilshift = diana_setattr_ilshifts.Count;
+            Num_Diana_SetAttr_Irshift = diana_setattr_irshifts.Count;
+            Num_Diana_SetAttr_Ibitor = diana_setattr_ibitors.Count;
+            Num_Diana_SetAttr_Ibitand = diana_setattr_ibitands.Count;
+            Num_Diana_SetAttr_Ibitxor = diana_setattr_ibitxors.Count;
+            Num_Diana_MKDict = diana_mkdicts.Count;
+            Num_Diana_MKSet = diana_mksets.Count;
+            Num_Diana_MKList = diana_mklists.Count;
+            Num_Diana_Call = diana_calls.Count;
+            Num_Diana_Format = diana_formats.Count;
+            Num_Diana_Const = diana_consts.Count;
+            Num_Diana_MKTuple = diana_mktuples.Count;
+            Num_Diana_Pack = diana_packs.Count;
+            Num_Diana_Replicate = diana_replicates.Count;
         }
+        return entryPoint;
     }
 
     public static readonly THint<int> int_hint = THint<int>.val;

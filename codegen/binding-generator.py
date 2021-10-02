@@ -281,7 +281,6 @@ class Codegen:
         self.cls_name = "" # name that user see in the script language
         self.indent = ""
         self.getters = []
-        self.setters = []
     def __lshift__(self, other: str):
         self.IO.write(self.indent)
         self.IO.write(other)
@@ -298,14 +297,8 @@ class Codegen:
         finally:
             self.indent = indent
 
-    def declare(self, name: str, func, is_setter=False, is_getter=False):
-        if is_setter:
-            self.setters.append('{ "%s".ToIStr(), MK.CreateFunc(%s) },\n' % (name, func) )
-            return
-        
-        getter_desc = "true" if is_getter else "false"
-        self.getters.append('{ "%s".ToIStr(), (%s, MK.CreateFunc(%s)) },\n' % (name, getter_desc, func) )
-        
+    def declare(self, name: str, func):
+        self.getters.append('{ "%s".ToIStr(), MK.CreateFunc(%s) },\n' % (name, func) )
         return self
     
     def bind_getitem(self, x: MethodDecl):
@@ -313,7 +306,7 @@ class Codegen:
         bind_name = x.binding._
         name = f"bind_{bind_name}"
         params = [TParam(TName(self.impl_type)), *x.params]
-        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
+        self.declare(bind_name, name)
 
         self  << f"public static DObj {name}(Args _args) // bind this.[ind] \n"
         self << "{\n"
@@ -347,7 +340,7 @@ class Codegen:
         bind_name = x.binding._
         name = f"bind_{bind_name}"
         params = [TParam(TName(self.impl_type)), *x.params]
-        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
+        self.declare(bind_name, name)
 
         self  << f"public static DObj {name}(Args _args) // bind this.[ind]=val \n"
         self << "{\n"
@@ -376,7 +369,7 @@ class Codegen:
         bind_name = x.binding._
         name = f"bind_{bind_name}"
         
-        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
+        self.declare(bind_name, name)
         self  << f"public static DObj {name}(Args _args) // bind method \n"
         self << "{\n"
         variadic = False
@@ -459,7 +452,7 @@ class Codegen:
                     in_t: Type = param.cast_from
                 argn = f"_arg{i}"
                 if param.is_varg:
-                    self << f"var {argn} = new {expect_t.as_str()}[nargs - {i} - 1];\n"
+                    self << f"var {argn} = new {expect_t.as_str()}[nargs - {i}];\n"
                     self << f"for(var _i = {i}; _i < nargs; _i++)\n"
                     self << f"  {argn}[_i - {i}] = _args[_i];\n"
                     arguments.append(argn)
@@ -492,7 +485,7 @@ class Codegen:
         bind_name = x.binding._
         name = f"bind_{bind_name}"
         
-        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
+        self.declare(bind_name, name)
         self  << f"public static DObj {name}(Args _args) // bind cls prop \n"
         self << "{\n"
         with self.tab():
@@ -517,7 +510,7 @@ class Codegen:
     def bind_this_property(self,  x : MethodDecl):
         bind_name = x.binding._
         name = f"bind_{bind_name}"
-        self.declare(bind_name, name, is_getter=x.binding.is_getter, is_setter=x.binding.is_setter)
+        self.declare(bind_name, name)
         self  << f"public static DObj {name}(Args _args) // bind `this` prop \n"
         self << "{\n"
         with self.tab():
@@ -582,13 +575,13 @@ class Codegen:
             self << f"public string name => {dumps(bind_name)};\n"
             self << f"public static Cls unique = new Cls();\n"
             self << f"public Type NativeType => typeof({wrap_type});\n"
-            self << f"public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {{get; set;}}\n"
+            self << f"public System.Collections.Generic.Dictionary<InternString, DObj> Dict {{get; set;}}\n"
             self << f"public Cls()\n"
             self << "{\n"
             
             with self.tab():
                 self << "DWrap.RegisterTypeMap(NativeType, this);\n"
-                self << f"Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>\n"
+                self << f"Dict = new System.Collections.Generic.Dictionary<InternString, DObj>\n"
                 self << "{\n"
                 with self.tab():
                     for each in self.getters:

@@ -124,7 +124,7 @@ class TypeTrans(Trans):
     def typename(self, s):
         return {"List": 'list', 'Tuple': 'tuple', 'string': 'str'}.get(s, s)
     def array_type(self, t):
-        return f"tuple[{t}, ...]"
+        return f"PVector[{t}]"
     def generic_type(self, t, args):
         return f"{t}[{', '.join(args)}]"
     def tuple_type(self, *args):
@@ -275,7 +275,7 @@ class Codegen:
         with self.tab():
             self << f"private {CODE} Read{CODE}()"
             self << "{"
-            self << "    fileStream.Read(cache_4byte, 0, 1);"
+            self << "    binaryReader.Read(cache_4byte, 0, 1);"
             self << f"    return ({CODE})cache_4byte[0];"
             self << "}"
             self.newline
@@ -291,7 +291,8 @@ class Codegen:
             self << "    _ => throw new ArgumentOutOfRangeException(\"unknown code {code}.\")"
             self << "};"
             
-            self << "private Ptr Read(THint<Ptr> _) => ReadFromCode(ReadCODE());"
+            self << "private Ptr Read(THint<Ptr> _) => ReadPtr();"
+            self << "private Ptr ReadPtr() => ReadFromCode(ReadCODE());"
             for kind, params in datagen_seqs:
                 if params:
                     self << f"private {kind} Read{kind}() => new {kind}"
@@ -306,8 +307,13 @@ class Codegen:
                     with self.tab():
                         self << "int len = ReadInt();"
                         self << "for(var i = 0; i < len; i++)"
+                        self << "{"
                         with self.tab():
+                            self.IO.write("#if A_DBG\n")
+                            self << f"Console.WriteLine($\"parsing {kind}-{{i}}\");"
+                            self.IO.write("#endif\n")    
                             self << f"{kind.lower()}s.Add(Read(THint<{kind}>.val));"
+                        self << "}"
                     self << "}"
                     continue
                                     
@@ -318,19 +324,36 @@ class Codegen:
                 with self.tab():
                     self << "int len = ReadInt();"
                     self << "for(var i = 0; i < len; i++)"
+                    self << "{"
                     with self.tab():
+                        self.IO.write("#if A_DBG\n")
+                        self << f"Console.WriteLine($\"parsing {kind}-{{i}}\");"
+                        self.IO.write("#endif\n")
                         self << f"{kind.lower()}s.Add(Read{kind}());"
+                    self << "}"
                 self << "}"
                 self.newline
             
-            self << f"public void LoadCode()"
+            self << f"public (int, int) LoadCode()"
             self << "{"
+
             with self.tab():
+                self << "var entryPoint = (ReadInt(), ReadInt());"
                 self << "lock(_loaderSync)"
                 self << "{"
                 for kind, params in self.tab_iter(datagen_seqs):
+                    self.IO.write("#if A_DBG\n")
+                    self << f"Console.WriteLine(\"start loading {kind.lower()}s...\");"
+                    self.IO.write("#endif\n")
                     self << f"Load_{kind.lower()}s();"
+                    self.IO.write("#if A_DBG\n")
+                    self << f"Console.WriteLine(\"finished loading {kind.lower()}s.\");"
+                    self.IO.write("#endif\n")
+                for kind, params in self.tab_iter(datagen_seqs):
+                    self << f"Num_{kind} = {kind.lower()}s.Count;"
                 self << "}"
+                self << "return entryPoint;"
+
             self << "}"
             self.newline
             for t in ["int", "(int, int)", "float", "bool", "Ptr", "string", *self.dataclasses]:
@@ -342,6 +365,7 @@ class Codegen:
     def gen_python_code_builder(self, language: Language):
         self << "from __future__ import annotations"
         self << "from dataclasses import dataclass"
+        self << "from pyrsistent  import PVector"
         self << "from dianascript.serialize import *"
         self.newline
         self.newline
@@ -360,15 +384,16 @@ class Codegen:
                     py_type = py_parse(type)
                     self << f"{field}: {py_type}"
                 self << f"TAG = {i}"
-                
                 self.newline
-                self << "def serialize_(self, arr: bytearray):"
-                with self.tab():
-                    self << "arr.append(self.TAG)"
-                    for field, type in params:
-                        self << f"serialize_(self.{field}, arr)"
-                self.newline
+
                 if params:
+                    self << "def serialize_(self, arr: bytearray):"
+                    with self.tab():
+                        # self << "arr.append(self.TAG)"
+                        for field, type in params:
+                            self << f"serialize_(self.{field}, arr)"
+                    self.newline
+                
                     self << "def as_ptr(self) -> Ptr:"
                     with self.tab():
                         self << f"return Ptr(self.TAG, DFlatGraphCode.{kind.lower()}s.cache(self))"
@@ -416,6 +441,15 @@ class Codegen:
             with self.tab():
                 for field, type in params:
                     self << f"serialize_(cls.{field}, arr)"
+            
+            self << "inspect = {"
+            for each in  self.tab_iter(self.enums):
+                if each in params_lookup:
+                    self << f"{each}.TAG : ({each}, {each.lower()}s),"
+                else:
+                    self << f"{each}.TAG : ({each}, None),"
+            self << "}"
+                
         self.newline
         self << f"{language.name}IR" + " = " + ' | '.join(py_parse(type) for type, params in self.datagen_seqs if params)
     

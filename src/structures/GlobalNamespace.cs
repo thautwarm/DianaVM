@@ -15,7 +15,7 @@ public partial class GlobalNamespace
       GlobalNamespace.Print();
       return MK.Nil();
     }
-    var _arg0 = new DObj[nargs - 0 - 1];
+    var _arg0 = new DObj[nargs - 0];
     for(var _i = 0; _i < nargs; _i++)
       _arg0[_i - 0] = _args[_i];
     {
@@ -27,13 +27,13 @@ public partial class GlobalNamespace
   public string name => "GlobalNamespace";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(GlobalNamespace);
-  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, DObj> Dict {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
+    Dict = new System.Collections.Generic.Dictionary<InternString, DObj>
     {
-      { "print".ToIStr(), (false, MK.CreateFunc(bind_print)) },
+      { "print".ToIStr(), MK.CreateFunc(bind_print) },
     };
   }
   }

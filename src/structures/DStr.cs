@@ -162,7 +162,7 @@ public partial class DStr
       var _return = String.Format(_arg0);
       return MK.create(_return);
     }
-    var _arg1 = new Object[nargs - 1 - 1];
+    var _arg1 = new Object[nargs - 1];
     for(var _i = 1; _i < nargs; _i++)
       _arg1[_i - 1] = _args[_i];
     {
@@ -251,28 +251,28 @@ public partial class DStr
   public string name => "str";
   public static Cls unique = new Cls();
   public Type NativeType => typeof(DStr);
-  public System.Collections.Generic.Dictionary<InternString, (bool, DObj)> Getters {get; set;}
+  public System.Collections.Generic.Dictionary<InternString, DObj> Dict {get; set;}
   public Cls()
   {
     DWrap.RegisterTypeMap(NativeType, this);
-    Getters = new System.Collections.Generic.Dictionary<InternString, (bool, DObj)>
+    Dict = new System.Collections.Generic.Dictionary<InternString, DObj>
     {
-      { "join".ToIStr(), (false, MK.CreateFunc(bind_join)) },
-      { "concat".ToIStr(), (false, MK.CreateFunc(bind_concat)) },
-      { "endswith".ToIStr(), (false, MK.CreateFunc(bind_endswith)) },
-      { "startswith".ToIStr(), (false, MK.CreateFunc(bind_startswith)) },
-      { "__len__".ToIStr(), (false, MK.CreateFunc(bind___len__)) },
-      { "strip".ToIStr(), (false, MK.CreateFunc(bind_strip)) },
-      { "rstrip".ToIStr(), (false, MK.CreateFunc(bind_rstrip)) },
-      { "lstrip".ToIStr(), (false, MK.CreateFunc(bind_lstrip)) },
-      { "lower".ToIStr(), (false, MK.CreateFunc(bind_lower)) },
-      { "upper".ToIStr(), (false, MK.CreateFunc(bind_upper)) },
-      { "__contains__".ToIStr(), (false, MK.CreateFunc(bind___contains__)) },
-      { "format".ToIStr(), (false, MK.CreateFunc(bind_format)) },
-      { "substr".ToIStr(), (false, MK.CreateFunc(bind_substr)) },
-      { "insert".ToIStr(), (false, MK.CreateFunc(bind_insert)) },
-      { "remove".ToIStr(), (false, MK.CreateFunc(bind_remove)) },
-      { "index".ToIStr(), (false, MK.CreateFunc(bind_index)) },
+      { "join".ToIStr(), MK.CreateFunc(bind_join) },
+      { "concat".ToIStr(), MK.CreateFunc(bind_concat) },
+      { "endswith".ToIStr(), MK.CreateFunc(bind_endswith) },
+      { "startswith".ToIStr(), MK.CreateFunc(bind_startswith) },
+      { "__len__".ToIStr(), MK.CreateFunc(bind___len__) },
+      { "strip".ToIStr(), MK.CreateFunc(bind_strip) },
+      { "rstrip".ToIStr(), MK.CreateFunc(bind_rstrip) },
+      { "lstrip".ToIStr(), MK.CreateFunc(bind_lstrip) },
+      { "lower".ToIStr(), MK.CreateFunc(bind_lower) },
+      { "upper".ToIStr(), MK.CreateFunc(bind_upper) },
+      { "__contains__".ToIStr(), MK.CreateFunc(bind___contains__) },
+      { "format".ToIStr(), MK.CreateFunc(bind_format) },
+      { "substr".ToIStr(), MK.CreateFunc(bind_substr) },
+      { "insert".ToIStr(), MK.CreateFunc(bind_insert) },
+      { "remove".ToIStr(), MK.CreateFunc(bind_remove) },
+      { "index".ToIStr(), MK.CreateFunc(bind_index) },
     };
   }
   }

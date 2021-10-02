@@ -5,6 +5,7 @@ namespace DianaScript
 
     public static class CallDFuncExtensions
     {
+
         public static T dcall1<T>(DObj f, DObj arg)
         {
             return MK.unbox<T>(f.__call__(new Args { arg }));
@@ -57,9 +58,13 @@ namespace DianaScript
             return idToStr[s.identity];
         }
     }
-    public struct InternString
+    public struct InternString : IEquatable<InternString>, IComparable<InternString>
     {
         public int identity;
+
+        public int CompareTo(InternString other) => identity.CompareTo(other.identity);
+
+        public bool Equals(InternString other) => identity == other.identity;
 
         public override string ToString() => InternStringExtensions.idToStr[identity];
     }
