@@ -40,3 +40,11 @@ end
 
 
 print("y", fact(5))
+print([1, 2, 3])
+
+print([1, 2, 3].[0])
+
+if x + 1 = 2 then
+else
+    print(3)
+end

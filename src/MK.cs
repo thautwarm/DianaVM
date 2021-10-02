@@ -70,7 +70,7 @@ namespace DianaScript
         public static DNil Nil() => DNil.unique;
 
         public static DObj create() => Nil();
-        public static DDict Dict(Dictionary<DObj, DObj> d) => throw new NotImplementedException();
+        public static DDict Dict(Dictionary<DObj, DObj> d) => DDict.Make(d);
 
         public static DObj create(Dictionary<DObj, DObj> d) => Dict(d);
 
@@ -78,7 +78,7 @@ namespace DianaScript
 
         public static DObj create(DObj[] d) => Tuple(d);
 
-        public static DList List(List<DObj> d) => throw new NotImplementedException();
+        public static DList List(List<DObj> d) => DList.Make(d);
 
         // public static T create<T>(T o) where T : DObj => o;
         public static DObj create(List<DObj> d) => List(d);

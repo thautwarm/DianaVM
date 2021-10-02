@@ -1,0 +1,1 @@
+dotnet run runtests/test.ran --no-build

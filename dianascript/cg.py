@@ -217,16 +217,18 @@ class CG:
                 for each in elts:
                     self.cg_for_expr(each)
                 self << Diana_MKTuple(len(elts)).as_ptr()
+            
             case EDict(kvs):
                 for k, v in kvs:
                     self.cg_for_expr(k)
                     self.cg_for_expr(v)
                 self << Diana_MKDict(len(kvs)).as_ptr()
+            
             case EList(elts):
                 for e in elts:
                     self.cg_for_expr(e)
 
-                self << Diana_MKDict(len(elts)).as_ptr()
+                self << Diana_MKList(len(elts)).as_ptr()
 
             case ENot(expr):
                 self.cg_for_expr(expr)

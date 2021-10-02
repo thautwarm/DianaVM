@@ -37,7 +37,7 @@ ExceptionList1 = {
     "DBool": ["repr", "bool", "not"],
     "DNil": ["repr"],
     "DArray": ["iter", "repr"],
-    "DList": ["repr"],
+    "DList": ["repr", 'getitem', 'setitem', "delitem"],
     "DSet": [],
     "DDict": ["getitem", "setitem", "delitem"],
     "DTuple": ["add", "contains", "eq"],

@@ -297,7 +297,7 @@ namespace DianaScript
 #if A_DBG
             Console.WriteLine($"pop {n}; stacksize->{vstack.Count} - {n}");
 #endif
-            List<DObj> lst = new List<DObj>();
+            List<DObj> lst = list_init(n);
             for(var i = 0; i < n; i++)
                 lst[n - i -1]  = pop();
             return lst;

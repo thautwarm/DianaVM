@@ -132,31 +132,6 @@ public partial class DList
         }
 
 
-        public DObj __getitem__(DObj a)
-        {
-            var meth = this.Class.ops.__getitem__;
-            if (meth == null)
-                throw new InvalidOperationException($"'{this.Class.name}' object is not subscriptable.");
-            return meth(this, a);
-        }
-
-
-        public void __setitem__(DObj a, DObj b)
-        {
-            var meth = this.Class.ops.__setitem__;
-            if (meth == null)
-                throw new InvalidOperationException($"'{this.Class.name}' object does not support item assignment.");
-            meth(this, a, b);
-        }
-
-        public void __delitem__(DObj a)
-        {
-            var meth = this.Class.ops.__delitem__;
-            if (meth == null)
-                throw new InvalidOperationException($"'{this.Class.name}' object does not support item deletion.");
-            meth(this, a);
-        }
-
         public DObj __getattr__(InternString attr)
         {
             var meth = this.Class.ops.__getattr__;
