@@ -138,28 +138,18 @@ class CG:
                 self.cg_for_expr(cond)
 
             case SIf(cond, then, None):
-                self.cg_for_expr(cond)
-                with self.enter_block():
-                    self.cg_for_stmts(then)
-                    new_block = self.block
-                    linenos = self.linenos
 
-                target_offset = len(self.block) + len(new_block)
-                self.block.extend(new_block)
-                self.linenos.extend(linenos)
-                self << Diana_JumpIfNot(target_offset - 1).as_ptr()
+                self.cg_for_expr(cond)
+                i_jump_to_orelse_if_not = self << PlaceHolder()
+                self.cg_for_stmts(then)
+                self.block[i_jump_to_orelse_if_not] = Diana_JumpIfNot(self.cur_offset - 1).as_ptr()
+                
 
             case SIf(cond, [], orelse):
                 self.cg_for_expr(cond)
-                with self.enter_block():
-                    self.cg_for_stmts(orelse)
-                    new_block = self.block
-                    linenos = self.linenos
-
-                target_offset = len(self.block) + len(new_block)
-                self.block.extend(new_block)
-                self.linenos.extend(linenos)
-                self << Diana_JumpIf(target_offset - 1).as_ptr()
+                i_jump_to_orelse_if_not = self << PlaceHolder()
+                self.cg_for_stmts(orelse)
+                self.block[i_jump_to_orelse_if_not] = Diana_JumpIf(self.cur_offset - 1).as_ptr()
 
             case SIf(cond, then, orelse):
                 self.cg_for_expr(cond)
@@ -273,7 +263,7 @@ class CG:
                 self.cg_for_expr(value)
                 self << Diana_SetAttr(InternString(attr)).as_ptr()
             case _:
-                pass
+                raise TypeError(expr)
 
 _op_map = {
     "+": "add",

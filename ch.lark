@@ -55,7 +55,7 @@ expr_opt:      -> None
         | expr -> $1
 
 lhs_opt : -> None
-        | expr -> $1
+        | lhs -> $1
 
 stmt :   "var" seplist{",", name}              -> SDecl($2) | @1
        | seplist{":=", lhs} ":=" expr                          -> SAssign($1, $3) | @2

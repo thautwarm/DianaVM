@@ -23,6 +23,17 @@ public partial class GlobalNamespace
       return MK.Nil();
     }
   }
+  public static DObj bind_time(Args _args) // bind method 
+  {
+    var nargs = _args.NArgs;
+    if (nargs != 0)
+      throw new D_TypeError($"calling GlobalNamespace.time; needs at least  (0) arguments, got {nargs}.");
+    {
+      var _return = GlobalNamespace.Time();
+      return MK.create(_return);
+    }
+    throw new D_TypeError($"call GlobalNamespace.time; needs at most (0) arguments, got {nargs}.");
+  }
   public partial class Cls : DClsObj  {
   public string name => "GlobalNamespace";
   public static Cls unique = new Cls();
@@ -34,6 +45,7 @@ public partial class GlobalNamespace
     Dict = new System.Collections.Generic.Dictionary<InternString, DObj>
     {
       { "print".ToIStr(), MK.CreateFunc(bind_print) },
+      { "time".ToIStr(), MK.CreateFunc(bind_time) },
     };
   }
   }

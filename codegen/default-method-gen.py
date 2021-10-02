@@ -24,6 +24,7 @@ eqs = ["eq", "ne"]
 cmps = ["lt", "gt", "le", "ge"]
 bitops = ["bitand", "bitor", "bitxor", "lshift", "rshift"]
 ariths = ["add", "sub", "mul", "pow", "floordiv", "truediv"]
+iterable = ["iter"]
 
 
 # for obj
@@ -37,7 +38,7 @@ ExceptionList1 = {
     "DBool": ["repr", "bool", "not"],
     "DNil": ["repr"],
     "DArray": ["iter", "repr"],
-    "DList": ["repr", 'getitem', 'setitem', "delitem"],
+    "DList": ["repr", 'getitem', 'setitem', "delitem", *iterable],
     "DSet": [],
     "DDict": ["getitem", "setitem", "delitem"],
     "DTuple": ["add", "contains", "eq"],

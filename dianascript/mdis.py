@@ -22,12 +22,9 @@ def dis():
     for i, block in enumerate(DFlatGraphCode.blocks):
         print("block", i, ":")
         locs = block.location_data
-        j = len(block.codes) if locs else locs[0][0] - 1
         for i, ptr in enumerate(block.codes):
-            if i > j:
-                j = i
-                line, col = locs[i]
-                print(f"(line {line} column {col})")
+            
+                
             t, builder = DFlatGraphCode.inspect[ptr.kind]
             if builder is None:
                 print("    ", t.__name__, sep='')

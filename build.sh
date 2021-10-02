@@ -5,3 +5,5 @@ python codegen/binding-generator.py
 
 # unity does not support default interface implementation..
 python codegen/default-method-gen.py  
+
+dotnet build

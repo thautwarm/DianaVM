@@ -24,10 +24,10 @@ namespace DianaScript
     }
     public enum @__TOKEN
     {
-        RETURN,
-        GO_AHEAD,
-        LOOP_BREAK,
-        LOOP_CONTINUE
+        RETURN = 0,
+        GO_AHEAD = 1,
+        LOOP_BREAK = 2,
+        LOOP_CONTINUE = 3
     }
 
     public enum @__ACTION

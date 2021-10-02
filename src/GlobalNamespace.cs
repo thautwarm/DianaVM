@@ -12,6 +12,11 @@ namespace DianaScript
                 Console.Write(obj.__repr__());
             Console.WriteLine("");
         }
+
+        public static int Time()
+        {
+            return (int) (System.DateTime.Now.Ticks % int.MaxValue);
+        }
         public static Dictionary<InternString, DObj> Globals => throw new NotImplementedException();
         public static Dictionary<InternString, DObj> GetGlonal()
         {

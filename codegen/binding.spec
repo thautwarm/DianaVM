@@ -17,6 +17,7 @@ boxedtypes {
 
 GlobalNamespace GlobalNamespace GlobalNamespace{
     void Print(*DObj) as print
+    int Time() as time
 }
 
 NoneType DNil DNil{}

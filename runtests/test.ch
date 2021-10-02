@@ -48,3 +48,63 @@ if x + 1 = 2 then
 else
     print(3)
 end
+
+func g()
+    var i
+    each i of [1, 2, 3, 4] do
+        print(i)
+    end
+end
+
+g()
+
+print(int.parse("233"))
+
+x := time()
+
+func test()
+    var x
+    loop
+        if x < 10000000 then
+            break
+        end
+        x := x + 1
+    end
+end
+
+print((time() - x))
+
+print((time() - time()))
+print((time() - time()))
+print((time() - time()))
+print((time() - time()))
+print((time() - time()))
+print((time() - time()))
+print((time() - time()))
+print((time() - time()))
+print((time() - time()))
+print((time() - time()))
+print((time() - time()))
+print("aaa")
+x := time()
+
+func test2()
+    var x
+    x := 0
+    loop
+        if x > 10000000 then
+            break
+        end
+        x := x + 1
+    end
+    return x
+end
+
+x := time()
+print(test2())
+print(time() - x)
+
+x := time()
+print(test2(), "<<test2")
+print(time() - x)
+

@@ -24,10 +24,10 @@ namespace DianaScript
     }
     public enum TOKEN
     {
-        RETURN,
-        GO_AHEAD,
-        LOOP_BREAK,
-        LOOP_CONTINUE
+        RETURN = 0,
+        GO_AHEAD = 1,
+        LOOP_BREAK = 2,
+        LOOP_CONTINUE = 3
     }
 
     public enum ACTION
@@ -556,7 +556,8 @@ namespace DianaScript
                     switch(token)
                     {
                         case (int) TOKEN.LOOP_BREAK:
-                            break;
+                            token = (int) TOKEN.GO_AHEAD;
+                            goto loop_end;
                         case (int) TOKEN.RETURN:
                             return;
                         default:
@@ -564,6 +565,7 @@ namespace DianaScript
                             break;
                     }
                 }
+                loop_end: ;
 
                 break;
             }

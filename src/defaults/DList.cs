@@ -13,15 +13,6 @@ public partial class DList
         }
 
 
-        public IEnumerable<DObj> __iter__()
-        {
-            var meth = this.Class.ops.__iter__;
-            if (meth == null)
-                throw new InvalidOperationException($"{this.Class.name} objects are not iterable.");
-            return meth(this);
-        }
-
-
         public DObj __call__(Args args)
         {
             var meth = this.Class.ops.__call__;

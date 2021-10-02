@@ -55,7 +55,7 @@ expr_opt: -> expr_opt_0
         | expr -> expr_opt_1                     
 
 lhs_opt : -> lhs_opt_0                  
-        | expr -> lhs_opt_1                     
+        | lhs -> lhs_opt_1                    
 
 stmt :   "var" seplist{",", name} -> stmt_0                                                                 
        | seplist{":=", lhs} ":=" expr -> stmt_1                                                                                       

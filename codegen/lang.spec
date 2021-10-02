@@ -153,7 +153,8 @@ Loop(body: int)
         switch(token)
         {
             case (int) TOKEN.LOOP_BREAK:
-                break;
+                token = (int) TOKEN.GO_AHEAD;
+                goto loop_end;
             case (int) TOKEN.RETURN:
                 return;
             default:
@@ -161,6 +162,7 @@ Loop(body: int)
                 break;
         }
     }
+    loop_end: ;
 %]
 For(body: int)
 [%
