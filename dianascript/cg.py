@@ -59,7 +59,7 @@ class CG:
             return (InternString(name).as_int() << 2) | GLOBAL_FLAG
     
     def __lshift__(self, other: Ptr | PlaceHolder):
-        self.block.append(other)
+        self.block.append(other) # type: ignore
         return len(self.block) - 1
     
     def cg_for_stmts(self, stmts):

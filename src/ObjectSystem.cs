@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-
+using System.Linq;
+using System.Runtime.CompilerServices;
 /*
 primitive types:
 int, float, str, bool, noneclass, meta,
@@ -10,73 +11,142 @@ ref: directref globalref
 namespace DianaScript
 {
 
+    using static CallDFuncExtensions;
     using NameSpace = Dictionary<InternString, DObj>;
 
+    using BinaryOp = Func<DObj, DObj, DObj>;
+    using CompareOp = Func<DObj, DObj, bool>;
+    public struct Ops
+    {
+        public Dictionary<InternString, DObj> Dict;
+        public Func<DObj, Args, DObj> __call__;
+        public BinaryOp __add__;
+        public BinaryOp __sub__;
+        public BinaryOp __truediv__;
+        public BinaryOp __floordiv__;
+        public BinaryOp __mul__;
+        public BinaryOp __pow__;
+        public BinaryOp __mod__;
+        public BinaryOp __lshift__;
+        public BinaryOp __rshift__;
+        public BinaryOp __bitand__;
+        public BinaryOp __bitor__;
+        public BinaryOp __bitxor__;
+        public BinaryOp __getitem__;
 
-    public interface DObj
+        public CompareOp __subclasscheck__;
+        public CompareOp __contains__;
+        public CompareOp __gt__;
+        public CompareOp __ge__;
+        public CompareOp __lt__;
+        public CompareOp __le__;
+        public CompareOp __eq__;
+        public CompareOp __ne__;
+        public Action<DObj, DObj, DObj> __setitem__;
+        public Action<DObj, DObj> __delitem__;
+        public Func<DObj, InternString, DObj> __getattr__;
+        public Action<DObj, InternString, DObj> __setattr__;
+
+        public Func<DObj, DObj> __enter__;
+        public Action<DObj, DObj, DObj, DObj> __exit__;
+        public Func<DObj, IEnumerable<DObj>> __iter__;
+
+        // unambiguous
+        public Func<DObj, string> __repr__;
+
+        // readable
+        public Func<DObj, string> __str__;
+        public Func<DObj, int> __len__;
+        public Func<DObj, bool> __not__;
+
+        public Func<DObj, DObj> __neg__;
+
+        public Func<DObj, DObj> __invert__;
+
+        public Func<DObj, bool> __bool__;
+        public Func<DObj, int> __hash__;
+
+        public static Ops defaultOps = new Ops
+        {
+            __hash__ = RuntimeHelpers.GetHashCode,
+            __not__ = (x) => x.__bool__(),
+            __bool__ = (x) => true,
+            __repr__ = (x) => $"<{x.Class.name} at {RuntimeHelpers.GetHashCode(x)}>",
+            __eq__ = (x, y) => x.Native == y.Native,
+            __ne__ = (x, y) => !x.__eq__(y),
+
+        };
+        public Ops Make(Dictionary<InternString, DObj> d)
+        {
+            throw new NotImplementedException("");
+        }
+    }
+
+    public interface DObj : IComparable<DObj>, IEquatable<DObj>
     {
 
-        public DClsObj GetCls { get; }
+        public DClsObj Class { get; }
         public object Native { get; }
 
-        public DObj Get(InternString attr)
+        public IEnumerable<DObj> __iter__();
+        public DObj __call__(Args args);
+        public DObj __add__(DObj a);
+        public DObj __sub__(DObj a);
+        public DObj __mul__(DObj a);
+        public DObj __floordiv__(DObj a);
+        public DObj __truediv__(DObj a);
+        public DObj __pow__(DObj a);
+        public DObj __mod__(DObj a);
+        public DObj __lshift__(DObj a);
+        public DObj __rshift__(DObj a);
+        public DObj __bitand__(DObj a);
+        public DObj __bitor__(DObj a);
+        public DObj __bitxor__(DObj a);
+        public DObj __getitem__(DObj a);
+        public void __setitem__(DObj a, DObj b);
+        public void __delitem__(DObj a);
+        public DObj __getattr__(InternString attr);
+        public void __setattr__(InternString attr, DObj value);
+        public int __len__();
+        public bool __bool__();
+        public bool __not__();
+        public DObj __neg__();
+        public DObj __invert__();
+        public int __hash__();
+        public string __repr__();
+        public string __str__();
+        public bool __subclasscheck__(DObj o);
+        public bool __contains__(DObj o);
+        public bool __gt__(DObj o);
+        public bool __ge__(DObj o);
+        public bool __lt__(DObj o);
+        public bool __le__(DObj o);
+        public bool __eq__(DObj o);
+        public bool __ne__(DObj o);
+        public DObj __enter__();
+        public void __exit__(DObj errtype, DObj err, DObj frames);
+
+
+        public static bool operator <(DObj operand1, DObj operand2)
         {
-            (bool, DObj) o;
-            var getters = this.GetCls.Getters;
-            if (getters != null && getters.TryGetValue(attr, out o))
-            {
-                if (o.Item1) return o.Item2.__call__(new Args { this });
-                return o.Item2;
-            }
-            throw new D_AttributeError(this.GetCls, MK.String(attr.ToString()));
+            return operand1.__lt__(operand1);
         }
 
-        public void Set(InternString attr, DObj value)
+        public static bool operator <=(DObj operand1, DObj operand2)
         {
-            DObj o;
-            var setters = this.GetCls.Setters;
-            if (setters != null && setters.TryGetValue(attr, out o))
-            {
-                o.__call__(new Args { value, this });
-            }
-
-            throw new D_AttributeError(this.GetCls, MK.String(attr.ToString()));
+            return operand1.__le__(operand1);
         }
 
-        public DObj __enter__() => throw new D_TypeError($"{this.GetCls.__repr__} does not support __enter__.");
+        public static bool operator >(DObj operand1, DObj operand2)
+        {
+            return operand1.__gt__(operand1);
+        }
 
-        public void __exit__(DObj exctype, DObj exc, DObj frame) => throw new D_TypeError($"{this.GetCls.__repr__} does not support __enter__.");
+        public static bool operator >=(DObj operand1, DObj operand2)
+        {
+            return operand1.__ge__(operand1);
+        }
 
-        public DObj __call__(Args args) => throw new D_TypeError($"{this.GetCls.__repr__} instances are not callable");
-
-        IEnumerable<DObj> __iter__ => throw new D_TypeError($"{this.GetCls.__repr__} instances are not iterable");
-        public string __repr__ => $"{Native.ToString()}";
-        public string __str__ => __repr__;
-        public DObj __add__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '+' operator.");
-        public DObj __sub__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '-' operator.");
-        public DObj __truediv__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support / operator.");
-        public DObj __floordiv__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '//' operator.");
-        public DObj __mul__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '*' operator.");
-        public DObj __pow__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '**' operator.");
-        public DObj __mod__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '%' operator.");
-        public DObj __lshift__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '<<' operator.");
-        public DObj __rshift__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '>>' operator.");
-        public DObj __bitand__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '&' operator.");
-        public DObj __bitor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '|' operator.");
-        public DObj __bitxor__(DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support '^' operator.");
-        public DObj __invert__ => throw new D_TypeError($"{this.GetCls.__repr__} does not support '~' operator.");
-        public DObj __neg__ => throw new D_TypeError($"{this.GetCls.__repr__} does not support unary '-' operator.");
-        public DObj __getitem__(DObj ind) => throw new D_TypeError($"{this.GetCls.__repr__} does not support subscript operation.");
-        public void __setitem__(DObj ind, DObj other) => throw new D_TypeError($"{this.GetCls.__repr__} does not support subscript store operation.");
-        public void __delitem__(DObj ind) => throw new D_TypeError($"{this.GetCls.__repr__} does not support item delete.");
-        int __len__ => throw new D_TypeError($"{this.GetCls.__repr__} does not support length.");
-        bool __bool__ => true;
-        bool __not__ => !__bool__;
-        public bool __eq__(DObj other) => this.Native == other.Native;
-        public bool __ne__(DObj other) => !(this.__eq__(other));
-        public int __hash__ => Native.GetHashCode();
-        public bool __contains__(DObj a) => throw new D_TypeError($"{this.GetCls.__repr__} does not support contains operation.");
-        public bool __subclasscheck__(DObj a) => ((DClsObj)this) == ((DClsObj)a);
 
     }
 
@@ -88,6 +158,7 @@ namespace DianaScript
         public object Native => src;
         public static DArray Make(DClsObj eltype, int n)
         {
+
             return new DArray
             {
                 eltype = eltype,
@@ -104,8 +175,7 @@ namespace DianaScript
 
         public DObj this[int i]
         {
-            get =>
-(DObj)src.GetValue(i);
+            get => (DObj)src.GetValue(i);
             set
             {
                 var native = value.Native.GetType();
@@ -120,71 +190,57 @@ namespace DianaScript
             }
         }
         public int Count => src.GetLength(0);
-        public string __repr__ => $"Array({this.eltype.__repr__}, [{String.Join(", ", ((this as DObj).__iter__))}])";
-        IEnumerable<DObj> DObj.__iter__
+        public string __repr__() => $"Array({(this.eltype as DObj).__repr__()}, [{String.Join(", ", ((this as DObj).__iter__()))}])";
+        public IEnumerable<DObj> __iter__()
         {
-            get
+            int n = Count;
+            for (var i = 0; i < n; i++)
             {
-                int n = Count;
-                for (var i = 0; i < n; i++)
-                {
-                    yield return this[i];
-                }
+                yield return this[i];
             }
+
         }
+
     }
 
     public interface DClsObj : DObj
     {
 
-        public DObj AsObj => this;
         public Type NativeType { get; }
 
-        public Dictionary<InternString, (bool, DObj)> Getters => null;
-        public Dictionary<InternString, DObj> Setters => null;
+        public Ops ops { get; }
+        public Dictionary<InternString, DObj> Dict { get; }
 
         // generate by stub
         public string name { get; }
 
-        // change by hand
-        object DObj.Native => this;
-        DClsObj DObj.GetCls => meta.cls;
-        DObj DObj.Get(InternString attr)
-        {
-            (bool, DObj) o;
-            if (Getters != null && Getters.TryGetValue(attr, out o))
-                if (o.Item1)
-                    return o.Item2.__call__(new Args { this });
-                else
-                    return o.Item2;
-            throw new D_AttributeError(this, MK.String(attr.ToString()));
-        }
-        void DObj.Set(InternString attr, DObj v)
-        {
-            Getters[attr] = (false, v);
-        }
-        string DObj.__repr__ => $"<{this.name}>";
-        // __dict__ returns None if dict
+
     }
 
 
-    public class meta : DClsObj
+    public partial class meta : DClsObj
     {
 
-        public static meta cls = new meta();
+        public static meta unique = new meta();
+
+        public Ops ops => Ops.defaultOps;
+
+        public Dictionary<InternString, DObj> Dict => null;
 
         public string name => nameof(meta);
 
-        public DClsObj GetCls => this;
+        public DClsObj Class => this;
 
         public Type NativeType => typeof(Type);
 
-        DObj DObj.__call__(Args args)
+        public object Native => NativeType;
+
+        public DObj __call__(Args args)
         {
             var narg = args.NArgs;
             if (narg == 1)
             {
-                return args[0].GetCls;
+                return args[0].Class;
             }
             // create user class
             throw new NotImplementedException();
@@ -195,7 +251,7 @@ namespace DianaScript
     public partial class DFunc : DObj
     {
         public object Native => this;
-        public string Repr => $"<function>";
+
         public DRef[] freevals;
         public int[] nonargcells;
         public bool is_vararg;
@@ -204,7 +260,11 @@ namespace DianaScript
         public int metadataInd;
         public int body;
         public Dictionary<InternString, DObj> nameSpace;
-        public string __repr__ => $"<code at {(this as DObj).__hash__}>";
+        public string __repr__()
+        {
+            var name = AWorld.funcmetas[metadataInd].name;
+            return $"<func {name} at {(this as DObj).__hash__()}>";
+        }
 
         public static DFunc Make(
             int body, int narg, int nlocal, int metadataInd,
@@ -229,10 +289,10 @@ namespace DianaScript
         public static DInt Make(int i) => new DInt { value = i };
         public partial class Cls
         {
-            DObj DObj.__call__(Args args)
+            public DObj __call__(Args args)
             {
                 if (args.NArgs == 0) return MK.Int(0);
-                if (args.NArgs != 1) throw new D_TypeError($"object {(this as DObj).__repr__} is not callable.");
+                if (args.NArgs != 1) throw new D_TypeError($"object {(this as DObj).__repr__()} is not callable.");
                 var x = args[1];
                 switch (x)
                 {
@@ -245,7 +305,7 @@ namespace DianaScript
                     case DStr s:
                         return MK.Int(int.Parse(s.value));
                     default:
-                        throw new D_TypeError($"cannot cast {x.GetCls.__repr__} to {(this as DObj).__repr__}");
+                        throw new D_TypeError($"cannot cast {x.Class.__repr__()} to {(this as DObj).__repr__()}");
                 }
             }
         }
@@ -254,30 +314,37 @@ namespace DianaScript
 
         public bool Test => value != 0;
 
-        object DObj.Native => value;
+        public object Native => value;
 
-        string DObj.__repr__ => value.ToString();
+        public string __repr__() => value.ToString();
 
     }
 
+    public interface Ref : DObj
+    {
+        public void set_contents(DObj value);
+        public DObj get_contents();
+    }
 
 
     public partial class DRef : Ref
     {
         public DObj cell_contents;
 
+        public object Native => cell_contents;
         public DObj get_contents() => cell_contents;
 
         public void set_contents(DObj value) => cell_contents = value;
 
-        public object Native => this;
-
-        public string __repr__ => $"<DRef at {(this as DObj).__hash__}>";
+        public string __repr__() =>
+            cell_contents == null ?
+            "<DRef undefined>" : $"<DRef of {cell_contents.__repr__()}>";
 
         public DRef()
         {
             cell_contents = null;
         }
+
     }
 
     public partial class DRefGlobal : Ref
@@ -291,7 +358,7 @@ namespace DianaScript
 
         public object Native => this;
 
-        public string __repr__ => $"<DRef at {(this as DObj).__hash__}>";
+        public string __repr__() => $"<DRefGlobal at {(this as DObj).__hash__()}>";
 
         public DRefGlobal(NameSpace ns, InternString s)
         {
@@ -308,16 +375,16 @@ namespace DianaScript
         public bool value;
         public object Native => value;
 
-        public string __repr__ => value.ToString();
-        bool DObj.__bool__ => value;
-        bool DObj.__not__ => !value;
+        public string __repr__() => value.ToString();
+        public bool __bool__() => value;
+        public bool __not__() => !value;
 
         public partial class Cls
         {
-            DObj DObj.__call__(Args args)
+            public DObj __call__(Args args)
             {
                 if (args.Count == 0) return MK.Bool(false);
-                if (args.Count != 1) throw new D_TypeError($"object {(this as DObj).__repr__} is not callable.");
+                if (args.Count != 1) throw new D_TypeError($"object {this.__repr__()} is not callable.");
                 var x = args[1];
                 switch (x)
                 {
@@ -330,7 +397,7 @@ namespace DianaScript
                     case DStr s:
                         return MK.Bool(bool.Parse(s.value));
                     default:
-                        throw new D_TypeError($"cannot cast {x.GetCls.__repr__} to {(this as DObj).__repr__}");
+                        throw new D_TypeError($"cannot cast {x.Class.__repr__()} to {(this as DObj).__repr__()}");
                 }
             }
         }
@@ -345,10 +412,10 @@ namespace DianaScript
         public static DFloat Make(float i) => new DFloat { value = i };
         public partial class Cls
         {
-            DObj DObj.__call__(Args args)
+            public DObj __call__(Args args)
             {
                 if (args.Count == 0) return MK.Float(0.0f);
-                if (args.Count != 1) throw new D_TypeError($"object {(this as DObj).__repr__} is not callable.");
+                if (args.Count != 1) throw new D_TypeError($"object {(this as DObj).__repr__()} is not callable.");
                 var x = args[1];
                 switch (x)
                 {
@@ -361,7 +428,7 @@ namespace DianaScript
                     case DStr s:
                         return MK.Float(float.Parse(s.value));
                     default:
-                        throw new D_TypeError($"cannot cast {x.GetCls.__repr__} to {(this as DObj).__repr__}");
+                        throw new D_TypeError($"cannot cast {x.Class.__repr__()} to {this.__repr__()}");
                 }
             }
         }
@@ -369,9 +436,9 @@ namespace DianaScript
 
         public bool Test => value != 0.0;
 
-        object DObj.Native => value;
+        public object Native => value;
 
-        string DObj.__repr__ => value.ToString();
+        public string __repr__() => value.ToString();
 
         // public static implicit operator DFloat(float d) => MK.Float(d);
         // public static implicit operator float(DFloat d) => d.value;
@@ -386,7 +453,7 @@ namespace DianaScript
             public DObj __call__(Args args)
             {
                 if (args.Count == 0) return MK.String("");
-                if (args.Count != 1) throw new D_TypeError($"object {(this as DObj).__repr__} is not callable.");
+                if (args.Count != 1) throw new D_TypeError($"object {this.__repr__()} is not callable.");
                 var x = args[1];
                 switch (x)
                 {
@@ -399,14 +466,14 @@ namespace DianaScript
                     case DStr _:
                         return x;
                     default:
-                        throw new D_TypeError($"cannot cast {x.GetCls.__repr__} to {(this as DObj).__repr__}");
+                        throw new D_TypeError($"cannot cast {x.Class.__repr__()} to {this.__repr__()}");
                 }
             }
         }
         public string value;
         public object Native => this.value;
 
-        public string __repr__ => value.Replace("\"", "\\\"");
+        public string __repr__() => value.Replace("\"", "\\\"");
 
 
     }
@@ -460,6 +527,9 @@ namespace DianaScript
     public partial class DNil : DObj
     {
         public static DNil Make() => unique;
+
+        public string __repr__() => "None";
+
         public static readonly DNil unique = new DNil();
         public object Native => this;
     }
@@ -470,12 +540,12 @@ namespace DianaScript
         {
 
             public string name => $"wrap({NativeType.FullName})";
-            public static Cls unique = new Cls();
             public Type NativeType { get; set; }
-            public System.Collections.Generic.Dictionary<string, (bool, DObj)> Getters { get; set; }
+            public Dictionary<InternString, DObj> dict { get; set; }
+            public Dictionary<InternString, DObj> Dict => dict;
             public Cls()
             {
-                Getters = new System.Collections.Generic.Dictionary<string, (bool, DObj)>
+                this.dict = new Dictionary<InternString, DObj>
                 {
                 };
             }
@@ -484,8 +554,9 @@ namespace DianaScript
     public partial class DWrap : DObj
     {
         public DClsObj _cls;
-        public DClsObj GetCls => _cls;
-        protected static Dictionary<Type, DClsObj> typemaps = new Dictionary<Type, DClsObj>();
+        public DClsObj Class => _cls;
+        internal static Dictionary<Type, DClsObj> typemaps = new Dictionary<Type, DClsObj>();
+        public object value;
 
         public static DClsObj TypeMapOrCache(Type t)
         {
@@ -513,7 +584,7 @@ namespace DianaScript
             _cls = TypeMapOrCache(d.GetType());
 
         }
-        public object value;
+
         public object Native => value;
     }
 
@@ -534,7 +605,7 @@ namespace DianaScript
         public static DList Make(List<DObj> v) => new DList { src = v };
         public List<DObj> src;
         public object Native => src;
-
+        public string __repr__() => $@"[{String.Join(", ", src.Select(x => x.__repr__()))}]";
     }
 
     public partial class DSet : DObj
@@ -555,6 +626,42 @@ namespace DianaScript
         public object Native => func;
 
         public DObj __call__(Args args) => func(args);
+    }
+
+    public partial class DUserObj : DObj
+    {
+        private DClsObj _cls;
+        public DClsObj Class => _cls;
+        public Dictionary<InternString, DObj> table;
+
+        public object Native => this;
+        public DUserObj(DUserObj.Cls cls, Dictionary<InternString, DObj> table)
+        {
+            _cls = cls;
+            this.table = table;
+
+        }
+        public partial class Cls
+        {
+            public string _name;
+            public Ops _ops;
+            public Dictionary<InternString, DObj> _methods;
+            public Type NativeType => typeof(DUserObj.Cls);
+
+            public Ops ops => _ops;
+            public string name => _name;
+            public Dictionary<InternString, DObj> Dict => _methods;
+
+            public object Native => this;
+
+            public Cls(string name, Ops ops, Dictionary<InternString, DObj> methods)
+            {
+                _name = name;
+                _ops = ops;
+                _methods = methods;
+            }
+
+        }
     }
 
 }

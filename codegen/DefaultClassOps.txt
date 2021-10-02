@@ -1,0 +1,268 @@
+metaclass
+        public DClsObj Class => meta.unique;
+ops
+        public Ops ops => Ops.defaultOps;
+native
+        public Type NativeType => typeof($$);
+dict
+        public Dictionary<InternString, DObj> Dict => null;
+
+nativetype_correspond
+        public object Native => NativeType;
+
+invalid_op
+
+        private InvalidOperationException invalid_op(string op)
+        {
+            return new InvalidOperationException($"unsupported operator '{op}' for class object {this.name}");
+        }
+
+iter
+        public IEnumerable<DObj> __iter__()
+        {
+            
+            throw new InvalidOperationException($"class object '{this.name}' is not iterable.");
+            
+        }
+
+call
+        public DObj __call__(Args args)
+        {
+            throw new InvalidOperationException($"class object '{this.name}' is not callable.");
+        }
+
+add
+        public DObj __add__(DObj a)
+        {
+            throw this.invalid_op("+");
+        }
+
+sub
+        public DObj __sub__(DObj a)
+        {
+            
+            throw this.invalid_op("-");
+            
+        }
+mul
+        public DObj __mul__(DObj a)
+        {
+            throw this.invalid_op("*");
+        }
+floordiv
+        public DObj __floordiv__(DObj a)
+        {
+            var meth = this.Class.ops.__floordiv__;
+            if (meth == null)
+                throw this.invalid_op("floor division");
+            return meth(this, a);
+        }
+truediv
+        public DObj __truediv__(DObj a)
+        {
+            var meth = this.Class.ops.__truediv__;
+            if (meth == null)
+                throw this.invalid_op("division");
+            return meth(this, a);
+        }
+pow
+        public DObj __pow__(DObj a)
+        {
+            throw this.invalid_op("**");
+        }
+mod
+        public DObj __mod__(DObj a)
+        {
+            throw this.invalid_op("%");
+        }
+lshift
+        public DObj __lshift__(DObj a)
+        {
+            throw this.invalid_op("<<");
+        }
+
+rshift
+        public DObj __rshift__(DObj a)
+        {
+            throw this.invalid_op(">>");
+        }
+
+bitand
+        public DObj __bitand__(DObj a)
+        {
+            
+            throw this.invalid_op("&");
+        }
+bitor
+        public DObj __bitor__(DObj a)
+        {
+            throw this.invalid_op("|");    
+        }
+bitxor
+        public DObj __bitxor__(DObj a)
+        {
+
+            throw this.invalid_op("^");
+
+        }
+
+getitem
+        public DObj __getitem__(DObj a)
+        {
+
+            throw new InvalidOperationException($"class object'{this.name}' is not subscriptable.");
+
+        }
+
+setitem
+        public void __setitem__(DObj a, DObj b)
+        {
+
+            throw new InvalidOperationException($"class object '{this.name}' does not support item assignment.");
+        }
+delitem
+        public void __delitem__(DObj a)
+        {
+            throw new InvalidOperationException($"class object '{this.name}' does not support item deletion.");
+        }
+getattr
+        public DObj __getattr__(InternString attr)
+        {
+            if (Dict == null || !Dict.TryGetValue(attr, out var meth))
+                throw this.invalid_op($"o.{attr}");
+            return meth;
+        }
+setattr
+        public void __setattr__(InternString attr, DObj value)
+        {
+            throw this.invalid_op($"o.{attr}=v");
+        }
+len
+        public int __len__()
+        {
+            throw this.invalid_op($"len");
+
+        }
+bool
+        public bool __bool__()
+        {
+            return true;
+        }
+neg
+        public DObj __neg__()
+        {
+            throw this.invalid_op($"negation(-)");
+        }
+inv
+        public DObj __invert__()
+        {
+            throw this.invalid_op($"invert(~)");
+        }
+not
+        public bool __not__()
+        {
+            return !this.__bool__();
+        }
+hash
+        public int __hash__()
+        {
+            return RuntimeHelpers.GetHashCode(this);
+        }
+
+subclasscheck
+        public bool __subclasscheck__(DObj o)
+        {
+            return (o.Class == this);
+        }
+contains
+        public bool __contains__(DObj o)
+        {
+            throw this.invalid_op("contains");
+        }
+gt
+        public bool __gt__(DObj o)
+        {
+            throw this.invalid_op(">");
+        }
+ge
+        public bool __ge__(DObj o)
+        {
+            throw this.invalid_op(">=");
+        }
+
+lt
+        public bool __lt__(DObj o)
+        {
+            throw this.invalid_op("<");
+        }
+
+le
+        public bool __le__(DObj o)
+        {
+            throw this.invalid_op("<=");
+        }
+
+eq
+        public bool __eq__(DObj o)
+        {
+           return this == o;
+        }
+
+ne
+        public bool __ne__(DObj o)
+        {
+            return !(__eq__(o));
+        }
+
+enter
+        public DObj __enter__()
+        {
+            throw this.invalid_op("with-enter");
+        }
+exit
+        public void __exit__(DObj errtype, DObj err, DObj frames)
+        {
+
+            throw this.invalid_op("with-exit");
+        }
+repr
+        public string __repr__()
+        {
+            return this.name;
+        }
+
+str
+        public string __str__()
+        {
+            return __repr__();
+        }
+
+
+net
+        public int CompareTo(DObj other)
+        {
+            if (this.__eq__(other))
+                return 0;
+            else if (this.__gt__(other))
+                return 1;
+            else if (this.__lt__(other))
+                return -1;
+            else
+                throw new D_InvalidComparison(this.Class);
+        }
+
+
+        public bool Equals(DObj other)
+        {
+                return this.__eq__(other);
+        }
+
+        public override bool Equals(Object other)
+        {
+                return this.__eq__(MK.create(other));
+        }
+
+        public override int GetHashCode() => __hash__();
+
+
+

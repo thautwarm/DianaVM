@@ -61,7 +61,7 @@ stmt :   "var" seplist{",", name} -> stmt_0
        | seplist{":=", lhs} ":=" expr -> stmt_1                                                                                       
        | expr -> stmt_2                                                       
        | "loop" block "end" -> stmt_3                                                                     
-       | "each" lhs_opt "of" expr "do" block "end" -> stmt_4                                                                            
+       | "each" lhs_opt "of" expr do block "end" -> stmt_4                                                                          
                                                                
        | "if" expr then block "end" -> stmt_5                                                                       
        | "if" expr then block "else" block "end" -> stmt_6                                                                         
@@ -71,6 +71,7 @@ stmt :   "var" seplist{",", name} -> stmt_0
        | "func" name "(" nullable{seplist{",", name}} ")" block "end" -> stmt_10                                                                                                 
 
 then : NEWLINE? "then"
+do : NEWLINE? "do"
 
 filter{keep, discard} :filter{keep, discard} keep -> filter_0                                                 
     | filter{keep, discard} discard -> filter_1                                          

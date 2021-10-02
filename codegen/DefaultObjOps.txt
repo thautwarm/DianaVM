@@ -1,0 +1,335 @@
+invalid_op
+
+        private InvalidOperationException invalid_op(string op)
+        {
+            return new InvalidOperationException($"unsupported operator '{op}' for {this.Class.name}");
+        }
+
+iter
+        public IEnumerable<DObj> __iter__()
+        {
+            var meth = this.Class.ops.__iter__;
+            if (meth == null)
+                throw new InvalidOperationException($"{this.Class.name} objects are not iterable.");
+            return meth(this);
+        }
+
+call
+        public DObj __call__(Args args)
+        {
+            var meth = this.Class.ops.__call__;
+            if (meth == null)
+                throw new InvalidOperationException($"{this.Class.name} objects are not callable.");
+            return meth(this, args);
+        }
+
+add
+        public DObj __add__(DObj a)
+        {
+            var meth = this.Class.ops.__add__;
+            if (meth == null)
+                throw this.invalid_op("+");
+            return meth(this, a);
+        }
+
+sub
+        public DObj __sub__(DObj a)
+        {
+            var meth = this.Class.ops.__sub__;
+            if (meth == null)
+                throw this.invalid_op("-");
+            return meth(this, a);
+        }
+mul
+        public DObj __mul__(DObj a)
+        {
+            var meth = this.Class.ops.__mul__;
+            if (meth == null)
+                throw this.invalid_op("*");
+            return meth(this, a);
+        }
+
+floordiv
+        public DObj __floordiv__(DObj a)
+        {
+            var meth = this.Class.ops.__floordiv__;
+            if (meth == null)
+                throw this.invalid_op("floor division");
+            return meth(this, a);
+        }
+truediv
+        public DObj __truediv__(DObj a)
+        {
+            var meth = this.Class.ops.__truediv__;
+            if (meth == null)
+                throw this.invalid_op("division");
+            return meth(this, a);
+        }
+pow
+        public DObj __pow__(DObj a)
+        {
+            var meth = this.Class.ops.__pow__;
+            if (meth == null)
+                throw this.invalid_op("**");
+            return meth(this, a);
+        }
+mod
+        public DObj __mod__(DObj a)
+        {
+            var meth = this.Class.ops.__mod__;
+            if (meth == null)
+                throw this.invalid_op("%");
+            return meth(this, a);
+        }
+lshift
+        public DObj __lshift__(DObj a)
+        {
+            var meth = this.Class.ops.__lshift__;
+            if (meth == null)
+                throw this.invalid_op("<<");
+            return meth(this, a);
+        }
+
+rshift
+        public DObj __rshift__(DObj a)
+        {
+            var meth = this.Class.ops.__rshift__;
+            if (meth == null)
+                throw this.invalid_op(">>");
+            return meth(this, a);
+        }
+
+bitand
+        public DObj __bitand__(DObj a)
+        {
+            var meth = this.Class.ops.__rshift__;
+            if (meth == null)
+                throw this.invalid_op("&");
+            return meth(this, a);
+        }
+bitor
+        public DObj __bitor__(DObj a)
+        {
+            var meth = this.Class.ops.__bitor__;
+            if (meth == null)
+                throw this.invalid_op("|");
+            return meth(this, a);
+        }
+bitxor
+        public DObj __bitxor__(DObj a)
+        {
+            var meth = this.Class.ops.__bitxor__;
+            if (meth == null)
+                throw this.invalid_op("^");
+            return meth(this, a);
+        }
+
+getitem
+        public DObj __getitem__(DObj a)
+        {
+            var meth = this.Class.ops.__getitem__;
+            if (meth == null)
+                throw new InvalidOperationException($"'{this.Class.name}' object is not subscriptable.");
+            return meth(this, a);
+        }
+
+setitem
+        public void __setitem__(DObj a, DObj b)
+        {
+            var meth = this.Class.ops.__setitem__;
+            if (meth == null)
+                throw new InvalidOperationException($"'{this.Class.name}' object does not support item assignment.");
+            meth(this, a, b);
+        }
+delitem
+        public void __delitem__(DObj a)
+        {
+            var meth = this.Class.ops.__delitem__;
+            if (meth == null)
+                throw new InvalidOperationException($"'{this.Class.name}' object does not support item deletion.");
+            meth(this, a);
+        }
+getattr
+        public DObj __getattr__(InternString attr)
+        {
+            var meth = this.Class.ops.__getattr__;
+            if (meth == null)
+                throw this.invalid_op($"o.{attr}");
+            return meth(this, attr);
+        }
+setattr
+        public void __setattr__(InternString attr, DObj value)
+        {
+            var meth = this.Class.ops.__setattr__;
+            if (meth == null)
+                throw this.invalid_op($"o.{attr}=v");
+            meth(this, attr, value);
+        }
+len
+        public int __len__()
+        {
+            var meth = this.Class.ops.__len__;
+            if (meth == null)
+                throw new InvalidOperationException($"'{this.Class.name}' object has no concept of length.");
+            return meth(this);
+        }
+bool
+        public bool __bool__()
+        {
+            var meth = this.Class.ops.__bool__;
+            if (meth == null)
+                throw new InvalidOperationException($"'{this.Class.name}' object cannot be casted to boolean.");
+            return meth(this);
+        }
+neg
+        public DObj __neg__()
+        {
+            throw this.invalid_op($"negation(-)");
+        }
+inv
+        public DObj __invert__()
+        {
+            throw this.invalid_op($"invert(~)");
+        }
+not
+        public bool __not__()
+        {
+            var meth = this.Class.ops.__bool__;
+            if (meth == null)
+                this.invalid_op("not");
+            return meth(this);
+        }
+hash
+        public int __hash__()
+        {
+            return RuntimeHelpers.GetHashCode(this.Native);
+        }
+
+subclasscheck
+        public bool __subclasscheck__(DObj o)
+        {
+            var meth = this.Class.ops.__subclasscheck__;
+            if (meth == null)
+                throw new InvalidOperationException($"'{this.Class.name}' object cannot be used for runtime type check.");
+            return meth(this, o);
+        }
+contains
+        public bool __contains__(DObj o)
+        {
+            var meth = this.Class.ops.__contains__;
+            if (meth == null)
+                throw this.invalid_op("contains");
+            return meth(this, o);
+        }
+gt
+        public bool __gt__(DObj o)
+        {
+            var meth = this.Class.ops.__gt__;
+            if (meth == null)
+                throw this.invalid_op(">");
+            return meth(this, o);
+        }
+ge
+        public bool __ge__(DObj o)
+        {
+            var meth = this.Class.ops.__ge__;
+            if (meth == null)
+                throw this.invalid_op(">=");
+            return meth(this, o);
+        }
+
+lt
+        public bool __lt__(DObj o)
+        {
+            var meth = this.Class.ops.__lt__;
+            if (meth == null)
+                throw this.invalid_op("<");
+            return meth(this, o);
+        }
+
+le
+        public bool __le__(DObj o)
+        {
+            var meth = this.Class.ops.__le__;
+            if (meth == null)
+                throw this.invalid_op("<=");
+            return meth(this, o);
+        }
+
+eq
+        public bool __eq__(DObj o)
+        {
+           var meth = this.Class.ops.__eq__;
+            if (meth == null)
+                throw this.invalid_op("=");
+            return meth(this, o);
+        }
+
+ne
+        public bool __ne__(DObj o)
+        {
+            var meth = this.Class.ops.__ne__;
+            if (meth == null)
+                throw this.invalid_op("!=");
+            return meth(this, o);
+        }
+
+enter
+        public DObj __enter__()
+        {
+            var meth = this.Class.ops.__enter__;
+            if (meth == null)
+                throw this.invalid_op("with-enter");
+            return meth(this);
+        }
+exit
+        public void __exit__(DObj errtype, DObj err, DObj frames)
+        {
+            var meth = this.Class.ops.__exit__;
+            if (meth == null)
+                throw this.invalid_op("with-exit");
+            meth(this, errtype, err, frames);
+        }
+repr
+        public string __repr__()
+        {
+            var meth = this.Class.ops.__repr__;
+            if (meth == null)
+                throw this.invalid_op("repr");
+            return meth(this);
+        }
+
+str
+        public string __str__()
+        {
+            var meth = this.Class.ops.__repr__;
+            if (meth == null)
+                return this.__repr__();
+            return meth(this);
+        }
+
+net
+        public int CompareTo(DObj other)
+        {
+            if (this.__eq__(other))
+                return 0;
+            else if (this.__gt__(other))
+                return 1;
+            else if (this.__lt__(other))
+                return -1;
+            else
+                throw new D_InvalidComparison(this.Class);
+        }
+
+
+        public bool Equals(DObj other)
+        {
+                return this.__eq__(other);
+        }
+
+        public override bool Equals(Object other)
+        {
+                return this.__eq__(MK.create(other));
+        }
+
+        public override int GetHashCode() => __hash__();

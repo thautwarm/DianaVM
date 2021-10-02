@@ -49,8 +49,8 @@ namespace DianaScript
 
         public static float cast(THint<float> _, int s) => s;
         public static int cast(THint<int> _, float s) => (int)s;
-        public static IEnumerable<DObj> cast(THint<IEnumerable<DObj>> _, DObj s) => s.__iter__;
-        public static bool cast(THint<bool> _, DObj s) => s.__bool__;
+        public static IEnumerable<DObj> cast(THint<IEnumerable<DObj>> _, DObj s) => s.__iter__();
+        public static bool cast(THint<bool> _, DObj s) => s.__bool__();
         public static A cast<A>(THint<A> _, A s) => s;
 
 

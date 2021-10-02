@@ -1,12 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace DianaScript
 {
-
-
-
 
     public class ExceptionWithFrames : Exception
     {
@@ -14,12 +10,10 @@ namespace DianaScript
         public Stack<MiniFrame> frames;
         public Exception e;
 
-        public DFlatGraphCode flatGraph;
-        public ExceptionWithFrames(Stack<MiniFrame> frames, DFlatGraphCode flatGraph, Exception e) : base("Unhandled exception in the VM side.")
+        public ExceptionWithFrames(Stack<MiniFrame> frames, Exception e) : base("Unhandled exception in the VM side.")
         {
             this.frames = frames;
             this.e = e;
-            this.flatGraph = flatGraph;
         }
 
         public override string StackTrace
@@ -33,12 +27,11 @@ namespace DianaScript
                 {
 
                     var best_lineno = -1;
-                    var block = flatGraph.blocks[frame.blockind];
-                    var meta = flatGraph.funcmetas[frame.metadataInd];
+                    var block = AWorld.blocks[frame.blockind];
+                    var meta = AWorld.funcmetas[frame.metadataInd];
                     var func_filename = meta.filename;
                     var func_name = meta.name;
                     var func_lineno = meta.lineno;
-
 
                     foreach (var (offset, lineno) in block.location_data)
                     {
@@ -70,9 +63,9 @@ namespace DianaScript
             }
         }
 
-        public static ExceptionWithFrames Make(Stack<MiniFrame> frames, DFlatGraphCode flatGraph, Exception e)
+        public static ExceptionWithFrames Make(Stack<MiniFrame> frames, Exception e)
         {
-            return new ExceptionWithFrames(frames, flatGraph, e);
+            return new ExceptionWithFrames(frames, e);
         }
     }
     public class D_AttributeError : Exception
@@ -80,7 +73,7 @@ namespace DianaScript
         public D_AttributeError(DClsObj t, DStr attr, string message) : base(message)
         {
         }
-        public D_AttributeError(DClsObj t, DStr attr) : base($"{t.__repr__} has no attribute {attr.value}.")
+        public D_AttributeError(DClsObj t, DStr attr) : base($"{t.__repr__()} has no attribute {attr.value}.")
         {
         }
         public D_AttributeError(string message) : base(message)
@@ -92,7 +85,7 @@ namespace DianaScript
     {
         public DClsObj expect;
         public DObj got;
-        public D_TypeError(DClsObj expect, DObj o) : base($"expect an instance of {expect.__repr__}, but got {o.__repr__}.")
+        public D_TypeError(DClsObj expect, DObj o) : base($"expect an instance of {expect.__repr__()}, but got {o.__repr__()}.")
         {
         }
 
@@ -111,7 +104,7 @@ namespace DianaScript
 
     public class D_ValueError : Exception
     {
-        public D_ValueError(DObj expect, DObj o) : base($"expect the value {expect.__repr__}, but got {o.__repr__}.")
+        public D_ValueError(DObj expect, DObj o) : base($"expect the value {expect.__repr__()}, but got {o.__repr__()}.")
         {
         }
         public D_ValueError(DObj expect, DObj o, string message) : base(message)
@@ -126,6 +119,14 @@ namespace DianaScript
     public class D_NameError : Exception
     {
         public D_NameError(string s) : base($"Name {s} not found.")
+        {
+        }
+    }
+
+    public class D_InvalidComparison : Exception
+    {
+
+        public D_InvalidComparison(DClsObj cls) : base($"{cls.name} produces invalid comparsion.")
         {
         }
     }

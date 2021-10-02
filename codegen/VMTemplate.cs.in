@@ -14,7 +14,7 @@ namespace DianaScript
         {
             if (argcount >= f.narg)
                 return;
-            string f_repr = ((DObj)f).__repr__;
+            string f_repr = f.__repr__();
             var expect = (f.is_vararg ? ">=" : "") + $"{f.narg}";
             throw new ArgumentException($"{f_repr} takes expect {expect} arguments, got {argcount}.");
         }
@@ -46,15 +46,8 @@ namespace DianaScript
 
         // stack of (blockind, offset)
         public Stack<@__MiniFrame> errorFrames;
-
-        public DFlatGraphCode flatGraph;
-
-        public static DFlatGraphCode FlatGraph; // should be the same as the instance field
-
-        public @__DVM(DFlatGraphCode flatGraph)
+        public @__DVM()
         {
-            this.flatGraph = flatGraph;
-            DVM.FlatGraph = flatGraph;
             this.errorFrames = new Stack<@__MiniFrame>();
         }
 
@@ -66,8 +59,7 @@ namespace DianaScript
                 offset = 0,
                 token = (int)GO_AHEAD,
                 vstack = new List<DObj>(),
-                cur_func = dfunc,
-                flatGraph = flatGraph
+                cur_func = dfunc
             };
             executor.exec_block(dfunc.body);
             if (executor.vstack.Count == 0)
@@ -87,7 +79,6 @@ namespace DianaScript
         public List<DObj> vstack;
         public DObj[] localvars;
         public DFunc cur_func;
-        public DFlatGraphCode flatGraph;
 
         public const int bit_nonlocal = 0b01;
         public const int bit_classify = 0b01 << 1;
@@ -106,7 +97,7 @@ namespace DianaScript
         }
         DObj loadconst(int slot)
         {
-            return flatGraph.dobjs[slot];
+            return AWorld.dobjs[slot];
         }
 
         DObj loadvar(int slot)
@@ -124,7 +115,7 @@ namespace DianaScript
                 }
                 if (c == null)
                 {
-                    var name = flatGraph.funcmetas[cur_func.metadataInd].localnames[slot >> 2];
+                    var name = AWorld.funcmetas[cur_func.metadataInd].localnames[slot >> 2];
                     throw new NullReferenceException($"undefined variable {name}.");
                 }
             }
@@ -135,13 +126,13 @@ namespace DianaScript
                     c = cur_func.freevals[slot >> 2].cell_contents;
                     if (c == null)
                     {
-                        var name = flatGraph.funcmetas[cur_func.metadataInd].freenames[slot >> 2];
+                        var name = AWorld.funcmetas[cur_func.metadataInd].freenames[slot >> 2];
                         throw new NullReferenceException($"undefined cell variable {name}.");
                     }
                 }
                 else // global
                 {
-                    c = cur_func.nameSpace[flatGraph.internstrings[slot >> 2]];
+                    c = cur_func.nameSpace[AWorld.internstrings[slot >> 2]];
 
                 }
             }
@@ -170,14 +161,14 @@ namespace DianaScript
                 }
                 else // global
                 {
-                    cur_func.nameSpace[flatGraph.internstrings[slot >> 2]] = o;
+                    cur_func.nameSpace[AWorld.internstrings[slot >> 2]] = o;
 
                 }
             }
         }
 
-        FuncMeta loadmetadata(int slot) => flatGraph.funcmetas[slot];
-        string loadstr(int slot) => flatGraph.strings[slot];
+        FuncMeta loadmetadata(int slot) => AWorld.funcmetas[slot];
+        string loadstr(int slot) => AWorld.strings[slot];
         
         DObj peek(int n){
             return vstack[vstack.Count - n - 1];
@@ -278,7 +269,7 @@ namespace DianaScript
         public void exec_block(int blockind)
         {
             int old_offset = offset;
-            var codes = flatGraph.blocks[blockind].codes;
+            var codes = AWorld.blocks[blockind].codes;
             try
             {
                 for (var i = 0; i < codes.Length; i++)
@@ -303,7 +294,7 @@ namespace DianaScript
         public void assert(bool val, DObj msg)
         {
             if (!val)
-                throw new Exception("assertion failed" + msg.__str__);
+                throw new Exception("assertion failed:" + msg.__str__());
         }
         public void exec_code(Ptr curPtr)
         {

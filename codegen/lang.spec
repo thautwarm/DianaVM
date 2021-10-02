@@ -5,6 +5,9 @@
 // 3 : continue loop
 // 4 : break loop
 // 5 : reraise exception
+// IEquatable<T>
+// IComparable<T>
+// IFormattable 
 
 // loadmetadata
 // storevar, loadvar, loadstr, loadistr
@@ -79,7 +82,7 @@ Action(kind: int)
     switch (kind)
     {
         case (int) ACTION.ASSERT: 
-            assert(pop().__bool__, pop());
+            assert(pop().__bool__(), pop());
             break;
         case (int) ACTION.RAISE:
             throw MK.unbox<Exception>(pop());
@@ -89,17 +92,17 @@ Action(kind: int)
 %]
 ControlIf(arg: int) // break, continue, reraise
 [%
-    if(pop().__bool__)
+    if(pop().__bool__())
         token = arg;
 %]
 JumpIfNot(off: int)
 [%
-    if(!(pop().__bool__))
+    if(!(pop().__bool__()))
         offset = off; 
 %]
 JumpIf(off: int)
 [%
-    if(pop().__bool__)
+    if(pop().__bool__())
         offset = off; 
 %]
 Jump(off: int)
@@ -123,7 +126,7 @@ Try(body: int, except_handlers: Catch[], final_body: int)
             exec_block(handler.exc_type);
             var exc_type = pop();
             var e_boxed = MK.create(e);
-            if (exc_type.__subclasscheck__(e_boxed.GetCls))
+            if (exc_type.__subclasscheck__(e_boxed.Class))
             {
                 push(e_boxed);
                 exec_block(handler.body);   
@@ -160,7 +163,7 @@ Loop(body: int)
 For(body: int)
 [%
     var iter = pop();
-    foreach(var it in iter.__iter__){
+    foreach(var it in iter.__iter__()){
         push(it);
         exec_block(body);
         switch(token)
@@ -193,7 +196,7 @@ With(body: int)
         var e_boxed = MK.create(e);
         var e_trace = MK.create(virtual_machine.errorFrames);
         resource.__exit__(
-            e_boxed.GetCls,
+            e_boxed.Class,
             e_boxed,
             e_trace
         );
@@ -202,13 +205,13 @@ With(body: int)
 GetAttr(attr: InternString)
 [%
     var value = pop();
-    push(value.Get(attr));
+    push(value.__getattr__(attr));
 %]
 
 SetAttr(attr: InternString)
 [%
     var (value, subject) = pop2();
-    subject.Set(
+    subject.__setattr__(
         attr,
         value
     );
@@ -218,9 +221,9 @@ SetAttr_I$T(attr: InternString)  from {
 }
 [%
     var (value, subject) = pop2();
-    subject.Set(
+    subject.__setattr__(
         attr,
-        subject.Get(attr).__${T}__(value)
+        subject.__getattr__(attr).__${T}__(value)
     );
 %]
 DelItem()
@@ -273,7 +276,7 @@ notin()
 UnaryOp_$T() from { invert not neg }
 [%
     var val = pop();
-    push(MK.create(val.__${T}__));
+    push(MK.create(val.__${T}__()));
 %]
 MKDict(n: int)
 [%
@@ -317,7 +320,7 @@ Format(format: int, argn: int)
 [%
     var argvals = new string[argn];
     for(var i = 0; i < argn; i++)
-        argvals[argn - i - 1] = pop().__str__; // TODO: format style
+        argvals[argn - i - 1] = pop().__str__(); // TODO: format style
     var str = String.Format(loadstr(format), argvals);
     push(MK.String(str));
 %]

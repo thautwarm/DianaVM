@@ -2,6 +2,10 @@ from __future__ import annotations
 from lark import Lark, Transformer, v_args
 from dataclasses import dataclass
 from json.decoder import scanstring
+from pathlib import Path
+from io import StringIO
+from contextlib import contextmanager
+from json import dumps
 
 
 grammar = r'''
@@ -246,20 +250,8 @@ tbnf_parser = Lark(
 
 from prettyprinter import install_extras, pprint
 install_extras(["dataclasses"])
-
-ast = tbnf_parser.parse(open("binding.spec").read())
-pprint(ast)
-
-
-
-from pathlib import Path
-from io import StringIO
-from contextlib import contextmanager
-from json import dumps
-
-
-
-
+ast = tbnf_parser.parse(
+    Path(__file__).with_name("binding.spec").open().read())
 
 def accept_arg(in_t: str | Type, arg_repr: str):
     if not isinstance(in_t, str):
@@ -573,7 +565,7 @@ class Codegen:
         self << f"public partial class {wrap_type}\n"
         self << "{\n"
         with self.tab():
-            self << f"public DClsObj GetCls => Cls.unique;\n"
+            self << f"public DClsObj Class => Cls.unique;\n"
             for method in x.methods:
                     match method:
                         case MethodDecl() if method.params is None:
@@ -610,7 +602,7 @@ class Codegen:
 cg = Codegen()
 
 import shutil
-root = Path("src") / "structures"
+root = Path(__file__).parent.parent / "src" / "structures"
 shutil.rmtree(str(root))
 root.mkdir(exist_ok=True)
 for cls in ast:

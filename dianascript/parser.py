@@ -185,7 +185,7 @@ if __name__ == '__main__':
             if not source.strip():
                 continue
             res = parser.parse(source)
-            if not isinstance(res):
+            if not isinstance(res, Tree):
                 prettyprinter.pprint(res)
             else:
                 print(res)

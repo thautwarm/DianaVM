@@ -11,11 +11,13 @@ from contextlib import contextmanager
 from json.decoder import scanstring
 from string import Template
 from textwrap import indent
+from pathlib import Path
 
 import io
 
 CODE = "CODE"
-grammar = open("lang-generator.lark")
+current_path = Path(__file__)
+grammar = Path(__file__).with_name("lang-generator.lark").open().read()
 
 @v_args(inline=True)
 class Trans(Transformer):
@@ -419,7 +421,7 @@ class Codegen:
     
 
     def generate_interpreter(self, language: Language):
-        template_file = open('VMTemplate.cs.in')
+        template_file = current_path.with_name('VMTemplate.cs.in').open()
         for each in template_file:
             if each.strip().startswith("//REPLACE"):
                 break
@@ -465,21 +467,22 @@ def generate_array_read(self: Codegen, tname: str):
     self << "}"
 
 
-lang = parser.parse(open("lang.spec").read())
+lang = parser.parse(current_path.with_name("lang.spec").open().read())
 from prettyprinter import pprint, install_extras
 install_extras(['dataclasses'])
 # pprint(seq)
 
+root = current_path.parent.parent
 cg = Codegen()
-cg.IO = open("src/FlatGraph.cs", 'w', encoding='utf8')
+cg.IO = (root / "src" / "FlatGraph.cs").open('w', encoding='utf8')
 cg.graph_code_def(lang)
 
 
-cg.IO = open("src/FlatGraphParser.cs", 'w', encoding='utf8')
+cg.IO = (root / "src" / "FlatGraphParser.cs").open('w', encoding='utf8')
 cg.gen_parser(lang)
 
-cg.IO = open(f"dianascript/code_cons.py", 'w', encoding='utf8')
+cg.IO = (root / f"dianascript" / "code_cons.py").open('w', encoding='utf8')
 cg.gen_python_code_builder(lang)
 
-cg.IO = open(f"src/DVM.cs", 'w', encoding='utf8')
+cg.IO = (root / "src" / "DVM.cs").open('w', encoding='utf8')
 cg.generate_interpreter(lang)
