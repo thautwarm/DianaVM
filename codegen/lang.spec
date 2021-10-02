@@ -173,13 +173,14 @@ For(body: int)
         switch(token)
         {
             case (int) TOKEN.LOOP_BREAK:
-                break;
+                goto for_end;
             case (int) TOKEN.RETURN:
                 return;
             default:
                 token = (int) TOKEN.GO_AHEAD;
                 break;
         }
+        for_end: ;
     }
 %]
 With(body: int)
