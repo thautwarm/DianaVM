@@ -27,13 +27,13 @@ namespace DianaScript
                 {
 
                     var best_lineno = -1;
-                    var block = AWorld.blocks[frame.blockind];
                     var meta = AWorld.funcmetas[frame.metadataInd];
+                    int[] block = meta.bytecode;
                     var func_filename = meta.filename;
                     var func_name = meta.name;
                     var func_lineno = meta.lineno;
 
-                    foreach (var (offset, lineno) in block.location_data)
+                    foreach (var (offset, lineno) in meta.linenos)
                     {
                         best_lineno = lineno;
                         if (frame.offset < offset)
@@ -42,19 +42,17 @@ namespace DianaScript
                         }
                     }
 
-                    var kind = ((CODE)block.codes[frame.offset].kind).ToString();
+                    var kind = ((CODETAG)block[frame.offset]).ToString();
 
 
 
                     // TODO: show source code?
                     if (best_lineno == -1)
-                        tmp[i] = $"    calling {func_name}, fail at {kind}.\n" +
-                                 $"       callsite: {block.filename}, line unknown.\n" +
+                        tmp[i] = $"    calling {func_name}, fail at {kind}: line unknown.\n" +
                                  $"       function defined at: {func_filename}, line {func_lineno}";
 
                     else
-                        tmp[i] = $"    calling {func_name}, fail at {kind}.\n" +
-                                 $"       callsite: {block.filename}, line {best_lineno}." +
+                        tmp[i] = $"    calling {func_name}, fail at {kind}: line {best_lineno}.\n" +
                                  $"       function defined at: {func_filename}, line {func_lineno}";
 
                     i++;

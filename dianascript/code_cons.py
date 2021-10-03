@@ -1,759 +1,750 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pyrsistent import PVector
-from dianascript.serialize import serialize_
+from dianascript.serialize import DObj, Builder, InternString, serialize_
 from typing import TypeVar, Generic
 import struct
 
 _T = TypeVar("_T")
 
-class InternString(str):
-    pass
-Bytecode = list
 
-special_bit = 0b10000000
-true_bit = 0b10000011
-false_bit = 0b10000010
-none_bit = 0b10000000
-
-obj_box_tags: dict[type, int| None] = {
-    int: 0,
-    float: 1,
-    str: 2,
-    dict: 3,
-    set: 4,
-    list: 5,
-    tuple: 6
-}
-
-special_objs = {
-    (bool, True): true_bit,
-    (bool, False): false_bit,
-    (type(None), None): none_bit
-}
-
-booleans = (false_bit, true_bit)
-
-
-class DObj:
-    o: bool | int | float | str | None
-    t: type | None = None
-    def __init__(self, o):
-        self.o = o
-        self.type = type(o)
-
-    def __hash__(self):
-        return hash(self.o) ^ id(type)
-
-    def __eq__(self, other):
-        if not isinstance(other, DObj):
-            return False
-        return (self.o == other.o) and (self.type == other.type)
-    
-    def serialize_(self, barr: bytearray):
-        o = self.o
-        v = special_objs.get((type(o), o)) # type: ignore
-        if v is not None:
-            barr.append(v)
-            return
-        v = obj_box_tags[type(o)]
-        if v is not None:
-            barr.append(v)
-        serialize_(self.o, barr)
-
-def encode_to_7bit(value: int, barr: bytearray):
-    data = []
-    number = abs(value)
-    while number >= 0x80:
-        data.append((number | 0x80) & 0xff)
-        number >>= 7
-    barr.append(number & 0xff)
-
-def serialize_(o, barr: bytearray):
-    match o:
-        case bool():
-            barr.append(booleans[o])
-        case int(): 
-            barr.extend(struct.pack('<i', o))
-        case float():
-            barr.extend(struct.pack('<f', o))
-        case str(): # or InternString
-            encoded = bytes(o, 'utf8')
-            encode_to_7bit(len(encoded), barr)
-            barr.extend(encoded)
-        case dict():
-            serialize_(len(o), barr)
-            for k, v in o.items():
-                serialize_(k, barr)
-                serialize_(v, barr)
-        case list() | set() | PVector():    
-            serialize_(len(o), barr)
-            for v in o:  # type: ignore
-                serialize_(v, barr)
-        case tuple():
-            for v in o:  # type: ignore
-                serialize_(v, barr)
-        case None:
-            barr.append(none_bit | special_bit)
-        case _:
-            o.serialize_(barr)
-
-class Builder(Generic[_T]):
-    def __init__(self):
-        self._map: dict[_T, int] = {}
-        self._revmap: dict[int, _T] = {}
-    
-    def __getitem__(self, i: int) -> _T:
-        return self._revmap[i]
-
-    def __iter__(self):
-        for i in range(len(self)):
-            yield self._revmap[i]
-    
-    def __len__(self):
-        return len(self._map)
-
-    def cache(self, x: _T) -> int:
-        o = object()
-        i = self._map.get(x, o)
-        if i is o:
-            i = self._map[x] = len(self._map)
-            self._revmap[i] = x
-            return i
-        else:
-            assert isinstance(i, int)
-            return i
-
-    def serialize_(self, arr: bytearray):
-        serialize_(len(self), arr)
-        for i in range(len(self._revmap)):
-            serialize_(self._revmap[i], arr)            
+Bytecode = PVector[int | InternString]
+BytecodeBuilder = list[int | InternString]
 
 @dataclass(frozen=True)
 class Diana_FunctionDef:
     metadataInd: int
-    code: int
-
     TAG = 0
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.metadataInd), barr)
-        serialize_(as_int(self.code), barr)
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.metadataInd))
 @dataclass(frozen=True)
 class Diana_LoadGlobalRef:
     istr: InternString
-
     TAG = 1
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.istr), barr)
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.istr))
 @dataclass(frozen=True)
 class Diana_DelVar:
     target: int
-
     TAG = 2
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.target), barr)
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.target))
 @dataclass(frozen=True)
 class Diana_LoadVar:
     i: int
-
     TAG = 3
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.i), barr)
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.i))
 @dataclass(frozen=True)
 class Diana_StoreVar:
     i: int
-
     TAG = 4
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.i), barr)
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.i))
 @dataclass(frozen=True)
 class Diana_Action:
     kind: int
-
     TAG = 5
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.kind), barr)
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.kind))
 @dataclass(frozen=True)
-class Diana_ControlIf:
-    arg: int
-
+class Diana_Return:
     TAG = 6
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.arg), barr)
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+@dataclass(frozen=True)
+class Diana_Break:
+    TAG = 7
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+@dataclass(frozen=True)
+class Diana_Continue:
+    TAG = 8
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_JumpIfNot:
     off: int
-
-    TAG = 7
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.off), barr)
+    TAG = 9
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.off))
 @dataclass(frozen=True)
 class Diana_JumpIf:
     off: int
-
-    TAG = 8
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.off), barr)
+    TAG = 10
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.off))
 @dataclass(frozen=True)
 class Diana_Jump:
     off: int
-
-    TAG = 9
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.off), barr)
-@dataclass(frozen=True)
-class Diana_Control:
-    arg: int
-
-    TAG = 10
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.arg), barr)
-@dataclass(frozen=True)
-class Diana_Try:
-    unwind_start: int
-    unwind_stop: int
-    errorlabel: int
-    finallabel: int
-
     TAG = 11
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.unwind_start), barr)
-        serialize_(as_int(self.unwind_stop), barr)
-        serialize_(as_int(self.errorlabel), barr)
-        serialize_(as_int(self.finallabel), barr)
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.off))
+@dataclass(frozen=True)
+class Diana_TryCatch:
+    unwind_bound: int
+    catch_start: int
+    catch_bound: int
+    TAG = 12
+    
+    OFFSET = 4
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.unwind_bound))
+        flat_code.append(as_flatten(self.catch_start))
+        flat_code.append(as_flatten(self.catch_bound))
+@dataclass(frozen=True)
+class Diana_TryFinally:
+    unwind_bound: int
+    final_start: int
+    final_bound: int
+    TAG = 13
+    
+    OFFSET = 4
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.unwind_bound))
+        flat_code.append(as_flatten(self.final_start))
+        flat_code.append(as_flatten(self.final_bound))
+@dataclass(frozen=True)
+class Diana_TryCatchFinally:
+    unwind_bound: int
+    catch_start: int
+    catch_bound: int
+    final_start: int
+    final_bound: int
+    TAG = 14
+    
+    OFFSET = 6
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.unwind_bound))
+        flat_code.append(as_flatten(self.catch_start))
+        flat_code.append(as_flatten(self.catch_bound))
+        flat_code.append(as_flatten(self.final_start))
+        flat_code.append(as_flatten(self.final_bound))
 @dataclass(frozen=True)
 class Diana_Loop:
-    body: int
-
-    TAG = 12
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.body), barr)
+    loop_bound: int
+    TAG = 15
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.loop_bound))
 @dataclass(frozen=True)
 class Diana_For:
-    body: int
-
-    TAG = 13
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.body), barr)
+    for_bound: int
+    TAG = 16
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.for_bound))
 @dataclass(frozen=True)
 class Diana_With:
-    body: int
-
-    TAG = 14
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.body), barr)
+    with_bound: int
+    TAG = 17
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.with_bound))
 @dataclass(frozen=True)
 class Diana_GetAttr:
     attr: InternString
-
-    TAG = 15
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 18
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr:
     attr: InternString
-
-    TAG = 16
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 19
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Iadd:
     attr: InternString
-
-    TAG = 17
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 20
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Isub:
     attr: InternString
-
-    TAG = 18
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 21
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Imul:
     attr: InternString
-
-    TAG = 19
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 22
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Itruediv:
     attr: InternString
-
-    TAG = 20
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 23
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Ifloordiv:
     attr: InternString
-
-    TAG = 21
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 24
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Imod:
     attr: InternString
-
-    TAG = 22
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 25
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Ipow:
     attr: InternString
-
-    TAG = 23
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 26
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Ilshift:
     attr: InternString
-
-    TAG = 24
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 27
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Irshift:
     attr: InternString
-
-    TAG = 25
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 28
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Ibitor:
     attr: InternString
-
-    TAG = 26
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 29
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Ibitand:
     attr: InternString
-
-    TAG = 27
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 30
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_SetAttr_Ibitxor:
     attr: InternString
-
-    TAG = 28
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.attr), barr)
+    TAG = 31
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.attr))
 @dataclass(frozen=True)
 class Diana_DelItem:
-
-    TAG = 29
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 32
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_GetItem:
-
-    TAG = 30
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 33
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem:
-
-    TAG = 31
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 34
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Iadd:
-
-    TAG = 32
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 35
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Isub:
-
-    TAG = 33
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 36
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Imul:
-
-    TAG = 34
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 37
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Itruediv:
-
-    TAG = 35
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 38
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ifloordiv:
-
-    TAG = 36
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 39
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Imod:
-
-    TAG = 37
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 40
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ipow:
-
-    TAG = 38
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 41
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ilshift:
-
-    TAG = 39
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 42
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Irshift:
-
-    TAG = 40
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 43
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ibitor:
-
-    TAG = 41
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 44
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ibitand:
-
-    TAG = 42
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 45
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ibitxor:
-
-    TAG = 43
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 46
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_add:
-
-    TAG = 44
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 47
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_sub:
-
-    TAG = 45
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 48
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_mul:
-
-    TAG = 46
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 49
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_truediv:
-
-    TAG = 47
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 50
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_floordiv:
-
-    TAG = 48
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 51
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_mod:
-
-    TAG = 49
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 52
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_pow:
-
-    TAG = 50
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 53
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_lshift:
-
-    TAG = 51
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 54
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_rshift:
-
-    TAG = 52
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 55
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_bitor:
-
-    TAG = 53
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 56
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_bitand:
-
-    TAG = 54
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 57
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_bitxor:
-
-    TAG = 55
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 58
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_gt:
-
-    TAG = 56
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 59
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_lt:
-
-    TAG = 57
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 60
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_ge:
-
-    TAG = 58
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 61
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_le:
-
-    TAG = 59
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 62
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_eq:
-
-    TAG = 60
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 63
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_ne:
-
-    TAG = 61
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 64
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_in:
-
-    TAG = 62
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 65
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_notin:
-
-    TAG = 63
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 66
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_UnaryOp_invert:
-
-    TAG = 64
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 67
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_UnaryOp_not:
-
-    TAG = 65
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 68
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_UnaryOp_neg:
-
-    TAG = 66
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 69
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_MKDict:
     n: int
-
-    TAG = 67
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.n), barr)
+    TAG = 70
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.n))
 @dataclass(frozen=True)
 class Diana_MKSet:
     n: int
-
-    TAG = 68
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.n), barr)
+    TAG = 71
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.n))
 @dataclass(frozen=True)
 class Diana_MKList:
     n: int
-
-    TAG = 69
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.n), barr)
+    TAG = 72
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.n))
 @dataclass(frozen=True)
 class Diana_Call:
     n: int
-
-    TAG = 70
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.n), barr)
+    TAG = 73
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.n))
 @dataclass(frozen=True)
 class Diana_Format:
     format: int
     argn: int
-
-    TAG = 71
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.format), barr)
-        serialize_(as_int(self.argn), barr)
+    TAG = 74
+    
+    OFFSET = 3
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.format))
+        flat_code.append(as_flatten(self.argn))
 @dataclass(frozen=True)
 class Diana_Const:
     p_const: int
-
-    TAG = 72
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.p_const), barr)
+    TAG = 75
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.p_const))
 @dataclass(frozen=True)
 class Diana_MKTuple:
     n: int
-
-    TAG = 73
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.n), barr)
+    TAG = 76
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.n))
 @dataclass(frozen=True)
 class Diana_Pack:
     n: int
-
-    TAG = 74
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.n), barr)
+    TAG = 77
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.n))
 @dataclass(frozen=True)
 class Diana_Replicate:
     n: int
-
-    TAG = 75
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
-        serialize_(as_int(self.n), barr)
+    TAG = 78
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(as_flatten(self.n))
 @dataclass(frozen=True)
 class Diana_Pop:
-
-    TAG = 76
-
-    def serialize_(self, barr):
-        barr.append(self.TAG)
+    TAG = 79
+    
+    OFFSET = 1
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
 
 @dataclass(frozen=True)
 class FuncMeta:
@@ -765,59 +756,130 @@ class FuncMeta:
     name: InternString
     filename: str
     lineno: int
+    linenos: PVector[tuple[int, int]]
     freenames: PVector[str]
     localnames: PVector[str]
+    bytecode: Bytecode
+    
+    def serialize_(self, barr: bytearray):
+        serialize_(self.is_vararg, barr)
+        serialize_(self.freeslots, barr)
+        serialize_(self.nonargcells, barr)
+        serialize_(self.narg, barr)
+        serialize_(self.nlocal, barr)
+        serialize_(self.name, barr)
+        serialize_(self.filename, barr)
+        serialize_(self.lineno, barr)
+        serialize_(self.linenos, barr)
+        serialize_(self.freenames, barr)
+        serialize_(self.localnames, barr)
+        serialize_(self.bytecode, barr)
 
-    def as_int(self) -> int:
-        is_vararg = as_int(self.is_vararg)
-        freeslots = as_int(self.freeslots)
-        nonargcells = as_int(self.nonargcells)
-        narg = as_int(self.narg)
-        nlocal = as_int(self.nlocal)
-        name = as_int(self.name)
-        filename = as_int(self.filename)
-        lineno = as_int(self.lineno)
-        freenames = as_int(self.freenames)
-        localnames = as_int(self.localnames)
-        return Storage.funcmetas.cache((is_vararg, freeslots, nonargcells, narg, nlocal, name, filename, lineno, freenames, localnames))    
-@dataclass(frozen=True)
-class Block:
-    codes: PVector[Ptr]
-    location_data: PVector[tuple[int, int]]
-    filename: str
+    def as_flatten(self) -> int:
+        return Storage.funcmetas.cache(self)
 
-    def as_int(self) -> int:
-        codes = as_int(self.codes)
-        location_data = as_int(self.location_data)
-        filename = as_int(self.filename)
-        return Storage.blocks.cache((codes, location_data, filename))    
-
-def as_int(self):
+def as_flatten(self):
     if isinstance(self, int):
         return self
-    if isinstance(self, string):
-        return self
-    if isinstance(self, DObj):
-        return self
-    if isinstance(self, InternString):
-        return self
-    return self.as_int()
+    return self.as_flatten()
 
 class Storage:
-    strings : Builder[string] = Builder()
-    dobjs : Builder[DObj] = Builder()
+    strings : Builder[str] = Builder()
     internstrings : Builder[InternString] = Builder()
+    dobjs : Builder[DObj] = Builder()
     funcmetas : Builder[FuncMeta] = Builder()
-    blocks : Builder[Block] = Builder()
-    def serialize_(self, barr: bytearray):
-        self.strings.serialize_(barr)
-        self.dobjs.serialize_(barr)
-        self.internstrings.serialize_(barr)
-        self.funcmetas.serialize_(barr)
-        self.blocks.serialize_(barr)
-f.internstrings.serialize_(barr)
-    
-        self.dataclasss.serialize_(barr)
-    
-        self.dataclasss.serialize_(barr)
-    
+
+    @classmethod
+    def serialize_(cls, barr: bytearray):
+        cls.strings.serialize_(barr)
+        cls.internstrings.serialize_(barr)
+        cls.dobjs.serialize_(barr)
+        cls.funcmetas.serialize_(barr)
+
+class PlaceHolder:
+    def __init__(self, OFFSET: int):
+        self.OFFSET = OFFSET
+
+Instr = (
+    PlaceHolder
+    | Diana_FunctionDef
+    | Diana_LoadGlobalRef
+    | Diana_DelVar
+    | Diana_LoadVar
+    | Diana_StoreVar
+    | Diana_Action
+    | Diana_Return
+    | Diana_Break
+    | Diana_Continue
+    | Diana_JumpIfNot
+    | Diana_JumpIf
+    | Diana_Jump
+    | Diana_TryCatch
+    | Diana_TryFinally
+    | Diana_TryCatchFinally
+    | Diana_Loop
+    | Diana_For
+    | Diana_With
+    | Diana_GetAttr
+    | Diana_SetAttr
+    | Diana_SetAttr_Iadd
+    | Diana_SetAttr_Isub
+    | Diana_SetAttr_Imul
+    | Diana_SetAttr_Itruediv
+    | Diana_SetAttr_Ifloordiv
+    | Diana_SetAttr_Imod
+    | Diana_SetAttr_Ipow
+    | Diana_SetAttr_Ilshift
+    | Diana_SetAttr_Irshift
+    | Diana_SetAttr_Ibitor
+    | Diana_SetAttr_Ibitand
+    | Diana_SetAttr_Ibitxor
+    | Diana_DelItem
+    | Diana_GetItem
+    | Diana_SetItem
+    | Diana_SetItem_Iadd
+    | Diana_SetItem_Isub
+    | Diana_SetItem_Imul
+    | Diana_SetItem_Itruediv
+    | Diana_SetItem_Ifloordiv
+    | Diana_SetItem_Imod
+    | Diana_SetItem_Ipow
+    | Diana_SetItem_Ilshift
+    | Diana_SetItem_Irshift
+    | Diana_SetItem_Ibitor
+    | Diana_SetItem_Ibitand
+    | Diana_SetItem_Ibitxor
+    | Diana_add
+    | Diana_sub
+    | Diana_mul
+    | Diana_truediv
+    | Diana_floordiv
+    | Diana_mod
+    | Diana_pow
+    | Diana_lshift
+    | Diana_rshift
+    | Diana_bitor
+    | Diana_bitand
+    | Diana_bitxor
+    | Diana_gt
+    | Diana_lt
+    | Diana_ge
+    | Diana_le
+    | Diana_eq
+    | Diana_ne
+    | Diana_in
+    | Diana_notin
+    | Diana_UnaryOp_invert
+    | Diana_UnaryOp_not
+    | Diana_UnaryOp_neg
+    | Diana_MKDict
+    | Diana_MKSet
+    | Diana_MKList
+    | Diana_Call
+    | Diana_Format
+    | Diana_Const
+    | Diana_MKTuple
+    | Diana_Pack
+    | Diana_Replicate
+    | Diana_Pop
+)

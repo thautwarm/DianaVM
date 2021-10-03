@@ -36,14 +36,10 @@ namespace DianaScript
         public InternString name;
         public string filename;
         public int lineno;
+        public (int, int)[] linenos;
         public string[] freenames;
         public string[] localnames;
-    }
-    public struct Block
-    {
-        public Ptr[] codes;
-        public (int, int)[] location_data;
-        public string filename;
+        public Bytecode bytecode;
     }
 
     public partial class AWorld
@@ -53,18 +49,15 @@ namespace DianaScript
         private static List<string> _strings;
         public static List<string> strings => _strings;
         private static int Num_strings = 0;
-        private static List<DObj> _dobjs;
-        public static List<DObj> dobjs => _dobjs;
-        private static int Num_dobjs = 0;
         private static List<InternString> _internstrings;
         public static List<InternString> internstrings => _internstrings;
         private static int Num_internstrings = 0;
+        private static List<DObj> _dobjs;
+        public static List<DObj> dobjs => _dobjs;
+        private static int Num_dobjs = 0;
         private static List<FuncMeta> _funcmetas;
         public static List<FuncMeta> funcmetas => _funcmetas;
         private static int Num_funcmetas = 0;
-        private static List<Block> _blocks;
-        public static List<Block> blocks => _blocks;
-        private static int Num_blocks = 0;
 
 
     public partial class CodeLoder
@@ -90,25 +83,6 @@ namespace DianaScript
             }
         }
 
-        private DObj Read(THint<DObj> _) => ReadDObj();
-
-
-
-        private void Load_dobjs()
-        {
-#if A_DBG
-            Console.WriteLine($"start loading data storage(dobjs).");
-#endif
-            var n = ReadInt();
-            for (var i = 0; i < n; i++)
-            {
-#if A_DBG
-                Console.WriteLine($"loading data dobjs[{i}].");
-#endif
-                AWorld.dobjs.Add(ReadDObj());
-            }
-        }
-
         private InternString Read(THint<InternString> _) => ReadInternString();
 
 
@@ -125,6 +99,25 @@ namespace DianaScript
                 Console.WriteLine($"loading data internstrings[{i}].");
 #endif
                 AWorld.internstrings.Add(ReadInternString());
+            }
+        }
+
+        private DObj Read(THint<DObj> _) => ReadDObj();
+
+
+
+        private void Load_dobjs()
+        {
+#if A_DBG
+            Console.WriteLine($"start loading data storage(dobjs).");
+#endif
+            var n = ReadInt();
+            for (var i = 0; i < n; i++)
+            {
+#if A_DBG
+                Console.WriteLine($"loading data dobjs[{i}].");
+#endif
+                AWorld.dobjs.Add(ReadDObj());
             }
         }
 
@@ -150,28 +143,6 @@ namespace DianaScript
             }
         }
 
-        private Block Read(THint<Block> _) => ReadBlock();
-
-        private Block ReadBlock() => new Block
-        {
-
-        };
-        private void Load_blocks()
-        {
-#if A_DBG
-            Console.WriteLine($"start loading data storage(blocks).");
-#endif
-
-            var n = ReadInt();
-            for (var i = 0; i < n; i++)
-            {
-#if A_DBG
-                Console.WriteLine($"loading data blocks[{i}].");
-#endif
-                AWorld.blocks.Add(ReadBlock());
-            }
-        }
-
 
         private Bytecode Read(THint<Bytecode> _) => ReadBytecode();
         private int ToIndex_int(int x) => x;
@@ -183,13 +154,12 @@ namespace DianaScript
 
             while (offset < codes.Length)
             {
-                var code = (int) binaryReader.ReadByte();
+                var code = (int) ReadInt();
                 codes[offset++] = code;
                 switch ((CODETAG)  code)
                 {
                     case CODETAG.Diana_FunctionDef:
                     {
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         break;
                     }
@@ -218,9 +188,16 @@ namespace DianaScript
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         break;
                     }
-                    case CODETAG.Diana_ControlIf:
+                    case CODETAG.Diana_Return:
                     {
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
+                    case CODETAG.Diana_Break:
+                    {
+                        break;
+                    }
+                    case CODETAG.Diana_Continue:
+                    {
                         break;
                     }
                     case CODETAG.Diana_JumpIfNot:
@@ -238,13 +215,23 @@ namespace DianaScript
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         break;
                     }
-                    case CODETAG.Diana_Control:
+                    case CODETAG.Diana_TryCatch:
                     {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         break;
                     }
-                    case CODETAG.Diana_Try:
+                    case CODETAG.Diana_TryFinally:
                     {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
+                    case CODETAG.Diana_TryCatchFinally:
+                    {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
@@ -547,24 +534,21 @@ namespace DianaScript
 
         private static readonly object _loaderSync = new object();
 
-        public (int, int) LoadCode()
+        public int LoadCode()
         {
-            var metadataInd = ReadInt();
-            var blockInd = ReadInt();    
+            var metadataIndForEntryPoint = ReadInt();
             lock(_loaderSync)
             {
                     Load_strings();
-                    Load_dobjs();
                     Load_internstrings();
+                    Load_dobjs();
                     Load_funcmetas();
-                    Load_blocks();
                     Num_strings = strings.Count;
-                    Num_dobjs = dobjs.Count;
                     Num_internstrings = internstrings.Count;
+                    Num_dobjs = dobjs.Count;
                     Num_funcmetas = funcmetas.Count;
-                    Num_blocks = blocks.Count;
             }
-            return (metadataInd, blockInd);
+            return metadataIndForEntryPoint;
         }
 
 

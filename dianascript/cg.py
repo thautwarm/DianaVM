@@ -16,37 +16,28 @@ LOOP_CONTINUE = 3
 
 GLOBAL_FLAG = 0b11
 
-class PlaceHolder:
-    pass
-
 class CG:
     def __init__(self, filename: str, is_global=False) -> None:
         self.filename = filename
-        self.block: list[Ptr] = []
+        self.block: list[Instr] = []
+        self.offset = 0
         self.lineno = 1
         self.local_scope: dict[str, tuple[str, int]] = {} # user name -> mangled name
-        self.local_names = []
-        self.linenos = []
+        self.local_names: list[str] = []
+        self.linenos: list[tuple[int, int]] = []
         self.is_global = is_global
-
-    @contextmanager
-    def enter_block(self):
-        old_code = self.block
-        linenos = self.linenos
-        try:
-            self.block = []
-            self.linenos = []
-            yield
-        finally:
-            self.block = old_code
-            self.linenos = linenos
+        
 
     @property
-    def cur_offset(self):
-        return len(self.block)
+    def next_offset(self):
+        return self.offset
 
     def mk_block(self):
-        return Block(pvector(self.block), pvector(self.linenos), self.filename)
+        res = []
+        for each in self.block:
+            assert not isinstance(each, PlaceHolder)
+            each.dumps(res)
+        return pvector(res)
 
     def declarevar(self, name: str):
         if not self.is_global:
@@ -59,10 +50,11 @@ class CG:
         if pair := self.local_scope.get(name):
             return pair[1] << 2
         else:
-            return (InternString(name).as_int() << 2) | GLOBAL_FLAG
+            return (InternString(name).as_flatten() << 2) | GLOBAL_FLAG
 
-    def __lshift__(self, other: Ptr | PlaceHolder):
+    def __lshift__(self, other: Instr):
         self.block.append(other) # type: ignore
+        self.offset += other.OFFSET
         return len(self.block) - 1
 
     def cg_for_stmts(self, stmts):
@@ -75,7 +67,7 @@ class CG:
 
             new_lineno = stmt.loc[0]
             if self.lineno < new_lineno:
-                self.linenos.append((self.cur_offset, new_lineno))
+                self.linenos.append((self.next_offset, new_lineno))
             self.lineno = new_lineno
 
         match stmt:
@@ -88,6 +80,7 @@ class CG:
                 sub_cg.cg_for_stmts(body)
                 block = sub_cg.mk_block()
                 meta = FuncMeta(
+                    bytecode=block,
                     nonargcells = pvector(),
                     is_vararg = False,
                     freeslots = pvector(),
@@ -98,80 +91,79 @@ class CG:
                     lineno = start_lineno,
                     freenames=pvector([]),
                     localnames=pvector(sub_cg.local_names),
+                    linenos = pvector(sub_cg.linenos),
                 )
-                d = Diana_FunctionDef(meta.as_int(), block.as_int())
-                self << d.as_ptr()
+                d = Diana_FunctionDef(meta.as_flatten())
+                self << d
                 i = self.varid(name)
-                self << Diana_StoreVar(i).as_ptr()
+                self << Diana_StoreVar(i)
             case SDecl(vars):
                 for each in vars:
                     self.declarevar(each)
 
             case SAssign(targets, value):
                 self.cg_for_expr(value)
-                self << Diana_Replicate(len(targets)).as_ptr()
+                self << Diana_Replicate(len(targets))
                 for each in reversed(targets):
                     self.cg_for_lhs(each)
 
             case SExpr(expr):
                 self.cg_for_expr(expr)
-                self << Diana_Pop().as_ptr()
+                self << Diana_Pop()
             case SFor(target, iter, body):
                 self.cg_for_expr(iter)
-                with self.enter_block():
-                    if target:
-                        self.cg_for_lhs(target)
-                    else:
-                        self << Diana_Pop().as_ptr()
-                    self.cg_for_stmts(body)
-                    new_block = self.mk_block()
-
-                self << Diana_For(new_block.as_int()).as_ptr()
+                backref = self << PlaceHolder(Diana_For.OFFSET)
+                if target:
+                    self.cg_for_lhs(target)
+                else:
+                    self << Diana_Pop()
+                self.cg_for_stmts(body)
+                self.block[backref] = Diana_For(self.next_offset)
 
             case SLoop(body):
-                with self.enter_block():
-                    self.cg_for_stmts(body)
-                    new_block = self.mk_block()
-                self << Diana_Loop(new_block.as_int()).as_ptr()
+                backref = self << PlaceHolder(Diana_For.OFFSET)
+                self.cg_for_stmts(body)            
+                self.block[backref] = Diana_Loop(self.next_offset)
 
             case SIf(cond, [], None):
                 self.cg_for_expr(cond)
+                self << Diana_Pop()
 
             case SIf(cond, then, None):
 
                 self.cg_for_expr(cond)
-                i_jump_to_orelse_if_not = self << PlaceHolder()
+                i_jump_to_orelse_if_not = self << PlaceHolder(Diana_JumpIfNot.OFFSET)
                 self.cg_for_stmts(then)
-                self.block[i_jump_to_orelse_if_not] = Diana_JumpIfNot(self.cur_offset - 1).as_ptr()
+                self.block[i_jump_to_orelse_if_not] = Diana_JumpIfNot(self.next_offset)
                 
 
             case SIf(cond, [], orelse):
                 self.cg_for_expr(cond)
-                i_jump_to_orelse_if_not = self << PlaceHolder()
+                i_jump_to_orelse_if_not = self << PlaceHolder(Diana_JumpIf.OFFSET)
                 self.cg_for_stmts(orelse)
-                self.block[i_jump_to_orelse_if_not] = Diana_JumpIf(self.cur_offset - 1).as_ptr()
+                self.block[i_jump_to_orelse_if_not] = Diana_JumpIf(self.next_offset)
 
             case SIf(cond, then, orelse):
                 self.cg_for_expr(cond)
-                i_jump_to_orelse_if_not = self << PlaceHolder()
+                i_jump_to_orelse_if_not = self << PlaceHolder(Diana_JumpIfNot.OFFSET)
                 self.cg_for_stmts(then)
-                i_jump_to_success = self << PlaceHolder()
-                self.block[i_jump_to_orelse_if_not] = Diana_JumpIfNot(self.cur_offset - 1).as_ptr()
+                i_jump_to_success = self << PlaceHolder(Diana_Jump.OFFSET)
+                self.block[i_jump_to_orelse_if_not] = Diana_JumpIfNot(self.next_offset)
                 self.cg_for_stmts(orelse)
-                self.block[i_jump_to_success] = Diana_Jump(self.cur_offset - 1).as_ptr()
+                self.block[i_jump_to_success] = Diana_Jump(self.next_offset)
 
             case SBreak():
-                self << Diana_Control(LOOP_BREAK).as_ptr()
+                self << Diana_Break()
 
             case SContinue():
-                self << Diana_Control(LOOP_CONTINUE).as_ptr()
+                self << Diana_Continue()
 
             case SReturn(val):
                 if val is None:
-                    self << Diana_Const(DObj(None).as_int()).as_ptr()
+                    self << Diana_Const(DObj(None).as_flatten())
                 else:
                     self.cg_for_expr(val)
-                self << Diana_Control(RETURN).as_ptr()
+                self << Diana_Return()
 
             case _:
                 raise
@@ -181,68 +173,68 @@ class CG:
         if expr.loc:
             new_lineno = expr.loc[0]
             if self.lineno < new_lineno:
-                self.linenos.append((self.cur_offset, new_lineno))
+                self.linenos.append((self.next_offset, new_lineno))
             self.lineno = new_lineno
         match expr:
             case EVal(val):
-                self << Diana_Const(DObj(val).as_int()).as_ptr()
+                self << Diana_Const(DObj(val).as_flatten())
             case EVar(var):
                 i = self.varid(var)
-                self << Diana_LoadVar(i).as_ptr()
+                self << Diana_LoadVar(i)
             case EApp(f, args):
                 self.cg_for_expr(f)
                 for arg in args:
                     self.cg_for_expr(arg)
-                self << Diana_Call(len(args)).as_ptr()
+                self << Diana_Call(len(args))
             case EIt(value, item):
                 self.cg_for_expr(value)
                 self.cg_for_expr(item)
-                self << Diana_GetItem().as_ptr()
+                self << Diana_GetItem()
             case EAttr(value, attr):
                 self.cg_for_expr(value)
-                self << Diana_GetAttr(InternString(attr)).as_ptr()
+                self << Diana_GetAttr(InternString(attr))
             case EPar([elt],  False):
                 self.cg_for_expr(elt)
             case EPar(elts,  _):
                 for each in elts:
                     self.cg_for_expr(each)
-                self << Diana_MKTuple(len(elts)).as_ptr()
+                self << Diana_MKTuple(len(elts))
             
             case EDict(kvs):
                 for k, v in kvs:
                     self.cg_for_expr(k)
                     self.cg_for_expr(v)
-                self << Diana_MKDict(len(kvs)).as_ptr()
+                self << Diana_MKDict(len(kvs))
             
             case EList(elts):
                 for e in elts:
                     self.cg_for_expr(e)
 
-                self << Diana_MKList(len(elts)).as_ptr()
+                self << Diana_MKList(len(elts))
 
             case ENot(expr):
                 self.cg_for_expr(expr)
-                self << Diana_UnaryOp_not().as_ptr()
+                self << Diana_UnaryOp_not()
 
             case ENeg(expr):
                 self.cg_for_expr(expr)
-                self << Diana_UnaryOp_neg().as_ptr()
+                self << Diana_UnaryOp_neg()
 
             case EInv(expr):
                 self.cg_for_expr(expr)
-                self << Diana_UnaryOp_invert().as_ptr()
+                self << Diana_UnaryOp_invert()
 
             case EAnd(a, b):
                 self.cg_for_expr(a)
-                i = self << PlaceHolder()
+                i = self << PlaceHolder(Diana_JumpIf.OFFSET)
                 self.cg_for_expr(b)
-                self.block[i] = Diana_JumpIf(self.cur_offset - 1).as_ptr()
+                self.block[i] = Diana_JumpIf(self.next_offset)
 
             case EOr(a, b):
                 self.cg_for_expr(a)
-                i = self << PlaceHolder()
+                i = self << PlaceHolder(Diana_JumpIfNot.OFFSET)
                 self.cg_for_expr(b)
-                self.block[i] = Diana_JumpIfNot(self.cur_offset - 1).as_ptr()
+                self.block[i] = Diana_JumpIfNot(self.next_offset)
 
             case EOp(left=left, op=op, right=right):
                 self.cg_for_expr(left)
@@ -250,18 +242,19 @@ class CG:
                 self << op_map[op]
             case _:
                 raise
+
     def cg_for_lhs(self, expr: Chlhs):
         match expr:
             case LVar(var):
                 i = self.varid(var)
-                self << Diana_StoreVar(i).as_ptr()
+                self << Diana_StoreVar(i)
             case LIt(val, item):
                 self.cg_for_expr(val)
                 self.cg_for_expr(item)
-                self << Diana_SetItem().as_ptr()
+                self << Diana_SetItem()
             case LAttr(value, attr):
                 self.cg_for_expr(value)
-                self << Diana_SetAttr(InternString(attr)).as_ptr()
+                self << Diana_SetAttr(InternString(attr))
             case _:
                 raise TypeError(expr)
 
@@ -289,16 +282,17 @@ _op_map = {
 }
 
 _globals = globals()
-op_map: dict[str, Ptr] = {each: _globals["Diana_" + v]().as_ptr() for each, v in _op_map.items() }
+op_map: dict[str, Instr] = {each: _globals["Diana_" + v]() for each, v in _op_map.items() }
 del _globals, _op_map
 
 def codegen(filename: str, suite: list[Chstmt], barr: bytearray):
     cg = CG(filename, is_global=True)
     cg.cg_for_stmts(suite)
-    cg << Diana_Const(DObj(None).as_int()).as_ptr()
-    cg << Diana_Control(RETURN).as_ptr()
+    cg << Diana_Const(DObj(None).as_flatten())
+    cg << Diana_Return()
     block = cg.mk_block()
     meta = FuncMeta(
+                    bytecode=block,
                     nonargcells = pvector(),
                     is_vararg = False,
                     freeslots = pvector(),
@@ -309,13 +303,12 @@ def codegen(filename: str, suite: list[Chstmt], barr: bytearray):
                     lineno = 1,
                     freenames=pvector([]),
                     localnames=pvector(cg.local_names),
+                    linenos = pvector(cg.linenos),
                 )
-    metaind = meta.as_int()
-    blockind = block.as_int()
+    metaind = meta.as_flatten()
     if logging.DEBUG >= logger.level :
         logger.debug("  entry point:")
         logger.debug(f"  - metaind : {metaind}")
-        logger.debug(f"  - blockind : {blockind}")
+
     serialize_(metaind, barr)
-    serialize_(blockind, barr)
-    DFlatGraphCode.serialize_(barr)
+    Storage.serialize_(barr)

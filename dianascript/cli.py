@@ -1,6 +1,6 @@
 from dianascript.cg import codegen
 from dianascript.parser import parser
-from dianascript.code_cons import DFlatGraphCode, Builder
+from dianascript.code_cons import Storage, Builder
 from dianascript.logger import logger
 from dianascript.mdis import dis
 import logging
@@ -18,7 +18,7 @@ def call_main(filename: str, out: str="a.ran", loglevel: str=""):
 
     if logging.DEBUG >= logger.level:
         logger.debug("  data count:")
-        for k, each in DFlatGraphCode.__dict__.items():
+        for k, each in Storage.__dict__.items():
             if isinstance(each, Builder):
                 logger.debug(f"  - {k} : {len(each)}")
         logger.debug("  simple CFG:")

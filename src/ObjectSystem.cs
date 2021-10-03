@@ -258,7 +258,7 @@ namespace DianaScript
         public int narg;
         public int nlocal;
         public int metadataInd;
-        public int body;
+        public int[] body;
         public Dictionary<InternString, DObj> nameSpace;
         public string __repr__()
         {
@@ -267,7 +267,7 @@ namespace DianaScript
         }
 
         public static DFunc Make(
-            int body, int narg, int nlocal, int metadataInd,
+            int[] body, int narg, int nlocal, int metadataInd,
             NameSpace nameSpace, bool is_vararg = false,
             DRef[] freevals = null, int[] nonargcells = null
         )

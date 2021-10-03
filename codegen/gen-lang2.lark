@@ -75,7 +75,7 @@ type : "(" seplist{",", type} ")" -> TTup($2)
 field : name ":" type -> Field($3, $1)
       | type name     -> Field($1, $2)
     
-byte_type : ("int" | "InternString") -> TName(*1)
+byte_type : name -> TName(*1)
 
 operand_field : name ":" byte_type -> Field($3, $1)
               | byte_type name     -> Field($1, $2)

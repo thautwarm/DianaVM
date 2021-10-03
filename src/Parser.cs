@@ -70,6 +70,7 @@ public partial class CodeLoder
             return f;
         }
         
+        // public InternString Read(THint<InternString> _) => ReadInternString();
         public InternString ReadInternString() => ReadStr().ToIStr();
         public string Readstring() => ReadStr();
         public string ReadStr()

@@ -10,11 +10,11 @@ public static class DevCode
     {
         Console.WriteLine("path: " + args[0]);
         var dvm = new DVM();
-        var loader = AWorld.GetLoaderFrom(args[0]);
-        var (metaInd, blockId) = loader.LoadCode();
+        var loader = new AWorld.CodeLoder(args[0]);
+        var metaInd = loader.LoadCode();
         
         var g = GlobalNamespace.GetGlonal();
-        dvm.exec_block(metaInd, blockId, g);
+        dvm.exec_block(metaInd, g);
         
         return 0;
         

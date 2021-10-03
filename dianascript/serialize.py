@@ -24,7 +24,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pyrsistent import PVector
 import struct
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, TYPE_CHECKING
+if TYPE_CHECKING:
+    from dianascript.code_cons import Storage
+
+
+def initialize():
+    global Storage
+    from dianascript.code_cons import Storage
+
 
 special_bit = 0b10000000
 true_bit = 0b10000011
@@ -48,31 +56,31 @@ special_objs = {
 }
 booleans = (false_bit, true_bit)
 
-@dataclass(frozen=True)
-class Ptr:
-    kind: int
-    ind: int | None
-    def as_ptr(self) -> Ptr:
-        return self
-    
-    def serialize_(self, barr: bytearray):
-        assert self.kind < 256
-        barr.append(self.kind)
-        if self.ind is not None:
-            serialize_(self.ind, barr)
+
+class InternString(str):
+
+    def as_flatten(self):
+        return Storage.internstrings.cache(self)
 
 
-def encode_to_7bit(value: int, barr: bytearray):
-    data = []
-    number = abs(value)
-    while number >= 0x80:
-        data.append((number | 0x80) & 0xff)
-        number >>= 7
-    barr.append(number & 0xff)
-
-@dataclass(frozen=True)
 class DObj:
-    o : object
+    o: bool | int | float | str | None
+    t: type | None = None
+    def __init__(self, o):
+        self.o = o
+        self.type = type(o)
+
+    def __hash__(self):
+        return hash(self.o) ^ id(type)
+
+    def __eq__(self, other):
+        if not isinstance(other, DObj):
+            return False
+        return (self.o == other.o) and (self.type == other.type)
+    
+    def as_flatten(self):
+        return Storage.dobjs.cache(self)
+    
     def serialize_(self, barr: bytearray):
         o = self.o
         v = special_objs.get((type(o), o)) # type: ignore
@@ -84,8 +92,15 @@ class DObj:
             barr.append(v)
         serialize_(self.o, barr)
 
-    def as_int(self) -> int:
-        return DFlatGraphCode.dobjs.cache(self)
+
+def encode_to_7bit(value: int, barr: bytearray):
+    data = []
+    number = abs(value)
+    while number >= 0x80:
+        data.append((number | 0x80) & 0xff)
+        number >>= 7
+    barr.append(number & 0xff)
+
 
 def serialize_(o, barr: bytearray):
     match o:
@@ -106,36 +121,16 @@ def serialize_(o, barr: bytearray):
                 serialize_(v, barr)
         case list() | set() | PVector():    
             serialize_(len(o), barr)
-            for v in o:
+            for v in o:  # type: ignore
                 serialize_(v, barr)
         case tuple():
-            for v in o:
+            for v in o:  # type: ignore
                 serialize_(v, barr)
         case None:
             barr.append(none_bit | special_bit)
         case _:
             o.serialize_(barr)
 
-
-global DFlatGraphCode
-
-class InternString(str):
-
-    def as_int(self) -> int:
-        global DFlatGraphCode
-        try:
-            DFlatGraphCode
-        except NameError:
-            from dianascript.code_cons import DFlatGraphCode
-        
-        return DFlatGraphCode.internstrings.cache(self)
-        
-
-def as_ptr(x):
-    if isinstance(x, (int, str, Ptr)):
-        raise TypeError
-    return x.as_ptr()
-        
 
 _T = TypeVar("_T")
 

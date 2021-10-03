@@ -4,39 +4,31 @@ namespace DianaScript
 {
 public partial class BlockExecutor
 {
-    public static void check_argcount(DFunc f, int argcount)
-    {
-        if (argcount == f.narg)
-            return;
-        if (argcount > f.narg && f.is_vararg)
-            return;
-        string f_repr = f.__repr__();
-        var expect = (f.is_vararg ? ">=" : "") + $"{f.narg}";
-        throw new ArgumentException($"{f_repr} takes {expect} arguments, got {argcount}.");
-    }
 
     int FromIndex_int(int a) => a;
     InternString FromIndex_InternString(int a) => new InternString { identity = a };
-    public void exec_code(int[] codes, int bound)
+
+    public void exec(int[] codes) => exec(codes, codes.Length);
+    public void exec(int[] BYTECODE, int bound)
     {
         LOOP_HEAD:
         while (offset < bound)
         {
-        var instruction = codes[offset];
+        var instruction = BYTECODE[offset];
         switch(instruction)
         {
             case (int) CODETAG.Diana_FunctionDef:
             {
-                var metadataInd = FromIndex_int(codes[offset + 1]);
-                var code = FromIndex_int(codes[offset + 2]);
+                var metadataInd = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var meta = loadmetadata(metadataInd);
                 int nfree = meta.freeslots.Length;
                 var new_freevals = new DRef[meta.freeslots.Length];
                 for(var i = 0; i < nfree; i++)
                     new_freevals[i] = loadref(meta.freeslots[i]);
-
-                var dfunc = DFunc.Make(code,
+    
+                var dfunc = DFunc.Make(
+                    body:meta.bytecode,
                     freevals:new_freevals,
                     is_vararg: meta.is_vararg,
                     narg: meta.narg,
@@ -44,16 +36,16 @@ public partial class BlockExecutor
                     nonargcells: meta.nonargcells,
                     metadataInd: metadataInd,
                     nameSpace: cur_func.nameSpace
-                    );
+                );
                 push(dfunc);
 
                 
-                offset += 3;
+                offset += 2;
                 break;
             }
             case (int) CODETAG.Diana_LoadGlobalRef:
             {
-                var istr = FromIndex_InternString(codes[offset + 1]);
+                var istr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 push(new DRefGlobal(cur_func.nameSpace, istr));
 
@@ -63,7 +55,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_DelVar:
             {
-                var target = FromIndex_int(codes[offset + 1]);
+                var target = FromIndex_int(BYTECODE[offset + 1]);
                 
                 storevar(target, null);
 
@@ -73,7 +65,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_LoadVar:
             {
-                var i = FromIndex_int(codes[offset + 1]);
+                var i = FromIndex_int(BYTECODE[offset + 1]);
                 
                 push(loadvar(i));
 
@@ -83,7 +75,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_StoreVar:
             {
-                var i = FromIndex_int(codes[offset + 1]);
+                var i = FromIndex_int(BYTECODE[offset + 1]);
                 
                 storevar(i, pop());
 
@@ -93,7 +85,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_Action:
             {
-                var kind = FromIndex_int(codes[offset + 1]);
+                var kind = FromIndex_int(BYTECODE[offset + 1]);
                 
                 switch (kind)
                 {
@@ -110,23 +102,47 @@ public partial class BlockExecutor
                 offset += 2;
                 break;
             }
-            case (int) CODETAG.Diana_ControlIf:
+            case (int) CODETAG.Diana_Return:
             {
-                var arg = FromIndex_int(codes[offset + 1]);
                 
-                if(pop().__bool__())
-                    token = arg;
+    
+                token = (int) TOKEN.RETURN;
+                return;
 
                 
-                offset += 2;
+                offset += 1;
+                break;
+            }
+            case (int) CODETAG.Diana_Break:
+            {
+                
+                token = (int) TOKEN.LOOP_BREAK;
+                return;
+
+                
+                offset += 1;
+                break;
+            }
+            case (int) CODETAG.Diana_Continue:
+            {
+                
+                token = (int) TOKEN.LOOP_CONTINUE;
+                return;
+
+                
+                offset += 1;
                 break;
             }
             case (int) CODETAG.Diana_JumpIfNot:
             {
-                var off = FromIndex_int(codes[offset + 1]);
+                var off = FromIndex_int(BYTECODE[offset + 1]);
                 
                 if(!(pop().__bool__()))
+                {
                     offset = off; 
+                    goto LOOP_HEAD;
+                }
+
 
                 
                 offset += 2;
@@ -134,10 +150,13 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_JumpIf:
             {
-                var off = FromIndex_int(codes[offset + 1]);
+                var off = FromIndex_int(BYTECODE[offset + 1]);
                 
                 if(pop().__bool__())
+                {
                     offset = off; 
+                    goto LOOP_HEAD;
+                }
 
                 
                 offset += 2;
@@ -145,71 +164,100 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_Jump:
             {
-                var off = FromIndex_int(codes[offset + 1]);
+                var off = FromIndex_int(BYTECODE[offset + 1]);
                 
                 offset = off; 
+                goto LOOP_HEAD;
 
                 
                 offset += 2;
                 break;
             }
-            case (int) CODETAG.Diana_Control:
+            case (int) CODETAG.Diana_TryCatch:
             {
-                var arg = FromIndex_int(codes[offset + 1]);
+                var unwind_bound = FromIndex_int(BYTECODE[offset + 1]);
+                var catch_start = FromIndex_int(BYTECODE[offset + 2]);
+                var catch_bound = FromIndex_int(BYTECODE[offset + 3]);
                 
-                token = arg;
-
-                
-                offset += 2;
-                break;
-            }
-            case (int) CODETAG.Diana_Try:
-            {
-                var unwind_start = FromIndex_int(codes[offset + 1]);
-                var unwind_stop = FromIndex_int(codes[offset + 2]);
-                var errorlabel = FromIndex_int(codes[offset + 3]);
-                var finallabel = FromIndex_int(codes[offset + 4]);
-                   
                 try
                 {
-                    exec_block(body);
+                    exec(BYTECODE, unwind_bound);
                 }
                 catch (Exception e)
                 {
                     clearstack();
-                    var except_handlers = load_handlers(except_handler_id);
-                    foreach(var handler in except_handlers){
-                        exec_block(handler.exc_type);
-                        var exc_type = pop();
-                        var e_boxed = MK.create(e);
-                        if (exc_type.__subclasscheck__(e_boxed.Class))
-                        {
-                            push(e_boxed);
-                            exec_block(handler.body);   
-                            virtual_machine.errorFrames.Clear();
-                            goto end_handled;
-                        }
-                    }
-                    throw;
-                    end_handled: ;
+                    var e_boxed = MK.create(e);
+                    push(e_boxed);
+                    offset = catch_start;
+                    exec(BYTECODE, catch_bound);
+                    virtual_machine.errorFrames.Clear();
+                }
+
+                
+                offset += 4;
+                break;
+            }
+            case (int) CODETAG.Diana_TryFinally:
+            {
+                var unwind_bound = FromIndex_int(BYTECODE[offset + 1]);
+                var final_start = FromIndex_int(BYTECODE[offset + 2]);
+                var final_bound = FromIndex_int(BYTECODE[offset + 3]);
+                
+                try
+                {
+                    exec(BYTECODE, unwind_bound);
                 }
                 finally
                 {
                     clearstack();
-                    exec_block(final_body);
+                    offset = final_start;
+                    exec(BYTECODE, final_bound);
                 }
 
                 
-                offset += 5;
+                offset += 4;
+                break;
+            }
+            case (int) CODETAG.Diana_TryCatchFinally:
+            {
+                var unwind_bound = FromIndex_int(BYTECODE[offset + 1]);
+                var catch_start = FromIndex_int(BYTECODE[offset + 2]);
+                var catch_bound = FromIndex_int(BYTECODE[offset + 3]);
+                var final_start = FromIndex_int(BYTECODE[offset + 4]);
+                var final_bound = FromIndex_int(BYTECODE[offset + 5]);
+                
+
+                try
+                {
+                    exec(BYTECODE, unwind_bound);
+                }
+                catch (Exception e)
+                {
+                    clearstack();
+                    var e_boxed = MK.create(e);
+                    push(e_boxed);
+                    offset = catch_start;
+                    exec(BYTECODE, catch_bound);
+                    virtual_machine.errorFrames.Clear();
+                }
+                finally
+                {
+                    clearstack();
+                    offset = final_start;
+                    exec(BYTECODE, final_bound);
+                }
+
+                
+                offset += 6;
                 break;
             }
             case (int) CODETAG.Diana_Loop:
             {
-                var body = FromIndex_int(codes[offset + 1]);
+                var loop_bound = FromIndex_int(BYTECODE[offset + 1]);
                 
                 while(true)
                 {
-                    exec_block(body);
+                    exec(BYTECODE, loop_bound);
                     switch(token)
                     {
                         case (int) TOKEN.LOOP_BREAK:
@@ -230,12 +278,13 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_For:
             {
-                var body = FromIndex_int(codes[offset + 1]);
+                var for_bound = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var iter = pop();
-                foreach(var it in iter.__iter__()){
+                foreach(var it in iter.__iter__())
+                {
                     push(it);
-                    exec_block(body);
+                    exec(BYTECODE, for_bound);
                     switch(token)
                     {
                         case (int) TOKEN.LOOP_BREAK:
@@ -255,18 +304,14 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_With:
             {
-                var body = FromIndex_int(codes[offset + 1]);
+                var with_bound = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var resource = pop();
+                var item = resource.__enter__();
                 try
                 {
-                    push(resource.__enter__());
-                    exec_block(body);
-                    resource.__exit__(
-                        MK.Nil(),
-                        MK.Nil(),
-                        MK.Nil()
-                    );
+                    push(item);
+                    exec(BYTECODE, with_bound);
                 }
                 catch (Exception e)
                 {
@@ -278,6 +323,11 @@ public partial class BlockExecutor
                         e_trace
                     );
                 }
+                resource.__exit__(
+                        MK.Nil(),
+                        MK.Nil(),
+                        MK.Nil()
+                );
 
                 
                 offset += 2;
@@ -285,7 +335,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_GetAttr:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var value = pop();
                 push(value.__getattr__(attr));
@@ -296,7 +346,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -310,7 +360,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Iadd:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -324,7 +374,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Isub:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -338,7 +388,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Imul:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -352,7 +402,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Itruediv:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -366,7 +416,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Ifloordiv:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -380,7 +430,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Imod:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -394,7 +444,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Ipow:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -408,7 +458,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Ilshift:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -422,7 +472,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Irshift:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -436,7 +486,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Ibitor:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -450,7 +500,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Ibitand:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -464,7 +514,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_SetAttr_Ibitxor:
             {
-                var attr = FromIndex_InternString(codes[offset + 1]);
+                var attr = FromIndex_InternString(BYTECODE[offset + 1]);
                 
                 var (value, subject) = pop2();
                 subject.__setattr__(
@@ -909,7 +959,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_MKDict:
             {
-                var n = FromIndex_int(codes[offset + 1]);
+                var n = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var dict = new Dictionary<DObj, DObj>(n);
                 for(var i = 0; i < n; i++){
@@ -924,7 +974,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_MKSet:
             {
-                var n = FromIndex_int(codes[offset + 1]);
+                var n = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var hset = new HashSet<DObj>(n);
                 popNTo(n, hset);
@@ -936,7 +986,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_MKList:
             {
-                var n = FromIndex_int(codes[offset + 1]);
+                var n = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var list = popNToList(n);
                 push(MK.List(list));
@@ -947,7 +997,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_Call:
             {
-                var n = FromIndex_int(codes[offset + 1]);
+                var n = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var f = peek(n);
                 if (f is DFunc dfunc)
@@ -971,8 +1021,8 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_Format:
             {
-                var format = FromIndex_int(codes[offset + 1]);
-                var argn = FromIndex_int(codes[offset + 2]);
+                var format = FromIndex_int(BYTECODE[offset + 1]);
+                var argn = FromIndex_int(BYTECODE[offset + 2]);
                 
                 var argvals = new string[argn];
                 for(var i = 0; i < argn; i++)
@@ -986,7 +1036,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_Const:
             {
-                var p_const = FromIndex_int(codes[offset + 1]);
+                var p_const = FromIndex_int(BYTECODE[offset + 1]);
                 
                 push(loadconst(p_const));
 
@@ -996,7 +1046,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_MKTuple:
             {
-                var n = FromIndex_int(codes[offset + 1]);
+                var n = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var tuple_elts = new DObj[n];
                 popNTo(n, tuple_elts);
@@ -1008,7 +1058,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_Pack:
             {
-                var n = FromIndex_int(codes[offset + 1]);
+                var n = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var tuple = (DTuple) pop();
                 var tuple_elts = tuple.elts;
@@ -1022,7 +1072,7 @@ public partial class BlockExecutor
             }
             case (int) CODETAG.Diana_Replicate:
             {
-                var n = FromIndex_int(codes[offset + 1]);
+                var n = FromIndex_int(BYTECODE[offset + 1]);
                 
                 var val = pop();
                 for(var i = 0; i < n; i++)

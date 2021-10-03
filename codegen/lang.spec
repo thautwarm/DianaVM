@@ -1,32 +1,8 @@
-// eval stmt return
-// 0 : return
-// 1 : go ahead
-// 2 : call frame
-// 3 : continue loop
-// 4 : break loop
-// 5 : reraise exception
-// IEquatable<T>
-// IComparable<T>
-// IFormattable 
-
-// loadmetadata
-// storevar, loadvar, loadstr, loadistr
-// exec_block
-// check_argcount
-// check_argcount(dfunc, argcount: int)
-// create_vstack(dfunc, p_args:int[])
-
-// exec type   | frame share |  offset share
-// exec_block  | yes         |  no
-// exec_code   | yes         |  yes
-// exec_func   | no          |  no
-
 language Diana
 
-
 data string
-data DObj
 data InternString
+data DObj
 
 dataclass FuncMeta(
     is_vararg: bool,
@@ -37,20 +13,22 @@ dataclass FuncMeta(
     name: InternString,
     filename: string,
     lineno: int,
+    linenos: (int, int)[],
     freenames: string[],
-    localnames: string[]
+    localnames: string[],
+    bytecode: Bytecode
 )
-dataclass Block(codes: Ptr[], location_data: (int, int)[], filename: string)
 
-FunctionDef(metadataInd: int, code: int)
+FunctionDef(metadataInd: int)
 [%
     var meta = loadmetadata(metadataInd);
     int nfree = meta.freeslots.Length;
     var new_freevals = new DRef[meta.freeslots.Length];
     for(var i = 0; i < nfree; i++)
         new_freevals[i] = loadref(meta.freeslots[i]);
-
-    var dfunc = DFunc.Make(code,
+    
+    var dfunc = DFunc.Make(
+        body:meta.bytecode,
         freevals:new_freevals,
         is_vararg: meta.is_vararg,
         narg: meta.narg,
@@ -58,7 +36,7 @@ FunctionDef(metadataInd: int, code: int)
         nonargcells: meta.nonargcells,
         metadataInd: metadataInd,
         nameSpace: cur_func.nameSpace
-        );
+    );
     push(dfunc);
 %]
 LoadGlobalRef(istr: InternString)
@@ -90,65 +68,106 @@ Action(kind: int)
             throw new Exception("unknown action " + ((ACTION) kind));
     }
 %]
-ControlIf(arg: int) // break, continue, reraise
+Return()
 [%
-    if(pop().__bool__())
-        token = arg;
+    
+    token = (int) TOKEN.RETURN;
+    return;
+%]
+Break()
+[%
+    token = (int) TOKEN.LOOP_BREAK;
+    return;
+%]
+Continue()
+[%
+    token = (int) TOKEN.LOOP_CONTINUE;
+    return;
 %]
 JumpIfNot(off: int)
 [%
     if(!(pop().__bool__()))
+    {
         offset = off; 
+        goto LOOP_HEAD;
+    }
+
 %]
 JumpIf(off: int)
 [%
     if(pop().__bool__())
+    {
         offset = off; 
+        goto LOOP_HEAD;
+    }
 %]
 Jump(off: int)
 [%
     offset = off; 
+    goto LOOP_HEAD;
 %]
-Control(arg: int) // break, continue, reraise
+TryCatch(unwind_bound: int, catch_start: int, catch_bound: int)
 [%
-    token = arg;
-%]
-Try(unwind_start: int, unwind_stop: int, errorlabel: int, finallabel: int)
-[%   
     try
     {
-        exec_block(body);
+        exec(BYTECODE, unwind_bound);
     }
     catch (Exception e)
     {
         clearstack();
-        var except_handlers = load_handlers(except_handler_id);
-        foreach(var handler in except_handlers){
-            exec_block(handler.exc_type);
-            var exc_type = pop();
-            var e_boxed = MK.create(e);
-            if (exc_type.__subclasscheck__(e_boxed.Class))
-            {
-                push(e_boxed);
-                exec_block(handler.body);   
-                virtual_machine.errorFrames.Clear();
-                goto end_handled;
-            }
-        }
-        throw;
-        end_handled: ;
+        var e_boxed = MK.create(e);
+        push(e_boxed);
+        offset = catch_start;
+        exec(BYTECODE, catch_bound);
+        virtual_machine.errorFrames.Clear();
+    }
+%]
+TryFinally(unwind_bound: int, final_start: int, final_bound: int)
+[%
+    try
+    {
+        exec(BYTECODE, unwind_bound);
     }
     finally
     {
         clearstack();
-        exec_block(final_body);
+        offset = final_start;
+        exec(BYTECODE, final_bound);
     }
 %]
-Loop(body: int)
+TryCatchFinally(
+    unwind_bound: int,
+    catch_start: int,
+    catch_bound: int,
+    final_start: int,
+    final_bound: int)
+[%
+
+    try
+    {
+        exec(BYTECODE, unwind_bound);
+    }
+    catch (Exception e)
+    {
+        clearstack();
+        var e_boxed = MK.create(e);
+        push(e_boxed);
+        offset = catch_start;
+        exec(BYTECODE, catch_bound);
+        virtual_machine.errorFrames.Clear();
+    }
+    finally
+    {
+        clearstack();
+        offset = final_start;
+        exec(BYTECODE, final_bound);
+    }
+%]
+Loop(loop_bound: int)
 [%
     while(true)
     {
-        exec_block(body);
+        exec(BYTECODE, loop_bound);
         switch(token)
         {
             case (int) TOKEN.LOOP_BREAK:
@@ -163,12 +182,13 @@ Loop(body: int)
     }
     loop_end: ;
 %]
-For(body: int)
+For(for_bound: int)
 [%
     var iter = pop();
-    foreach(var it in iter.__iter__()){
+    foreach(var it in iter.__iter__())
+    {
         push(it);
-        exec_block(body);
+        exec(BYTECODE, for_bound);
         switch(token)
         {
             case (int) TOKEN.LOOP_BREAK:
@@ -182,18 +202,14 @@ For(body: int)
         for_end: ;
     }
 %]
-With(body: int)
+With(with_bound: int)
 [%
     var resource = pop();
+    var item = resource.__enter__();
     try
     {
-        push(resource.__enter__());
-        exec_block(body);
-        resource.__exit__(
-            MK.Nil(),
-            MK.Nil(),
-            MK.Nil()
-        );
+        push(item);
+        exec(BYTECODE, with_bound);
     }
     catch (Exception e)
     {
@@ -205,6 +221,11 @@ With(body: int)
             e_trace
         );
     }
+    resource.__exit__(
+            MK.Nil(),
+            MK.Nil(),
+            MK.Nil()
+    );
 %]
 GetAttr(attr: InternString)
 [%
