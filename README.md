@@ -24,14 +24,16 @@ python -m dianascript runtests/b.ch --out runtests/b.ran
 Then you load the bytecode using Diana VM:
 
 ```C#
-public static void Main(string[] args)
+public static int Main(String[] args)
 {
+    Console.WriteLine("path: " + args[0]);
     var dvm = new DVM();
-    var loader = AWorld.GetLoaderFrom(args[0]);
-    var (metaInd, blockId) = loader.LoadCode();
-
-    var g = GlobalNamespace.GetGlonal();
-    dvm.exec_block(metaInd, blockId, g);
+    var loader = new AWorld.CodeLoder(args[0]);
+    var metaInd = loader.LoadCode();    
+    var global = GlobalNamespace.GetGlonal();
+    dvm.exec_block(metaInd, global);    
+    return 0;
+    
 }
 ```
 
