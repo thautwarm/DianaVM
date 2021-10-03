@@ -11,6 +11,12 @@ ref: directref globalref
 namespace DianaScript
 {
 
+#if INT32
+    using int_t = Int32;
+#else
+    using int_t = Int64;
+#endif
+
     using static CallDFuncExtensions;
     using NameSpace = Dictionary<InternString, DObj>;
 
@@ -286,16 +292,16 @@ namespace DianaScript
         }
     }
 
-
+    
     public partial class DInt : DObj
     {
-        public static DInt Make(int i) => new DInt { value = i };
+        public static DInt Make(int_t i) => new DInt { value = i };
         public partial class Cls
         {
             public DObj __call__(Args args)
             {
                 if (args.NArgs == 0) return MK.Int(0);
-                if (args.NArgs != 1) throw new D_TypeError($"object {(this as DObj).__repr__()} is not callable.");
+                if (args.NArgs != 1) throw new D_TypeError($"object {this.__repr__()} is not callable.");
                 var x = args[0];
                 switch (x)
                 {
@@ -304,16 +310,16 @@ namespace DianaScript
                     case DBool b:
                         return MK.Int(b.value ? 1 : 0);
                     case DFloat f:
-                        return MK.Int((int)f.value);
+                        return MK.Int((int_t)f.value);
                     case DStr s:
-                        return MK.Int(int.Parse(s.value));
+                        return MK.Int(int_t.Parse(s.value));
                     default:
-                        throw new D_TypeError($"cannot cast {x.Class.__repr__()} to {(this as DObj).__repr__()}");
+                        throw new D_TypeError($"cannot cast {x.Class.__repr__()} to {this.__repr__()}");
                 }
             }
         }
 
-        public int value;
+        public int_t value;
 
         public bool Test => value != 0;
 

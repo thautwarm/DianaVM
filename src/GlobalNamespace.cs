@@ -18,9 +18,9 @@ namespace DianaScript
             Console.WriteLine("");
         }
 
-        public static int Time()
+        public static long Time()
         {
-            return (int) (System.DateTime.Now.Ticks % int.MaxValue);
+            return System.DateTime.Now.Ticks;
         }
 
         

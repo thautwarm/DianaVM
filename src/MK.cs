@@ -3,6 +3,11 @@ using System.Collections.Generic;
 namespace DianaScript
 {
 
+#if INT32
+    using int_t = Int32;
+#else
+    using int_t = Int64;
+#endif
 
     public struct THint<A>
     {
@@ -49,6 +54,12 @@ namespace DianaScript
 
         public static float cast(THint<float> _, int s) => s;
         public static int cast(THint<int> _, float s) => (int)s;
+        public static float cast(THint<float> _, long s) => s;
+        public static long cast(THint<long> _, float s) => (int)s;
+
+        public static uint cast(THint<uint> _, int_t s) => unchecked((uint)s);
+        public static ulong cast(THint<ulong> _, int_t s) => unchecked((ulong)s);
+
         public static IEnumerable<DObj> cast(THint<IEnumerable<DObj>> _, DObj s) => s.__iter__();
         public static bool cast(THint<bool> _, DObj s) => s.__bool__();
         public static A cast<A>(THint<A> _, A s) => s;
@@ -58,8 +69,10 @@ namespace DianaScript
 
         // public static B cast<A, B>(THint<B> _, A s) where B : A => (B) s;
         public static DStr String(string s) => DStr.Make(s);
-        public static DInt Int(int s) => DInt.Make(s);
-
+        public static DInt Int(long s) => DInt.Make(unchecked((int_t) s));
+        public static DInt Int(int s) => DInt.Make(unchecked((int_t) s)); 
+        public static DInt Int(ulong s) => DInt.Make(unchecked((int_t) s));   
+        public static DInt Int(uint s) => DInt.Make(unchecked((int_t) s));   
         public static DObj create(int s) => Int(s);
         public static DBool Bool(bool b) => DBool.Make(b);
 

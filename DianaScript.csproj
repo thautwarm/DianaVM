@@ -6,6 +6,8 @@
     <LangVersion>8.0</LangVersion>
      <!-- <DefineConstants>A_DBG</DefineConstants> -->
 
+    <!-- <DefineConstants>INT32</DefineConstants> -->
+  
   </PropertyGroup>
 
 </Project>

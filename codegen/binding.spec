@@ -62,12 +62,12 @@ str DStr String {
     int this.IndexOf(String, Int32?, Int32?) as index
 }
 
-int DInt Int32 {
-    Int32 Parse(String) as parse
+int DInt Int64 {
+    Int64 Parse(String) as parse
     // need refer type in compiler side
-    bool TryParse(String, out Int32) as try_parse
-    Int32 MaxValue as max
-    Int32 MinValue as min
+    bool TryParse(String, out Int64) as try_parse
+    Int64 MaxValue as max
+    Int64 MinValue as min
 }
 
 float DFloat Single {

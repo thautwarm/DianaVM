@@ -7,18 +7,18 @@ namespace DianaScript
         public DObj __getitem__(DObj item)
         {
             var it = (DInt) item;
-            return this.src[it.value];
+            return this.src[(int) it.value];
         }
         public void __setitem__(DObj item, DObj value)
         {
             var it = (DInt) item;
-            this.src[it.value] = value;
+            this.src[(int) it.value] = value;
         }
 
         public void __delitem__(DObj item)
         {
             var it = (DInt) item;
-            this.src.RemoveAt(it.value);
+            this.src.RemoveAt((int) it.value);
         }
 
         public IEnumerable<DObj> __iter__()
