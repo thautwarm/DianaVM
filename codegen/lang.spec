@@ -28,7 +28,6 @@ data string
 data DObj
 data InternString
 
-dataclass Catch(exc_type: int, body: int)
 dataclass FuncMeta(
     is_vararg: bool,
     freeslots: int[],
@@ -66,10 +65,9 @@ LoadGlobalRef(istr: InternString)
 [%
     push(new DRefGlobal(cur_func.nameSpace, istr));
 %]
-DelVar(targets: int[])
+DelVar(target: int)
 [%
-    for(var i = 0; i < targets.Length; i++)
-        storevar(targets[i], null);
+    storevar(target, null);
 %]
 LoadVar(i: int)
 [%
@@ -115,7 +113,7 @@ Control(arg: int) // break, continue, reraise
 [%
     token = arg;
 %]
-Try(body: int, except_handlers: Catch[], final_body: int)
+Try(unwind_start: int, unwind_stop: int, errorlabel: int, finallabel: int)
 [%   
     try
     {
@@ -124,6 +122,7 @@ Try(body: int, except_handlers: Catch[], final_body: int)
     catch (Exception e)
     {
         clearstack();
+        var except_handlers = load_handlers(except_handler_id);
         foreach(var handler in except_handlers){
             exec_block(handler.exc_type);
             var exc_type = pop();
@@ -221,14 +220,14 @@ SetAttr(attr: InternString)
         value
     );
 %]
-SetAttr_I$T(attr: InternString)  from {
+SetAttr_I$$(attr: InternString)  from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
 }
 [%
     var (value, subject) = pop2();
     subject.__setattr__(
         attr,
-        subject.__getattr__(attr).__${T}__(value)
+        subject.__getattr__(attr).__$$__(value)
     );
 %]
 DelItem()
@@ -249,24 +248,24 @@ SetItem()
         value
     );
 %]
-SetItem_I$T()  from {
+SetItem_I$$()  from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
 }
 [%
     var (value, subject, item) = pop3();
     subject.__setitem__(
         item,
-        subject.__getitem__(item).__${T}__(value)
+        subject.__getitem__(item).__$$__(value)
     );
     push(item);
 %]
-$T() from {
+$$() from {
     add sub mul truediv floordiv mod pow lshift rshift bitor bitand bitxor
     gt lt ge le eq ne
 }
 [%
     var (left, right) = pop2();
-    push(MK.create(left.__${T}__(right)));
+    push(MK.create(left.__$$__(right)));
 %]
 in() 
 [%
@@ -278,10 +277,10 @@ notin()
     var (left, right) = pop2();
     push(MK.create(!(right.__contains__(left))));
 %]
-UnaryOp_$T() from { invert not neg }
+UnaryOp_$$() from { invert not neg }
 [%
     var val = pop();
-    push(MK.create(val.__${T}__()));
+    push(MK.create(val.__$$__()));
 %]
 MKDict(n: int)
 [%

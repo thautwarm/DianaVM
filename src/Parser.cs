@@ -26,38 +26,29 @@ namespace DianaScript
 
     public partial class AWorld
     {
+
+public partial class CodeLoder
+{
         public const bool DEBUG = true;
         private BinaryReader binaryReader;
         private byte[] cache_4byte = new byte[4];
         private byte[] cache_32byte = new byte[32];
 
-
-        private AWorld(FileStream fs)
+        
+        public CodeLoder(FileStream fs)
         {
             binaryReader = new BinaryReader(fs);
 
         }
-        private AWorld(string path)
+        public CodeLoder(string path)
         {
             var fs = File.Open(path, FileMode.Open);
             binaryReader = new BinaryReader(fs);
         }
 
-        public static AWorld GetLoaderFrom(string path) => new AWorld(path);
-        public static AWorld GetLoaderFrom(FileStream fs) => new AWorld(fs);
-
         public (int, int) Read(THint<(int, int)> _)
         {
             return (ReadInt(), ReadInt());
-        }
-        public InternString Read(THint<InternString> _)
-        {
-            var s = ReadStr().ToIStr();
-#if A_DBG
-            Console.WriteLine($"parsing intern string: {s}");
-        
-#endif
-            return s;
         }
         public int Read(THint<int> _) => ReadInt();
         public int ReadInt()
@@ -78,8 +69,9 @@ namespace DianaScript
 #endif
             return f;
         }
-
-        public string Read(THint<string> _) => ReadStr();
+        
+        public InternString ReadInternString() => ReadStr().ToIStr();
+        public string Readstring() => ReadStr();
         public string ReadStr()
         {
             var s = binaryReader.ReadString();
@@ -106,9 +98,7 @@ namespace DianaScript
             throw new InvalidDataException("invalid data format for boolean.");
         }
 
-
-        public DObj Read(THint<DObj> _) => ReadObj();
-        public DObj ReadObj()
+        public DObj ReadDObj()
         {
             binaryReader.Read(cache_4byte, 0, 1);
             var tag = cache_4byte[0];
@@ -153,8 +143,8 @@ namespace DianaScript
                         var ret = new Dictionary<DObj, DObj>(len / 2);
                         for (var i = 0; i < len; i += 2)
                         {
-                            var key = ReadObj();
-                            var value = ReadObj();
+                            var key = ReadDObj();
+                            var value = ReadDObj();
                             ret[key] = value;
                         }
                         return MK.Dict(ret);
@@ -165,7 +155,7 @@ namespace DianaScript
                         var ret = new List<DObj>(len);
                         for (var i = 0; i < len; i++)
                         {
-                            ret.Add(ReadObj());
+                            ret.Add(ReadDObj());
                         }
                         return MK.List(ret);
                     }
@@ -175,7 +165,7 @@ namespace DianaScript
                         var ret = new HashSet<DObj>(len);
                         for (var i = 0; i < len; i++)
                         {
-                            ret.Add(ReadObj());
+                            ret.Add(ReadDObj());
                         }
                         return MK.Set(ret);
                     }
@@ -185,7 +175,7 @@ namespace DianaScript
                         var ret = new DObj[len];
                         for (var i = 0; i < len; i++)
                         {
-                            ret[i] = ReadObj();
+                            ret[i] = ReadDObj();
                         }
                         return MK.Tuple(ret);
                     }
@@ -197,4 +187,6 @@ namespace DianaScript
         }
 
     }
+
+}
 }

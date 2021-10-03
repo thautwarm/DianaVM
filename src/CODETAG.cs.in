@@ -1,0 +1,9 @@
+namespace DianaScript
+{
+    public enum CODETAG
+    {
+{% for defi in defs if defi.is_bytecode %}
+        {{defi.name}} = {{defi.tag}},
+{% endfor %}
+    }
+}

@@ -1,0 +1,47 @@
+using System;
+using System.Collections.Generic;
+namespace DianaScript
+{
+public partial class BlockExecutor
+{
+    public static void check_argcount(DFunc f, int argcount)
+    {
+        if (argcount == f.narg)
+            return;
+        if (argcount > f.narg && f.is_vararg)
+            return;
+        string f_repr = f.__repr__();
+        var expect = (f.is_vararg ? ">=" : "") + $"{f.narg}";
+        throw new ArgumentException($"{f_repr} takes {expect} arguments, got {argcount}.");
+    }
+
+    int FromIndex_int(int a) => a;
+    InternString FromIndex_InternString(int a) => new InternString { identity = a };
+    public void exec_code(int[] codes, int bound)
+    {
+        LOOP_HEAD:
+        while (offset < bound)
+        {
+        var instruction = codes[offset];
+        switch(instruction)
+        {
+            {% for defi in defs if defi.is_bytecode %}
+            case (int) CODETAG.{{defi.name}}:
+            {
+                {% for field in defi %}
+                var {{ field.name }} = FromIndex_{{field.type.name}}(codes[offset + {{ loop.index }}]);
+                {% endfor %}
+                {{textwrap.indent(defi.action, " " * 12)}}
+                
+                offset += {{ len(defi) + 1 }};
+                break;
+            }
+            {% endfor %}
+            default:
+                throw new InvalidOperationException($"unknown bytecode {instruction}");
+            
+        }
+        }
+    }
+}
+}

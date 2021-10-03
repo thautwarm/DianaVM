@@ -1,0 +1,174 @@
+using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+
+namespace DianaScript
+{
+
+    public struct Bytecode
+    {
+        private int[] value;
+
+        private Bytecode(int[] value)
+        {
+            this.value = value;
+        }
+
+        public static implicit operator int[](Bytecode t)
+        {
+            return t.value;
+        }
+
+        public static implicit operator Bytecode(int[] value)
+        {
+            return new Bytecode(value);
+        }
+    }
+
+    {% for defi in defs if not defi.is_bytecode and not defi.is_external %}
+    public struct {{defi.name}}
+    {
+    {% for field in defi %}
+        public {{field.type | NET}} {{field.name}};
+    {% endfor %}
+    }
+    {% endfor %}
+
+    public partial class AWorld
+    {
+
+    // data definition
+    {% set ARR_TYPES = set() %}
+    {% for defi in defs if not defi.is_bytecode %}
+        private static List<{{defi.name}}> _{{ defi.name.lower() }}s;
+        public static List<{{defi.name}}> {{ defi.name.lower() }}s => _{{ defi.name.lower() }}s;
+        private static int Num_{{defi.name.lower()}}s = 0;
+    {% endfor %}
+
+
+    public partial class CodeLoder
+    {
+
+        {% for defi in defs if not defi.is_bytecode %}
+
+        private {{defi.name}} Read(THint<{{ defi.name }}> _) => Read{{defi.name}}();
+
+        {% if defi.is_external %}
+
+
+        private void Load_{{ defi.name.lower() }}s()
+        {
+#if A_DBG
+            Console.WriteLine($"start loading data storage({{defi.name.lower()}}s).");
+#endif
+            var n = ReadInt();
+            for (var i = 0; i < n; i++)
+            {
+#if A_DBG
+                Console.WriteLine($"loading data {{defi.name.lower()}}s[{i}].");
+#endif
+                AWorld.{{defi.name.lower()}}s.Add(Read{{defi.name}}());
+            }
+        }
+        {% else %}
+        private {{defi.name}} Read{{ defi.name }}() => new {{ defi.name }}
+        {
+
+            {% for field in def %}
+#if A_DBG
+            Console.WriteLine($"loading datum {{defi.name}}.{{field.name}}.");
+#endif
+            {% if isinstance(field.type, TArr) %}
+                {% do ARR_TYPES.add(field.type.eltype) %}
+            {% endif %}
+            {{field.name}} = Read(THint<{{field.type|NET}}>.val),
+            {% endfor %}
+        };
+        private void Load_{{ defi.name.lower() }}s()
+        {
+#if A_DBG
+            Console.WriteLine($"start loading data storage({{defi.name.lower()}}s).");
+#endif
+
+            var n = ReadInt();
+            for (var i = 0; i < n; i++)
+            {
+#if A_DBG
+                Console.WriteLine($"loading data {{defi.name.lower()}}s[{i}].");
+#endif
+                AWorld.{{defi.name.lower()}}s.Add(Read{{defi.name}}());
+            }
+        }
+        {% endif %}
+        {% endfor %}
+
+
+        private Bytecode Read(THint<Bytecode> _) => ReadBytecode();
+        private int ToIndex_int(int x) => x;
+        private int ToIndex_InternString(InternString x) => x.identity;
+        private Bytecode ReadBytecode()
+        {
+            var codes = new int[ReadInt()];
+            var offset = 0;
+
+            while (offset < codes.Length)
+            {
+                var code = (int) binaryReader.ReadByte();
+                codes[offset++] = code;
+                switch ((CODETAG)  code)
+                {
+                {% for defi in defs if defi.is_bytecode %}
+                    case CODETAG.{{defi.name}}:
+                    {
+                    {% for field in defi %}
+                    {% if is_dataclass(field.type) %}
+                        codes[offset++] = ReadInt() + Num_{{field.type.name.lower()}}s;
+                    {% else %}
+                        {% do assert_(isinstance(field.type, TName)) %}
+                        codes[offset++] = ToIndex_{{field.type.name}}(Read(THint<{{field.type | NET }}>.val));
+                    {% endif %}
+                    {% endfor %}
+                        break;
+                    }
+                {% endfor %}
+                    default:
+                        throw new InvalidDataException($"invalid code {code}");
+                }
+            }
+            return codes;
+        }
+
+        private static readonly object _loaderSync = new object();
+
+        public (int, int) LoadCode()
+        {
+            var metadataInd = ReadInt();
+            var blockInd = ReadInt();    
+            lock(_loaderSync)
+            {
+                {% for defi in defs if not defi.is_bytecode %}
+                    Load_{{ defi.name.lower()}}s();
+                {% endfor %}
+                {% for defi in defs if not defi.is_bytecode %}
+                    Num_{{defi.name.lower()}}s = {{defi.name.lower()}}s.Count;
+                {% endfor %}
+            }
+            return (metadataInd, blockInd);
+        }
+
+        {% for type in ARR_TYPES %}
+        public {{ type | NET }} Read(THint<{{type | NET}}[]> _)
+        {
+            var arr = new {{type | NET }}[ReadInt()];
+            for(var i = 0; i < arr.length; i++)
+            {
+                arr[i] = Read(THint<{{type | NET }}>.val);
+            }
+            return arr;
+        }
+        {% endfor %}
+
+    } // loader class
+    } // aworld
+}
