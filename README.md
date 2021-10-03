@@ -39,3 +39,25 @@ public static int Main(String[] args)
 
 An exception will get raised to .NET side if it is not handled in DianaScript/DVM.
 The exception type is compatible to both runtime.
+
+## Contributions
+
+You can help us in many aspects:
+
+1. Implementation for the whole object system.
+
+   For instance, if you want to add `+` operator support for specific builtin types(`bool`, `int`, `float`, `list`, `dict`, `None`, `tuple`...), just like [`__add__` for diana integers](https://github.com/thautwarm/DianaScript/blob/3214bc67f7b9591956f25437fd1e6df02109155e/src/NumberMethods.cs#L259); you should
+
+   1. add `"add"` to `ExceptionList1["DInt"]`
+
+   2. implement [the interface](https://github.com/thautwarm/DianaScript/blob/3214bc67f7b9591956f25437fd1e6df02109155e/src/ObjectSystem.cs#L93) at a proper place:
+
+       ```C#
+        public DObj __add__(DObj a)
+       ``` 
+
+2. Writing tests for the language, just like what I did(of course not enough) at [test.ch](https://github.com/thautwarm/DianaScript/blob/3214bc67f7b9591956f25437fd1e6df02109155e/runtests/test.ch#L1).
+
+3. Language design: should we use arbitrary-precision integers? Or, should we use dicts as sets, etc.. 
+
+4. 绝赞摆烂中
