@@ -155,6 +155,25 @@ public partial class BlockExecutor
                     goto AFTER_EXEC_CHECK_CFG;
                 }
 
+                
+                offset += OFFSET_INC;
+                break;
+            }
+            case (int) CODETAG.Diana_JumpIfNot_OrPop:
+            {
+                var OFFSET_INC = 2;
+                var off = FromIndex_int(BYTECODE[offset + 1]);
+                
+                if(!(peek(0).__bool__()))
+                {
+                    offset = off; 
+                    goto AFTER_EXEC_CHECK_CFG;
+                }
+                else
+                {
+                    pop();
+
+                }
 
                 
                 offset += OFFSET_INC;
@@ -169,6 +188,25 @@ public partial class BlockExecutor
                 {
                     offset = off; 
                     goto AFTER_EXEC_CHECK_CFG;
+                }
+
+                
+                offset += OFFSET_INC;
+                break;
+            }
+            case (int) CODETAG.Diana_JumpIf_OrPop:
+            {
+                var OFFSET_INC = 2;
+                var off = FromIndex_int(BYTECODE[offset + 1]);
+                
+                if(peek(0).__bool__())
+                {
+                    offset = off; 
+                    goto AFTER_EXEC_CHECK_CFG;
+                }
+                else
+                {
+                    pop();
                 }
 
                 

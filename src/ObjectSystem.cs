@@ -296,7 +296,7 @@ namespace DianaScript
             {
                 if (args.NArgs == 0) return MK.Int(0);
                 if (args.NArgs != 1) throw new D_TypeError($"object {(this as DObj).__repr__()} is not callable.");
-                var x = args[1];
+                var x = args[0];
                 switch (x)
                 {
                     case DInt _:
@@ -388,7 +388,7 @@ namespace DianaScript
             {
                 if (args.Count == 0) return MK.Bool(false);
                 if (args.Count != 1) throw new D_TypeError($"object {this.__repr__()} is not callable.");
-                var x = args[1];
+                var x = args[0];
                 switch (x)
                 {
                     case DBool _:
@@ -419,7 +419,7 @@ namespace DianaScript
             {
                 if (args.Count == 0) return MK.Float(0.0f);
                 if (args.Count != 1) throw new D_TypeError($"object {(this as DObj).__repr__()} is not callable.");
-                var x = args[1];
+                var x = args[0];
                 switch (x)
                 {
                     case DBool b:
@@ -457,7 +457,7 @@ namespace DianaScript
             {
                 if (args.Count == 0) return MK.String("");
                 if (args.Count != 1) throw new D_TypeError($"object {this.__repr__()} is not callable.");
-                var x = args[1];
+                var x = args[0];
                 switch (x)
                 {
                     case DBool b:

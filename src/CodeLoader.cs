@@ -217,7 +217,17 @@ namespace DianaScript
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         break;
                     }
+                    case CODETAG.Diana_JumpIfNot_OrPop:
+                    {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
                     case CODETAG.Diana_JumpIf:
+                    {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
+                    case CODETAG.Diana_JumpIf_OrPop:
                     {
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         break;
@@ -563,12 +573,12 @@ namespace DianaScript
             return metadataIndForEntryPoint;
         }
 
-        public (int, int)[] Read(THint<(int, int)[]> _)
+        public string[] Read(THint<string[]> _)
         {
-            var arr = new (int, int)[ReadInt()];
+            var arr = new string[ReadInt()];
             for(var i = 0; i < arr.Length; i++)
             {
-                arr[i] = Read(THint<(int, int)>.val);
+                arr[i] = Read(THint<string>.val);
             }
             return arr;
         }
@@ -581,12 +591,12 @@ namespace DianaScript
             }
             return arr;
         }
-        public string[] Read(THint<string[]> _)
+        public (int, int)[] Read(THint<(int, int)[]> _)
         {
-            var arr = new string[ReadInt()];
+            var arr = new (int, int)[ReadInt()];
             for(var i = 0; i < arr.Length; i++)
             {
-                arr[i] = Read(THint<string>.val);
+                arr[i] = Read(THint<(int, int)>.val);
             }
             return arr;
         }

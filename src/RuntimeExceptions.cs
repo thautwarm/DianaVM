@@ -35,17 +35,14 @@ namespace DianaScript
 
                     foreach (var (offset, lineno) in meta.linenos)
                     {
-                        best_lineno = lineno;
-                        if (frame.offset < offset)
+                        if (frame.offset - 1 < offset)
                         {
                             break;
                         }
+                        best_lineno = lineno;
                     }
 
                     var kind = ((CODETAG)block[frame.offset]).ToString();
-
-
-
                     // TODO: show source code?
                     if (best_lineno == -1)
                         tmp[i] = $"    calling {func_name}, fail at {kind}: line unknown.\n" +
@@ -57,7 +54,7 @@ namespace DianaScript
 
                     i++;
                 }
-                return e.Message + "\n" + String.Join("\n", tmp);
+                return e.StackTrace + "\n" + String.Join("\n", tmp);
             }
         }
 

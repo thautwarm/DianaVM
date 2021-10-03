@@ -18,6 +18,7 @@ boxedtypes {
 GlobalNamespace GlobalNamespace GlobalNamespace{
     void Print(*DObj) as print
     int Time() as time
+    void Assert(bool, string?) as assert
 }
 
 NoneType DNil DNil{}

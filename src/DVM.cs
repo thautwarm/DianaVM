@@ -73,7 +73,14 @@ namespace DianaScript
             this.resuable.metadataInd = metadataInd;
             this.resuable.body = meta.bytecode;
             this.resuable.nameSpace = globals;
-            exec_func(this.resuable, emptyDObjArray);
+            try
+            {
+                exec_func(this.resuable, emptyDObjArray);
+            }
+            catch (Exception e)
+            {
+                throw new ExceptionWithFrames(errorFrames, e);
+            }
         }
     
         public DObj exec_func(DFunc dfunc, DObj[] localvars)

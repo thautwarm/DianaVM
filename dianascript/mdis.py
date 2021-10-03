@@ -26,7 +26,10 @@ def dis():
         locs = funcmeta.lineno
         offset = 0
         bytecode = funcmeta.bytecode
+        labels = {}
         while offset < len(bytecode):
+            if offset in labels:
+                print(f"label {offset}")
             tag = bytecode[offset]
             assert isinstance(tag, int)
             t = TypeIndex[tag]
@@ -35,6 +38,8 @@ def dis():
             for (name, ann), suboff in zip(anns.items(), range(1, t.OFFSET)):
                 operand = bytecode[offset + suboff]
                 kwargs[name] = operand
+            if 'Jump' in t.__name__:
+                labels[next(iter(kwargs.values()))] = None
             inst = t(**kwargs)
             print('  ', interpret(inst))
             offset += t.OFFSET

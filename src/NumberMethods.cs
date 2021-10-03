@@ -191,7 +191,6 @@ namespace DianaScript
             switch (other)
             {
                 case DFloat v: return (float)self.value < v.value;
-                case DBool v: return self.value < dbool_to_int(v);
                 case DInt v: return self.value < v.value;
                 default:
                     throw unsupported_ops(self, "<", other);
@@ -203,7 +202,6 @@ namespace DianaScript
             switch (other)
             {
                 case DFloat v: return (float)self.value <= v.value;
-                case DBool v: return self.value <= dbool_to_int(v);
                 case DInt v: return self.value <= v.value;
                 default:
                     throw unsupported_ops(self, "<=", other);
@@ -215,7 +213,6 @@ namespace DianaScript
             switch (other)
             {
                 case DFloat v: return (float)self.value > v.value;
-                case DBool v: return self.value > dbool_to_int(v);
                 case DInt v: return self.value > v.value;
                 default:
                     throw unsupported_ops(self, ">", other);
@@ -227,7 +224,6 @@ namespace DianaScript
             switch (other)
             {
                 case DFloat v: return (float)self.value >= v.value;
-                case DBool v: return self.value >= dbool_to_int(v);
                 case DInt v: return self.value >= v.value;
                 default:
                     throw unsupported_ops(self, ">=", other);
@@ -239,10 +235,9 @@ namespace DianaScript
             switch (other)
             {
                 case DFloat v: return (float)self.value == v.value;
-                case DBool v: return v.value ? self.value == 1 : self.value == 0;
                 case DInt v: return self.value == v.value;
                 default:
-                    throw unsupported_ops(self, "==", other);
+                    return false;
             }
         }
 
@@ -251,15 +246,11 @@ namespace DianaScript
             switch (other)
             {
                 case DFloat v: return (float)self.value != v.value;
-                case DBool v: return v.value ? self.value != 1 : self.value != 0;
                 case DInt v: return self.value != v.value;
                 default:
-                    throw unsupported_ops(self, "!=", other);
+                    return true;
             }
         }
-
-
-
     }
 
     public partial class DInt

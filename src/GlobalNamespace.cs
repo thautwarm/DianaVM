@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Generic;
+
 namespace DianaScript
 {
+    public class  AssertionException: Exception
+    {
+        public AssertionException(string message) : base(message){}
+    }
     public partial class GlobalNamespace: DObj
     {
 
@@ -16,6 +21,16 @@ namespace DianaScript
         public static int Time()
         {
             return (int) (System.DateTime.Now.Ticks % int.MaxValue);
+        }
+
+        
+        public static void Assert(bool a, string msg = "Assertion failed")
+        {
+            if (!a)
+            {
+                throw new AssertionException(msg);
+                
+            }
         }
         public static Dictionary<InternString, DObj> Globals => throw new NotImplementedException();
         public static Dictionary<InternString, DObj> GetGlonal()

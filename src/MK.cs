@@ -74,7 +74,7 @@ namespace DianaScript
 
         public static DObj create(Dictionary<DObj, DObj> d) => Dict(d);
 
-        public static DTuple Tuple(DObj[] d) => throw new NotImplementedException();
+        public static DTuple Tuple(DObj[] d) => DTuple.Make(d);
 
         public static DObj create(DObj[] d) => Tuple(d);
 

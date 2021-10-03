@@ -21,6 +21,7 @@ def read(filename):
 
 
 eqs = ["eq", "ne"]
+test = ["bool", "not"]
 cmps = ["lt", "gt", "le", "ge"]
 bitops = ["bitand", "bitor", "bitxor", "lshift", "rshift"]
 ariths = ["add", "sub", "mul", "pow", "floordiv", "truediv"]
@@ -35,8 +36,8 @@ ExceptionList1 = {
     "DStr": ["repr"],
     "DInt": ["repr", "mod", *eqs, *cmps, *bitops, *ariths],
     "DFloat": ["repr"],
-    "DBool": ["repr", "bool", "not"],
-    "DNil": ["repr"],
+    "DBool": ["repr", "bool", "not", *eqs],
+    "DNil": ["repr", *test, *eqs],
     "DArray": ["iter", "repr"],
     "DList": ["repr", 'getitem', 'setitem', "delitem", *iterable],
     "DSet": [],

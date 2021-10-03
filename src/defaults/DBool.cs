@@ -248,24 +248,6 @@ public partial class DBool
         }
 
 
-        public bool __eq__(DObj o)
-        {
-           var meth = this.Class.ops.__eq__;
-            if (meth == null)
-                throw this.invalid_op("=");
-            return meth(this, o);
-        }
-
-
-        public bool __ne__(DObj o)
-        {
-            var meth = this.Class.ops.__ne__;
-            if (meth == null)
-                throw this.invalid_op("!=");
-            return meth(this, o);
-        }
-
-
         public DObj __enter__()
         {
             var meth = this.Class.ops.__enter__;

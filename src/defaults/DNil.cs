@@ -181,14 +181,6 @@ public partial class DNil
             return meth(this);
         }
 
-        public bool __bool__()
-        {
-            var meth = this.Class.ops.__bool__;
-            if (meth == null)
-                throw new InvalidOperationException($"'{this.Class.name}' object cannot be casted to boolean.");
-            return meth(this);
-        }
-
         public DObj __neg__()
         {
             throw this.invalid_op($"negation(-)");
@@ -197,14 +189,6 @@ public partial class DNil
         public DObj __invert__()
         {
             throw this.invalid_op($"invert(~)");
-        }
-
-        public bool __not__()
-        {
-            var meth = this.Class.ops.__bool__;
-            if (meth == null)
-                this.invalid_op("not");
-            return meth(this);
         }
 
         public int __hash__()
@@ -260,24 +244,6 @@ public partial class DNil
             var meth = this.Class.ops.__le__;
             if (meth == null)
                 throw this.invalid_op("<=");
-            return meth(this, o);
-        }
-
-
-        public bool __eq__(DObj o)
-        {
-           var meth = this.Class.ops.__eq__;
-            if (meth == null)
-                throw this.invalid_op("=");
-            return meth(this, o);
-        }
-
-
-        public bool __ne__(DObj o)
-        {
-            var meth = this.Class.ops.__ne__;
-            if (meth == null)
-                throw this.invalid_op("!=");
             return meth(this, o);
         }
 

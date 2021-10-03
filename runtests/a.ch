@@ -19,7 +19,7 @@ end
 
 each x of expr do
     x + 3
-    x = x - 3
+    x =: x - 3
 end
 
 if 1 > 2 or 2 < 3 and test(func(), func()) then

@@ -91,7 +91,19 @@ JumpIfNot(off: int)
         offset = off; 
         goto AFTER_EXEC_CHECK_CFG;
     }
+%]
+JumpIfNot_OrPop(off: int)
+[%
+    if(!(peek(0).__bool__()))
+    {
+        offset = off; 
+        goto AFTER_EXEC_CHECK_CFG;
+    }
+    else
+    {
+        pop();
 
+    }
 %]
 JumpIf(off: int)
 [%
@@ -99,6 +111,18 @@ JumpIf(off: int)
     {
         offset = off; 
         goto AFTER_EXEC_CHECK_CFG;
+    }
+%]
+JumpIf_OrPop(off: int)
+[%
+    if(peek(0).__bool__())
+    {
+        offset = off; 
+        goto AFTER_EXEC_CHECK_CFG;
+    }
+    else
+    {
+        pop();
     }
 %]
 Jump(off: int)

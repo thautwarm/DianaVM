@@ -230,15 +230,15 @@ class CG:
 
             case EAnd(a, b):
                 self.cg_for_expr(a)
-                i = self << PlaceHolder(Diana_JumpIf.OFFSET)
+                i = self << PlaceHolder(Diana_JumpIfNot_OrPop.OFFSET)
                 self.cg_for_expr(b)
-                self.block[i] = Diana_JumpIf(self.next_offset)
+                self.block[i] = Diana_JumpIfNot_OrPop(self.next_offset)
 
             case EOr(a, b):
                 self.cg_for_expr(a)
-                i = self << PlaceHolder(Diana_JumpIfNot.OFFSET)
+                i = self << PlaceHolder(Diana_JumpIf_OrPop.OFFSET)
                 self.cg_for_expr(b)
-                self.block[i] = Diana_JumpIfNot(self.next_offset)
+                self.block[i] = Diana_JumpIf_OrPop(self.next_offset)
 
             case EOp(left=left, op=op, right=right):
                 self.cg_for_expr(left)
@@ -279,7 +279,7 @@ _op_map = {
     "<": "lt",
     ">=": "ge",
     "<=": "le",
-    "=": "eq",
+    "==": "eq",
     "!=": "ne",
     "in": "in",
     "notin": "notin"
