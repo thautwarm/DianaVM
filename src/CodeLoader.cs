@@ -126,6 +126,18 @@ namespace DianaScript
         private FuncMeta ReadFuncMeta() => new FuncMeta
         {
 
+            is_vararg = Read(THint<bool>.val),
+            freeslots = Read(THint<int[]>.val),
+            nonargcells = Read(THint<int[]>.val),
+            narg = Read(THint<int>.val),
+            nlocal = Read(THint<int>.val),
+            name = Read(THint<InternString>.val),
+            filename = Read(THint<string>.val),
+            lineno = Read(THint<int>.val),
+            linenos = Read(THint<(int, int)[]>.val),
+            freenames = Read(THint<string[]>.val),
+            localnames = Read(THint<string[]>.val),
+            bytecode = Read(THint<Bytecode>.val),
         };
         private void Load_funcmetas()
         {
@@ -211,44 +223,6 @@ namespace DianaScript
                         break;
                     }
                     case CODETAG.Diana_Jump:
-                    {
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        break;
-                    }
-                    case CODETAG.Diana_TryCatch:
-                    {
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        break;
-                    }
-                    case CODETAG.Diana_TryFinally:
-                    {
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        break;
-                    }
-                    case CODETAG.Diana_TryCatchFinally:
-                    {
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        break;
-                    }
-                    case CODETAG.Diana_Loop:
-                    {
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        break;
-                    }
-                    case CODETAG.Diana_For:
-                    {
-                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
-                        break;
-                    }
-                    case CODETAG.Diana_With:
                     {
                         codes[offset++] = ToIndex_int(Read(THint<int>.val));
                         break;
@@ -525,6 +499,44 @@ namespace DianaScript
                     {
                         break;
                     }
+                    case CODETAG.Diana_TryCatch:
+                    {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
+                    case CODETAG.Diana_TryFinally:
+                    {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
+                    case CODETAG.Diana_TryCatchFinally:
+                    {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
+                    case CODETAG.Diana_Loop:
+                    {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
+                    case CODETAG.Diana_For:
+                    {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
+                    case CODETAG.Diana_With:
+                    {
+                        codes[offset++] = ToIndex_int(Read(THint<int>.val));
+                        break;
+                    }
                     default:
                         throw new InvalidDataException($"invalid code {code}");
                 }
@@ -551,6 +563,33 @@ namespace DianaScript
             return metadataIndForEntryPoint;
         }
 
+        public (int, int)[] Read(THint<(int, int)[]> _)
+        {
+            var arr = new (int, int)[ReadInt()];
+            for(var i = 0; i < arr.Length; i++)
+            {
+                arr[i] = Read(THint<(int, int)>.val);
+            }
+            return arr;
+        }
+        public int[] Read(THint<int[]> _)
+        {
+            var arr = new int[ReadInt()];
+            for(var i = 0; i < arr.Length; i++)
+            {
+                arr[i] = Read(THint<int>.val);
+            }
+            return arr;
+        }
+        public string[] Read(THint<string[]> _)
+        {
+            var arr = new string[ReadInt()];
+            for(var i = 0; i < arr.Length; i++)
+            {
+                arr[i] = Read(THint<string>.val);
+            }
+            return arr;
+        }
 
     } // loader class
     } // aworld

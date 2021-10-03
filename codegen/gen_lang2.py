@@ -104,19 +104,19 @@ class gen_lang2_Transformer(Transformer):
     def nullable_1(self, __args):
         return  __args[1-1]
     def type_0(self, __args):
-        return  TTup(__args[2-1])
+        return  TTup(pvector(__args[2-1]))
     def type_1(self, __args):
         return  TArr(__args[1-1])
     def type_2(self, __args):
         return  TName(__args[1-1])
     def type_3(self, __args):
-        return  TGen(TName(__args[1-1]), __args[2-1])
+        return  TGen(TName(__args[1-1]), pvector(__args[3-1]))
     def field_0(self, __args):
         return  Field(__args[3-1], __args[1-1])
     def field_1(self, __args):
         return  Field(__args[1-1], __args[2-1])
     def byte_type_0(self, __args):
-        return  TName(_get_value(__args[1-1]))
+        return  TName(__args[1-1])
     def operand_field_0(self, __args):
         return  Field(__args[3-1], __args[1-1])
     def operand_field_1(self, __args):

@@ -89,7 +89,7 @@ JumpIfNot(off: int)
     if(!(pop().__bool__()))
     {
         offset = off; 
-        goto LOOP_HEAD;
+        goto AFTER_EXEC_CHECK_CFG;
     }
 
 %]
@@ -98,134 +98,13 @@ JumpIf(off: int)
     if(pop().__bool__())
     {
         offset = off; 
-        goto LOOP_HEAD;
+        goto AFTER_EXEC_CHECK_CFG;
     }
 %]
 Jump(off: int)
 [%
     offset = off; 
-    goto LOOP_HEAD;
-%]
-TryCatch(unwind_bound: int, catch_start: int, catch_bound: int)
-[%
-    try
-    {
-        exec(BYTECODE, unwind_bound);
-    }
-    catch (Exception e)
-    {
-        clearstack();
-        var e_boxed = MK.create(e);
-        push(e_boxed);
-        offset = catch_start;
-        exec(BYTECODE, catch_bound);
-        virtual_machine.errorFrames.Clear();
-    }
-%]
-TryFinally(unwind_bound: int, final_start: int, final_bound: int)
-[%
-    try
-    {
-        exec(BYTECODE, unwind_bound);
-    }
-    finally
-    {
-        clearstack();
-        offset = final_start;
-        exec(BYTECODE, final_bound);
-    }
-%]
-TryCatchFinally(
-    unwind_bound: int,
-    catch_start: int,
-    catch_bound: int,
-    final_start: int,
-    final_bound: int)
-[%
-
-    try
-    {
-        exec(BYTECODE, unwind_bound);
-    }
-    catch (Exception e)
-    {
-        clearstack();
-        var e_boxed = MK.create(e);
-        push(e_boxed);
-        offset = catch_start;
-        exec(BYTECODE, catch_bound);
-        virtual_machine.errorFrames.Clear();
-    }
-    finally
-    {
-        clearstack();
-        offset = final_start;
-        exec(BYTECODE, final_bound);
-    }
-%]
-Loop(loop_bound: int)
-[%
-    while(true)
-    {
-        exec(BYTECODE, loop_bound);
-        switch(token)
-        {
-            case (int) TOKEN.LOOP_BREAK:
-                token = (int) TOKEN.GO_AHEAD;
-                goto loop_end;
-            case (int) TOKEN.RETURN:
-                return;
-            default:
-                token = (int) TOKEN.GO_AHEAD;
-                break;
-        }
-    }
-    loop_end: ;
-%]
-For(for_bound: int)
-[%
-    var iter = pop();
-    foreach(var it in iter.__iter__())
-    {
-        push(it);
-        exec(BYTECODE, for_bound);
-        switch(token)
-        {
-            case (int) TOKEN.LOOP_BREAK:
-                goto for_end;
-            case (int) TOKEN.RETURN:
-                return;
-            default:
-                token = (int) TOKEN.GO_AHEAD;
-                break;
-        }
-        for_end: ;
-    }
-%]
-With(with_bound: int)
-[%
-    var resource = pop();
-    var item = resource.__enter__();
-    try
-    {
-        push(item);
-        exec(BYTECODE, with_bound);
-    }
-    catch (Exception e)
-    {
-        var e_boxed = MK.create(e);
-        var e_trace = MK.create(virtual_machine.errorFrames);
-        resource.__exit__(
-            e_boxed.Class,
-            e_boxed,
-            e_trace
-        );
-    }
-    resource.__exit__(
-            MK.Nil(),
-            MK.Nil(),
-            MK.Nil()
-    );
+    goto AFTER_EXEC_CHECK_CFG;
 %]
 GetAttr(attr: InternString)
 [%
@@ -376,4 +255,151 @@ Replicate(n: int)
 Pop()
 [%
     pop();
+%]
+
+
+// block instructions:
+
+TryCatch(unwind_bound: int, catch_start: int, catch_bound: int)
+[%
+    offset += OFFSET_INC;
+    try
+    {
+        exec(BYTECODE, unwind_bound);
+    }
+    catch (Exception e)
+    {
+        clearstack();
+        var e_boxed = MK.create(e);
+        push(e_boxed);
+        offset = catch_start;
+        exec(BYTECODE, catch_bound);
+        virtual_machine.errorFrames.Clear();
+    }
+    offset = catch_bound;
+    goto AFTER_EXEC_CHECK_CFG;
+%]
+TryFinally(unwind_bound: int, final_start: int, final_bound: int)
+[%
+    offset += OFFSET_INC;
+    try
+    {
+        exec(BYTECODE, unwind_bound);
+    }
+    finally
+    {
+        clearstack();
+        offset = final_start;
+        exec(BYTECODE, final_bound);
+    }
+    offset = final_bound;
+    goto AFTER_EXEC_CHECK_CFG;
+%]
+TryCatchFinally(
+    unwind_bound: int,
+    catch_start: int,
+    catch_bound: int,
+    final_start: int,
+    final_bound: int)
+[%
+
+    offset += OFFSET_INC;
+    try
+    {
+        exec(BYTECODE, unwind_bound);
+        // if succeed, offset = unwind_bound or returned;
+    }
+    catch (Exception e)
+    {
+        clearstack();
+        var e_boxed = MK.create(e);
+        push(e_boxed);
+        offset = catch_start;
+        exec(BYTECODE, catch_bound);
+        virtual_machine.errorFrames.Clear();
+    }
+    finally
+    {
+        clearstack();
+        offset = final_start;
+        exec(BYTECODE, final_bound);
+    }
+    offset = final_bound;
+    goto AFTER_EXEC_CHECK_CFG;
+%]
+Loop(loop_bound: int)
+[%
+    var loop_start = offset + OFFSET_INC;
+    while(true)
+    {
+        offset = loop_start;
+        exec(BYTECODE, loop_bound);
+        switch(token)
+        {
+            case (int) TOKEN.LOOP_BREAK:
+                token = (int) TOKEN.GO_AHEAD;
+                goto loop_end;
+            case (int) TOKEN.RETURN:
+                return;
+            default:
+                token = (int) TOKEN.GO_AHEAD;
+                break;
+        }
+    }
+    loop_end:
+    offset = loop_bound;
+    goto AFTER_EXEC_NO_CFG_CHECK;
+%]
+For(loop_bound: int)
+[%
+    var iter = pop();
+    var loop_start = offset + OFFSET_INC;
+    foreach(var it in iter.__iter__())
+    {
+        offset = loop_start;
+        push(it);
+        exec(BYTECODE, loop_bound);
+        switch(token)
+        {
+            case (int) TOKEN.LOOP_BREAK:
+                token = (int) TOKEN.GO_AHEAD;
+                goto for_end;
+            case (int) TOKEN.RETURN:
+                return;
+            default:
+                token = (int) TOKEN.GO_AHEAD;
+                break;
+        }
+        
+    }
+    for_end:
+    offset = loop_bound;
+    goto AFTER_EXEC_NO_CFG_CHECK;
+%]
+With(with_bound: int)
+[%
+    var resource = pop();
+    var item = resource.__enter__();
+    offset += OFFSET_INC;
+    try
+    {
+        push(item);
+        exec(BYTECODE, with_bound);
+    }
+    catch (Exception e)
+    {
+        var e_boxed = MK.create(e);
+        var e_trace = MK.create(virtual_machine.errorFrames);
+        resource.__exit__(
+            e_boxed.Class,
+            e_boxed,
+            e_trace
+        );
+    }
+    resource.__exit__(
+            MK.Nil(),
+            MK.Nil(),
+            MK.Nil()
+    );
+    goto AFTER_EXEC_CHECK_CFG;
 %]

@@ -26,7 +26,7 @@ class {{defi.name}}:
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
         {% for field in defi %}
-        flat_code.append(as_flatten(self.{{field.name}}))
+        flat_code.append(self.{{field.name}})
         {% endfor %}
 {% endfor %}
 

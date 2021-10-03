@@ -11,21 +11,24 @@ public partial class BlockExecutor
     public void exec(int[] codes) => exec(codes, codes.Length);
     public void exec(int[] BYTECODE, int bound)
     {
-        LOOP_HEAD:
+        
         while (offset < bound)
         {
+        
+
         var instruction = BYTECODE[offset];
         switch(instruction)
         {
             {% for defi in defs if defi.is_bytecode %}
             case (int) CODETAG.{{defi.name}}:
             {
+                var OFFSET_INC = {{ len(defi) + 1 }};
                 {% for field in defi %}
                 var {{ field.name }} = FromIndex_{{field.type.name}}(BYTECODE[offset + {{ loop.index }}]);
                 {% endfor %}
                 {{textwrap.indent(defi.action, " " * 12)}}
                 
-                offset += {{ len(defi) + 1 }};
+                offset += OFFSET_INC;
                 break;
             }
             {% endfor %}
@@ -33,6 +36,12 @@ public partial class BlockExecutor
                 throw new InvalidOperationException($"unknown bytecode {instruction}");
             
         }
+        AFTER_EXEC_CHECK_CFG:
+            if (token != (int) TOKEN.GO_AHEAD)
+                return;
+        AFTER_EXEC_NO_CFG_CHECK:
+            ;
+            
         }
     }
 }

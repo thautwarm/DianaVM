@@ -67,15 +67,15 @@ def next_tag():
     return x
 %%
 
-type : "(" seplist{",", type} ")" -> TTup($2)
+type : "(" seplist{",", type} ")" -> TTup(pvector($2))
      | type "[" "]"               -> TArr($1)
      | name                       -> TName($1)
-     | name "<" seplist{",", type}  ">" -> TGen(TName($1), $2)
+     | name "<" seplist{",", type}  ">" -> TGen(TName($1), pvector($3))
 
 field : name ":" type -> Field($3, $1)
       | type name     -> Field($1, $2)
     
-byte_type : name -> TName(*1)
+byte_type : name -> TName($1)
 
 operand_field : name ":" byte_type -> Field($3, $1)
               | byte_type name     -> Field($1, $2)

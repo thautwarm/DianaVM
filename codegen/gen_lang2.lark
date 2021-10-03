@@ -67,15 +67,15 @@ nullable{seq} : -> nullable_0
             
   
 
-type : "(" seplist{",", type} ")" -> type_0                                              
+type : "(" seplist{",", type} ")" -> type_0                                                       
      | type "[" "]" -> type_1                                              
      | name -> type_2                                               
-     | name "<" seplist{",", type}  ">" -> type_3                                                               
+     | name "<" seplist{",", type}  ">" -> type_3                                                                        
 
 field : name ":" type -> field_0                                       
       | type name -> field_1                                       
     
-byte_type : ("int" | "InternString") -> byte_type_0                                                  
+byte_type : name -> byte_type_0                              
 
 operand_field : name ":" byte_type -> operand_field_0                                                    
               | byte_type name -> operand_field_1                                                    

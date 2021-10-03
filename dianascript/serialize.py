@@ -119,7 +119,7 @@ def serialize_(o, barr: bytearray):
             for k, v in o.items():
                 serialize_(k, barr)
                 serialize_(v, barr)
-        case list() | set() | PVector():    
+        case list() | set() | PVector():
             serialize_(len(o), barr)
             for v in o:  # type: ignore
                 serialize_(v, barr)

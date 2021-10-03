@@ -22,7 +22,7 @@ class Diana_FunctionDef:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.metadataInd))
+        flat_code.append(self.metadataInd)
 @dataclass(frozen=True)
 class Diana_LoadGlobalRef:
     istr: InternString
@@ -32,7 +32,7 @@ class Diana_LoadGlobalRef:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.istr))
+        flat_code.append(self.istr)
 @dataclass(frozen=True)
 class Diana_DelVar:
     target: int
@@ -42,7 +42,7 @@ class Diana_DelVar:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.target))
+        flat_code.append(self.target)
 @dataclass(frozen=True)
 class Diana_LoadVar:
     i: int
@@ -52,7 +52,7 @@ class Diana_LoadVar:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.i))
+        flat_code.append(self.i)
 @dataclass(frozen=True)
 class Diana_StoreVar:
     i: int
@@ -62,7 +62,7 @@ class Diana_StoreVar:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.i))
+        flat_code.append(self.i)
 @dataclass(frozen=True)
 class Diana_Action:
     kind: int
@@ -72,7 +72,7 @@ class Diana_Action:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.kind))
+        flat_code.append(self.kind)
 @dataclass(frozen=True)
 class Diana_Return:
     TAG = 6
@@ -106,7 +106,7 @@ class Diana_JumpIfNot:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.off))
+        flat_code.append(self.off)
 @dataclass(frozen=True)
 class Diana_JumpIf:
     off: int
@@ -116,7 +116,7 @@ class Diana_JumpIf:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.off))
+        flat_code.append(self.off)
 @dataclass(frozen=True)
 class Diana_Jump:
     off: int
@@ -126,85 +126,69 @@ class Diana_Jump:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.off))
+        flat_code.append(self.off)
 @dataclass(frozen=True)
-class Diana_TryCatch:
-    unwind_bound: int
-    catch_start: int
-    catch_bound: int
+class Diana_GetAttr:
+    attr: InternString
     TAG = 12
     
-    OFFSET = 4
+    OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.unwind_bound))
-        flat_code.append(as_flatten(self.catch_start))
-        flat_code.append(as_flatten(self.catch_bound))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_TryFinally:
-    unwind_bound: int
-    final_start: int
-    final_bound: int
+class Diana_SetAttr:
+    attr: InternString
     TAG = 13
     
-    OFFSET = 4
+    OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.unwind_bound))
-        flat_code.append(as_flatten(self.final_start))
-        flat_code.append(as_flatten(self.final_bound))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_TryCatchFinally:
-    unwind_bound: int
-    catch_start: int
-    catch_bound: int
-    final_start: int
-    final_bound: int
+class Diana_SetAttr_Iadd:
+    attr: InternString
     TAG = 14
     
-    OFFSET = 6
+    OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.unwind_bound))
-        flat_code.append(as_flatten(self.catch_start))
-        flat_code.append(as_flatten(self.catch_bound))
-        flat_code.append(as_flatten(self.final_start))
-        flat_code.append(as_flatten(self.final_bound))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_Loop:
-    loop_bound: int
+class Diana_SetAttr_Isub:
+    attr: InternString
     TAG = 15
     
     OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.loop_bound))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_For:
-    for_bound: int
+class Diana_SetAttr_Imul:
+    attr: InternString
     TAG = 16
     
     OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.for_bound))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_With:
-    with_bound: int
+class Diana_SetAttr_Itruediv:
+    attr: InternString
     TAG = 17
     
     OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.with_bound))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_GetAttr:
+class Diana_SetAttr_Ifloordiv:
     attr: InternString
     TAG = 18
     
@@ -212,9 +196,9 @@ class Diana_GetAttr:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_SetAttr:
+class Diana_SetAttr_Imod:
     attr: InternString
     TAG = 19
     
@@ -222,9 +206,9 @@ class Diana_SetAttr:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_SetAttr_Iadd:
+class Diana_SetAttr_Ipow:
     attr: InternString
     TAG = 20
     
@@ -232,9 +216,9 @@ class Diana_SetAttr_Iadd:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_SetAttr_Isub:
+class Diana_SetAttr_Ilshift:
     attr: InternString
     TAG = 21
     
@@ -242,9 +226,9 @@ class Diana_SetAttr_Isub:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_SetAttr_Imul:
+class Diana_SetAttr_Irshift:
     attr: InternString
     TAG = 22
     
@@ -252,9 +236,9 @@ class Diana_SetAttr_Imul:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_SetAttr_Itruediv:
+class Diana_SetAttr_Ibitor:
     attr: InternString
     TAG = 23
     
@@ -262,9 +246,9 @@ class Diana_SetAttr_Itruediv:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_SetAttr_Ifloordiv:
+class Diana_SetAttr_Ibitand:
     attr: InternString
     TAG = 24
     
@@ -272,9 +256,9 @@ class Diana_SetAttr_Ifloordiv:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
-class Diana_SetAttr_Imod:
+class Diana_SetAttr_Ibitxor:
     attr: InternString
     TAG = 25
     
@@ -282,70 +266,10 @@ class Diana_SetAttr_Imod:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
-@dataclass(frozen=True)
-class Diana_SetAttr_Ipow:
-    attr: InternString
-    TAG = 26
-    
-    OFFSET = 2
-    
-    def dumps(self, flat_code: BytecodeBuilder):
-        flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
-@dataclass(frozen=True)
-class Diana_SetAttr_Ilshift:
-    attr: InternString
-    TAG = 27
-    
-    OFFSET = 2
-    
-    def dumps(self, flat_code: BytecodeBuilder):
-        flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
-@dataclass(frozen=True)
-class Diana_SetAttr_Irshift:
-    attr: InternString
-    TAG = 28
-    
-    OFFSET = 2
-    
-    def dumps(self, flat_code: BytecodeBuilder):
-        flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
-@dataclass(frozen=True)
-class Diana_SetAttr_Ibitor:
-    attr: InternString
-    TAG = 29
-    
-    OFFSET = 2
-    
-    def dumps(self, flat_code: BytecodeBuilder):
-        flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
-@dataclass(frozen=True)
-class Diana_SetAttr_Ibitand:
-    attr: InternString
-    TAG = 30
-    
-    OFFSET = 2
-    
-    def dumps(self, flat_code: BytecodeBuilder):
-        flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
-@dataclass(frozen=True)
-class Diana_SetAttr_Ibitxor:
-    attr: InternString
-    TAG = 31
-    
-    OFFSET = 2
-    
-    def dumps(self, flat_code: BytecodeBuilder):
-        flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.attr))
+        flat_code.append(self.attr)
 @dataclass(frozen=True)
 class Diana_DelItem:
-    TAG = 32
+    TAG = 26
     
     OFFSET = 1
     
@@ -353,7 +277,7 @@ class Diana_DelItem:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_GetItem:
-    TAG = 33
+    TAG = 27
     
     OFFSET = 1
     
@@ -361,7 +285,7 @@ class Diana_GetItem:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem:
-    TAG = 34
+    TAG = 28
     
     OFFSET = 1
     
@@ -369,7 +293,7 @@ class Diana_SetItem:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Iadd:
-    TAG = 35
+    TAG = 29
     
     OFFSET = 1
     
@@ -377,7 +301,7 @@ class Diana_SetItem_Iadd:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Isub:
-    TAG = 36
+    TAG = 30
     
     OFFSET = 1
     
@@ -385,7 +309,7 @@ class Diana_SetItem_Isub:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Imul:
-    TAG = 37
+    TAG = 31
     
     OFFSET = 1
     
@@ -393,7 +317,7 @@ class Diana_SetItem_Imul:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Itruediv:
-    TAG = 38
+    TAG = 32
     
     OFFSET = 1
     
@@ -401,7 +325,7 @@ class Diana_SetItem_Itruediv:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ifloordiv:
-    TAG = 39
+    TAG = 33
     
     OFFSET = 1
     
@@ -409,7 +333,7 @@ class Diana_SetItem_Ifloordiv:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Imod:
-    TAG = 40
+    TAG = 34
     
     OFFSET = 1
     
@@ -417,7 +341,7 @@ class Diana_SetItem_Imod:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ipow:
-    TAG = 41
+    TAG = 35
     
     OFFSET = 1
     
@@ -425,7 +349,7 @@ class Diana_SetItem_Ipow:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ilshift:
-    TAG = 42
+    TAG = 36
     
     OFFSET = 1
     
@@ -433,7 +357,7 @@ class Diana_SetItem_Ilshift:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Irshift:
-    TAG = 43
+    TAG = 37
     
     OFFSET = 1
     
@@ -441,7 +365,7 @@ class Diana_SetItem_Irshift:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ibitor:
-    TAG = 44
+    TAG = 38
     
     OFFSET = 1
     
@@ -449,7 +373,7 @@ class Diana_SetItem_Ibitor:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ibitand:
-    TAG = 45
+    TAG = 39
     
     OFFSET = 1
     
@@ -457,7 +381,7 @@ class Diana_SetItem_Ibitand:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_SetItem_Ibitxor:
-    TAG = 46
+    TAG = 40
     
     OFFSET = 1
     
@@ -465,7 +389,7 @@ class Diana_SetItem_Ibitxor:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_add:
-    TAG = 47
+    TAG = 41
     
     OFFSET = 1
     
@@ -473,7 +397,7 @@ class Diana_add:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_sub:
-    TAG = 48
+    TAG = 42
     
     OFFSET = 1
     
@@ -481,7 +405,7 @@ class Diana_sub:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_mul:
-    TAG = 49
+    TAG = 43
     
     OFFSET = 1
     
@@ -489,7 +413,7 @@ class Diana_mul:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_truediv:
-    TAG = 50
+    TAG = 44
     
     OFFSET = 1
     
@@ -497,7 +421,7 @@ class Diana_truediv:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_floordiv:
-    TAG = 51
+    TAG = 45
     
     OFFSET = 1
     
@@ -505,7 +429,7 @@ class Diana_floordiv:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_mod:
-    TAG = 52
+    TAG = 46
     
     OFFSET = 1
     
@@ -513,7 +437,7 @@ class Diana_mod:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_pow:
-    TAG = 53
+    TAG = 47
     
     OFFSET = 1
     
@@ -521,7 +445,7 @@ class Diana_pow:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_lshift:
-    TAG = 54
+    TAG = 48
     
     OFFSET = 1
     
@@ -529,7 +453,7 @@ class Diana_lshift:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_rshift:
-    TAG = 55
+    TAG = 49
     
     OFFSET = 1
     
@@ -537,7 +461,7 @@ class Diana_rshift:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_bitor:
-    TAG = 56
+    TAG = 50
     
     OFFSET = 1
     
@@ -545,7 +469,7 @@ class Diana_bitor:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_bitand:
-    TAG = 57
+    TAG = 51
     
     OFFSET = 1
     
@@ -553,7 +477,7 @@ class Diana_bitand:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_bitxor:
-    TAG = 58
+    TAG = 52
     
     OFFSET = 1
     
@@ -561,7 +485,7 @@ class Diana_bitxor:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_gt:
-    TAG = 59
+    TAG = 53
     
     OFFSET = 1
     
@@ -569,7 +493,7 @@ class Diana_gt:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_lt:
-    TAG = 60
+    TAG = 54
     
     OFFSET = 1
     
@@ -577,7 +501,7 @@ class Diana_lt:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_ge:
-    TAG = 61
+    TAG = 55
     
     OFFSET = 1
     
@@ -585,7 +509,7 @@ class Diana_ge:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_le:
-    TAG = 62
+    TAG = 56
     
     OFFSET = 1
     
@@ -593,7 +517,7 @@ class Diana_le:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_eq:
-    TAG = 63
+    TAG = 57
     
     OFFSET = 1
     
@@ -601,7 +525,7 @@ class Diana_eq:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_ne:
-    TAG = 64
+    TAG = 58
     
     OFFSET = 1
     
@@ -609,7 +533,7 @@ class Diana_ne:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_in:
-    TAG = 65
+    TAG = 59
     
     OFFSET = 1
     
@@ -617,7 +541,7 @@ class Diana_in:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_notin:
-    TAG = 66
+    TAG = 60
     
     OFFSET = 1
     
@@ -625,7 +549,7 @@ class Diana_notin:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_UnaryOp_invert:
-    TAG = 67
+    TAG = 61
     
     OFFSET = 1
     
@@ -633,7 +557,7 @@ class Diana_UnaryOp_invert:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_UnaryOp_not:
-    TAG = 68
+    TAG = 62
     
     OFFSET = 1
     
@@ -641,7 +565,7 @@ class Diana_UnaryOp_not:
         flat_code.append(self.TAG)
 @dataclass(frozen=True)
 class Diana_UnaryOp_neg:
-    TAG = 69
+    TAG = 63
     
     OFFSET = 1
     
@@ -650,15 +574,77 @@ class Diana_UnaryOp_neg:
 @dataclass(frozen=True)
 class Diana_MKDict:
     n: int
+    TAG = 64
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(self.n)
+@dataclass(frozen=True)
+class Diana_MKSet:
+    n: int
+    TAG = 65
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(self.n)
+@dataclass(frozen=True)
+class Diana_MKList:
+    n: int
+    TAG = 66
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(self.n)
+@dataclass(frozen=True)
+class Diana_Call:
+    n: int
+    TAG = 67
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(self.n)
+@dataclass(frozen=True)
+class Diana_Format:
+    format: int
+    argn: int
+    TAG = 68
+    
+    OFFSET = 3
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(self.format)
+        flat_code.append(self.argn)
+@dataclass(frozen=True)
+class Diana_Const:
+    p_const: int
+    TAG = 69
+    
+    OFFSET = 2
+    
+    def dumps(self, flat_code: BytecodeBuilder):
+        flat_code.append(self.TAG)
+        flat_code.append(self.p_const)
+@dataclass(frozen=True)
+class Diana_MKTuple:
+    n: int
     TAG = 70
     
     OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.n))
+        flat_code.append(self.n)
 @dataclass(frozen=True)
-class Diana_MKSet:
+class Diana_Pack:
     n: int
     TAG = 71
     
@@ -666,9 +652,9 @@ class Diana_MKSet:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.n))
+        flat_code.append(self.n)
 @dataclass(frozen=True)
-class Diana_MKList:
+class Diana_Replicate:
     n: int
     TAG = 72
     
@@ -676,77 +662,91 @@ class Diana_MKList:
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.n))
+        flat_code.append(self.n)
 @dataclass(frozen=True)
-class Diana_Call:
-    n: int
+class Diana_Pop:
     TAG = 73
     
-    OFFSET = 2
+    OFFSET = 1
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.n))
 @dataclass(frozen=True)
-class Diana_Format:
-    format: int
-    argn: int
+class Diana_TryCatch:
+    unwind_bound: int
+    catch_start: int
+    catch_bound: int
     TAG = 74
     
-    OFFSET = 3
+    OFFSET = 4
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.format))
-        flat_code.append(as_flatten(self.argn))
+        flat_code.append(self.unwind_bound)
+        flat_code.append(self.catch_start)
+        flat_code.append(self.catch_bound)
 @dataclass(frozen=True)
-class Diana_Const:
-    p_const: int
+class Diana_TryFinally:
+    unwind_bound: int
+    final_start: int
+    final_bound: int
     TAG = 75
     
-    OFFSET = 2
+    OFFSET = 4
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.p_const))
+        flat_code.append(self.unwind_bound)
+        flat_code.append(self.final_start)
+        flat_code.append(self.final_bound)
 @dataclass(frozen=True)
-class Diana_MKTuple:
-    n: int
+class Diana_TryCatchFinally:
+    unwind_bound: int
+    catch_start: int
+    catch_bound: int
+    final_start: int
+    final_bound: int
     TAG = 76
     
-    OFFSET = 2
+    OFFSET = 6
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.n))
+        flat_code.append(self.unwind_bound)
+        flat_code.append(self.catch_start)
+        flat_code.append(self.catch_bound)
+        flat_code.append(self.final_start)
+        flat_code.append(self.final_bound)
 @dataclass(frozen=True)
-class Diana_Pack:
-    n: int
+class Diana_Loop:
+    loop_bound: int
     TAG = 77
     
     OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.n))
+        flat_code.append(self.loop_bound)
 @dataclass(frozen=True)
-class Diana_Replicate:
-    n: int
+class Diana_For:
+    loop_bound: int
     TAG = 78
     
     OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
-        flat_code.append(as_flatten(self.n))
+        flat_code.append(self.loop_bound)
 @dataclass(frozen=True)
-class Diana_Pop:
+class Diana_With:
+    with_bound: int
     TAG = 79
     
-    OFFSET = 1
+    OFFSET = 2
     
     def dumps(self, flat_code: BytecodeBuilder):
         flat_code.append(self.TAG)
+        flat_code.append(self.with_bound)
 
 @dataclass(frozen=True)
 class FuncMeta:
@@ -816,12 +816,6 @@ Instr = (
     | Diana_JumpIfNot
     | Diana_JumpIf
     | Diana_Jump
-    | Diana_TryCatch
-    | Diana_TryFinally
-    | Diana_TryCatchFinally
-    | Diana_Loop
-    | Diana_For
-    | Diana_With
     | Diana_GetAttr
     | Diana_SetAttr
     | Diana_SetAttr_Iadd
@@ -884,6 +878,12 @@ Instr = (
     | Diana_Pack
     | Diana_Replicate
     | Diana_Pop
+    | Diana_TryCatch
+    | Diana_TryFinally
+    | Diana_TryCatchFinally
+    | Diana_Loop
+    | Diana_For
+    | Diana_With
 )
 
 TypeIndex = [
@@ -899,12 +899,6 @@ TypeIndex = [
     Diana_JumpIfNot,
     Diana_JumpIf,
     Diana_Jump,
-    Diana_TryCatch,
-    Diana_TryFinally,
-    Diana_TryCatchFinally,
-    Diana_Loop,
-    Diana_For,
-    Diana_With,
     Diana_GetAttr,
     Diana_SetAttr,
     Diana_SetAttr_Iadd,
@@ -967,4 +961,10 @@ TypeIndex = [
     Diana_Pack,
     Diana_Replicate,
     Diana_Pop,
+    Diana_TryCatch,
+    Diana_TryFinally,
+    Diana_TryCatchFinally,
+    Diana_Loop,
+    Diana_For,
+    Diana_With,
 ]

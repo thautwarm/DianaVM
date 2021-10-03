@@ -75,10 +75,7 @@ namespace DianaScript
         private {{defi.name}} Read{{ defi.name }}() => new {{ defi.name }}
         {
 
-            {% for field in def %}
-#if A_DBG
-            Console.WriteLine($"loading datum {{defi.name}}.{{field.name}}.");
-#endif
+            {% for field in defi %}
             {% if isinstance(field.type, TArr) %}
                 {% do ARR_TYPES.add(field.type.eltype) %}
             {% endif %}
@@ -157,10 +154,10 @@ namespace DianaScript
         }
 
         {% for type in ARR_TYPES %}
-        public {{ type | NET }} Read(THint<{{type | NET}}[]> _)
+        public {{ type | NET }}[] Read(THint<{{type | NET}}[]> _)
         {
             var arr = new {{type | NET }}[ReadInt()];
-            for(var i = 0; i < arr.length; i++)
+            for(var i = 0; i < arr.Length; i++)
             {
                 arr[i] = Read(THint<{{type | NET }}>.val);
             }
