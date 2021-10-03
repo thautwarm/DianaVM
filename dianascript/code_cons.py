@@ -2,13 +2,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pyrsistent import PVector
 from dianascript.serialize import DObj, Builder, InternString, serialize_
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, TYPE_CHECKING
 import struct
 
 _T = TypeVar("_T")
 
 
-Bytecode = PVector[int | InternString]
+if TYPE_CHECKING:
+    Bytecode = PVector[int | InternString]
+
 BytecodeBuilder = list[int | InternString]
 
 @dataclass(frozen=True)
@@ -883,3 +885,86 @@ Instr = (
     | Diana_Replicate
     | Diana_Pop
 )
+
+TypeIndex = [
+    Diana_FunctionDef,
+    Diana_LoadGlobalRef,
+    Diana_DelVar,
+    Diana_LoadVar,
+    Diana_StoreVar,
+    Diana_Action,
+    Diana_Return,
+    Diana_Break,
+    Diana_Continue,
+    Diana_JumpIfNot,
+    Diana_JumpIf,
+    Diana_Jump,
+    Diana_TryCatch,
+    Diana_TryFinally,
+    Diana_TryCatchFinally,
+    Diana_Loop,
+    Diana_For,
+    Diana_With,
+    Diana_GetAttr,
+    Diana_SetAttr,
+    Diana_SetAttr_Iadd,
+    Diana_SetAttr_Isub,
+    Diana_SetAttr_Imul,
+    Diana_SetAttr_Itruediv,
+    Diana_SetAttr_Ifloordiv,
+    Diana_SetAttr_Imod,
+    Diana_SetAttr_Ipow,
+    Diana_SetAttr_Ilshift,
+    Diana_SetAttr_Irshift,
+    Diana_SetAttr_Ibitor,
+    Diana_SetAttr_Ibitand,
+    Diana_SetAttr_Ibitxor,
+    Diana_DelItem,
+    Diana_GetItem,
+    Diana_SetItem,
+    Diana_SetItem_Iadd,
+    Diana_SetItem_Isub,
+    Diana_SetItem_Imul,
+    Diana_SetItem_Itruediv,
+    Diana_SetItem_Ifloordiv,
+    Diana_SetItem_Imod,
+    Diana_SetItem_Ipow,
+    Diana_SetItem_Ilshift,
+    Diana_SetItem_Irshift,
+    Diana_SetItem_Ibitor,
+    Diana_SetItem_Ibitand,
+    Diana_SetItem_Ibitxor,
+    Diana_add,
+    Diana_sub,
+    Diana_mul,
+    Diana_truediv,
+    Diana_floordiv,
+    Diana_mod,
+    Diana_pow,
+    Diana_lshift,
+    Diana_rshift,
+    Diana_bitor,
+    Diana_bitand,
+    Diana_bitxor,
+    Diana_gt,
+    Diana_lt,
+    Diana_ge,
+    Diana_le,
+    Diana_eq,
+    Diana_ne,
+    Diana_in,
+    Diana_notin,
+    Diana_UnaryOp_invert,
+    Diana_UnaryOp_not,
+    Diana_UnaryOp_neg,
+    Diana_MKDict,
+    Diana_MKSet,
+    Diana_MKList,
+    Diana_Call,
+    Diana_Format,
+    Diana_Const,
+    Diana_MKTuple,
+    Diana_Pack,
+    Diana_Replicate,
+    Diana_Pop,
+]

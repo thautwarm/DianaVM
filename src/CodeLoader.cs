@@ -46,16 +46,16 @@ namespace DianaScript
     {
 
     // data definition
-        private static List<string> _strings;
+        private static List<string> _strings = new List<string>(200);
         public static List<string> strings => _strings;
         private static int Num_strings = 0;
-        private static List<InternString> _internstrings;
+        private static List<InternString> _internstrings = new List<InternString>(200);
         public static List<InternString> internstrings => _internstrings;
         private static int Num_internstrings = 0;
-        private static List<DObj> _dobjs;
+        private static List<DObj> _dobjs = new List<DObj>(200);
         public static List<DObj> dobjs => _dobjs;
         private static int Num_dobjs = 0;
-        private static List<FuncMeta> _funcmetas;
+        private static List<FuncMeta> _funcmetas = new List<FuncMeta>(200);
         public static List<FuncMeta> funcmetas => _funcmetas;
         private static int Num_funcmetas = 0;
 

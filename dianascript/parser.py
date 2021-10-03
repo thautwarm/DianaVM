@@ -1,9 +1,4 @@
 # Generated from lark-action.
-def _get_location(token):
-    return (token.line, token.column)
-
-def _get_value(token):
-    return token.value
 
 
 from contextlib import contextmanager
@@ -39,6 +34,12 @@ def enter_block():
 
 def emit(x):
     BLOCKS[-1].append(x)
+
+def _get_location(token):
+    return (token.line, token.column)
+
+def _get_value(token):
+    return token.value
 
 
 from dianascript.parser_raw import Transformer, Lark_StandAlone, Tree

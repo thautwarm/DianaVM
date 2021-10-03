@@ -6,8 +6,12 @@ from dianascript.chstmt import *
 from dianascript.code_cons import *
 from dianascript.logger import logger
 from pyrsistent import pvector
+from dianascript.serialize import initialize
+
 import logging
 
+
+initialize()
 
 RETURN = 0
 GO_AHEAD = 1

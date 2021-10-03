@@ -41,7 +41,7 @@ namespace DianaScript
     // data definition
     {% set ARR_TYPES = set() %}
     {% for defi in defs if not defi.is_bytecode %}
-        private static List<{{defi.name}}> _{{ defi.name.lower() }}s;
+        private static List<{{defi.name}}> _{{ defi.name.lower() }}s = new List<{{defi.name}}>(200);
         public static List<{{defi.name}}> {{ defi.name.lower() }}s => _{{ defi.name.lower() }}s;
         private static int Num_{{defi.name.lower()}}s = 0;
     {% endfor %}

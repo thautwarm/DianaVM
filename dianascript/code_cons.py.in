@@ -2,13 +2,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pyrsistent import PVector
 from dianascript.serialize import DObj, Builder, InternString, serialize_
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, TYPE_CHECKING
 import struct
 
 _T = TypeVar("_T")
 
 
-Bytecode = PVector[int | InternString]
+if TYPE_CHECKING:
+    Bytecode = PVector[int | InternString]
+
 BytecodeBuilder = list[int | InternString]
 
 {% for defi in defs if defi.is_bytecode %}
@@ -70,3 +72,9 @@ Instr = (
     | {{defi.name}}
     {% endfor %}
 )
+
+TypeIndex = [
+    {% for defi in defs if defi.is_bytecode %}
+    {{defi.name}},
+    {% endfor %}
+]
