@@ -7,6 +7,8 @@
 *.ran
 .vscode/
 runtests/mylang_raw.py
+docs/_build
+
 # User-specific files
 *.rsuser
 *.suo

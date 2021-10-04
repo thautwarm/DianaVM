@@ -573,21 +573,21 @@ namespace DianaScript
             return metadataIndForEntryPoint;
         }
 
-        public (int, int)[] Read(THint<(int, int)[]> _)
-        {
-            var arr = new (int, int)[ReadInt()];
-            for(var i = 0; i < arr.Length; i++)
-            {
-                arr[i] = Read(THint<(int, int)>.val);
-            }
-            return arr;
-        }
         public int[] Read(THint<int[]> _)
         {
             var arr = new int[ReadInt()];
             for(var i = 0; i < arr.Length; i++)
             {
                 arr[i] = Read(THint<int>.val);
+            }
+            return arr;
+        }
+        public (int, int)[] Read(THint<(int, int)[]> _)
+        {
+            var arr = new (int, int)[ReadInt()];
+            for(var i = 0; i < arr.Length; i++)
+            {
+                arr[i] = Read(THint<(int, int)>.val);
             }
             return arr;
         }

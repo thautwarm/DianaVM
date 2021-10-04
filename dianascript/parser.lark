@@ -57,18 +57,18 @@ expr_opt: -> expr_opt_0
 lhs_opt : -> lhs_opt_0                  
         | lhs -> lhs_opt_1                    
 
-stmt :   "var" seplist{",", name} -> stmt_0                                                                 
-       | seplist{":=", lhs} ":=" expr -> stmt_1                                                                                       
-       | expr -> stmt_2                                                       
-       | "loop" block "end" -> stmt_3                                                                     
-       | "each" lhs_opt "of" expr do block "end" -> stmt_4                                                                          
-                                                               
-       | "if" expr then block "end" -> stmt_5                                                                       
-       | "if" expr then block "else" block "end" -> stmt_6                                                                         
-       | "break" -> stmt_7                                                               
-       | "continue" -> stmt_8                                                                  
-       | "return" expr_opt -> stmt_9                                                                       
-       | "func" name "(" nullable{seplist{",", name}} ")" block "end" -> stmt_10                                                                                                 
+stmt :   "var" seplist{",", name} -> stmt_0                                                                      
+       | seplist{":=", lhs} ":=" expr -> stmt_1                                                                            
+       | expr -> stmt_2                                                                 
+       | "loop" block "end" -> stmt_3                                                                      
+       | "each" lhs_opt "of" expr do block "end" -> stmt_4                                                                             
+                                                                    
+       | "if" expr then block "end" -> stmt_5                                                                              
+       | "if" expr then block "else" block "end" -> stmt_6                                                                            
+       | "break" -> stmt_7                                                                
+       | "continue" -> stmt_8                                                                   
+       | "return" expr_opt -> stmt_9                                                                        
+       | "func" name "(" nullable{seplist{",", name}} ")"block"end" -> stmt_10                                          
 
 then : NEWLINE? "then"
 do : NEWLINE? "do"
